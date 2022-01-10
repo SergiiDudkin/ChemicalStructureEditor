@@ -1,0 +1,126 @@
+body {
+	height: auto;
+	background-image: linear-gradient(90deg, #8ca698, #776581);
+}
+.brick {
+	fill: white;
+	opacity: 0.90;
+}
+.but {
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+.but:hover {
+	opacity: 1;
+}
+.elmsk {
+	font: bold 14pt Arial;
+}
+.menumsk {
+	font: 12pt Arial;
+}
+.flex-container {
+	display: flex;
+	flex-direction: column;
+	width: 36px;
+}
+#menubar {
+	height: 36px;
+	width: inherit;
+}
+#testbox {
+	display: inline-block;
+}
+.flex-row {
+	display: flex;
+	flex-direction: row;
+}
+#mainframe {
+	height: 604px;
+}
+#canvas {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/*Chemical structure drawing styles*/
+.chemtxt {
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	text-rendering: geometricPrecision;
+	user-select: none;
+}
+.geomprec {
+	text-rendering: geometricPrecision;
+}
+.sympoi {
+	pointer-events: none;
+}
+.bondline {
+	stroke-width: 1.1;
+	stroke: black;
+}
+.anode {
+	fill: url(#grad1);
+	opacity: 0;
+}
+.blackcirc {
+	fill: black;
+}
+.ag:hover .anode {
+	opacity: 1;
+	cursor: pointer;
+}
+.ag:hover .chemtxt {
+	filter: none;
+}
+.brect {
+	fill: url(#grad0);
+	opacity: 0;
+}
+.bg:hover .brect {
+	opacity: 1;
+}
+.bg:hover {
+	cursor: pointer;
+}
+#selectrect {
+	border: 1px dotted #000;
+	position: absolute;
+}
+.hlcirc {
+	stroke: blue;
+	stroke-width: 1.1;
+	fill: none;
+}
+.dropdown-child {
+	display: none;
+	background-color: #f0f4f2;
+	color: #364940;
+	box-shadow: 3px 3px 2px 0px rgba(0, 0, 0, 0.5);
+	font: 10pt Arial;
+	position: absolute;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+.dropdown:hover .dropdown-child {
+	display: block;
+}
+.dropdown-btn {
+	cursor: pointer;
+	padding: 3px 3px;
+}
+.dropdown-btn:hover {
+	background-color: white;
+}
+.dropdown-btn:active {
+	box-shadow: 0px 0px 0px 1px #364940 inset;
+}

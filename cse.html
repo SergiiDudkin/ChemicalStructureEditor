@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>CSE</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+	<div class="flex-row" id="mainframe">
+		<div class="flex-container"> <!-- Vertical menu bar -->
+			<svg id="filters" width="36" height="36" display="block"> <!-- Just blank space and container for filters -->
+				<defs>
+					<filter id="shadow">
+						<feDropShadow flood-opacity="0.5" dx="3" dy="3" stdDeviation="1.5"/>
+					</filter>
+					<filter id="okshadow">
+						<feDropShadow flood-opacity="0.5" dx="2" dy="2" stdDeviation="1.5"/>
+					</filter>
+				</defs>
+			</svg>
+		</div>
+		<div> <!-- id="rightbox"> -->
+			<div id="menubar" class="flex-row"> <!-- Horizontal menu bar -->
+				<div class="dropdown">
+					<svg width="74" height="36" display="block">
+						<mask class="menumsk" id="maskFile">
+							<rect x="0" y="0" width="68" height="30" fill="white" />
+							<text class="but" x="7" y="21" fill="black">File</text>
+						</mask>
+						<g filter="url(#shadow)">
+							<rect class="but brick" id="options" x="0" y="0" width="70" height="32" mask="url(#maskFile)" />
+						</g>
+					</svg>
+					<div class="dropdown-child">
+						<div class="dropdown-btn">New</div>
+						<div id="download-svg" class="dropdown-btn">Save as .svg</div>
+						<div class="dropdown-btn">Save as .mol</div>						
+					</div>
+				</div>
+				<svg width="74" height="36" display="block">
+					<mask class="menumsk" id="maskOptions">
+						<rect x="0" y="0" width="68" height="30" fill="white" />
+						<text class="but" x="7" y="21" fill="black">Options</text>
+					</mask>
+					<g filter="url(#shadow)">
+						<rect id="btn-opt1" class="fancybtn but brick" id="options" x="0" y="0" width="70" height="32" mask="url(#maskOptions)" />
+					</g>
+				</svg>
+			</div>
+			<div id="canvas-container">
+				<svg id="canvas" width="670" height="570" display="block"> <!-- Main canvas -->
+					<rect id="canvbckgrnd" class="brick" x="0" y="0" width="664" height="564" fill="white" filter="url(#shadow)"/>
+					<g id="atomhighlights"></g>
+					<g id="bondsall"></g>
+					<g id="atomsall"></g>
+					<defs>
+						<linearGradient id="grad0" gradientTransform="rotate(90)">
+							<stop offset="0%"  style="stop-color: #BCB6C0; stop-opacity: 1" />
+							<stop offset="50%" style="stop-color: white; stop-opacity: 1" />
+							<stop offset="100%"  style="stop-color: #BCB6C0; stop-opacity: 1" />
+						</linearGradient>
+						<radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+							<stop offset="50%" style="stop-color: white; stop-opacity: 1" />
+							<stop offset="100%" style="stop-color: #aec1b7; stop-opacity: 1" />
+						</radialGradient>
+					</defs>
+				</svg>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="ChemNode.js"></script>
+	<script type="text/javascript" src="ChemBond.js"></script>
+	<script type="text/javascript" src="main.js"></script>
+</body>
+</html>
