@@ -7,10 +7,10 @@ function ChemBond(node0, node1, id=null, multiplicity=1) {
 	node1.connections.push({'adjnode': node0, 'bond': this});
 
 	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getnodecenters();
+	[x0, y0, x1, y1] = this.getNodeCenters();
 	this.difx = x1 - x0;
 	this.dify = y1 - y0;
-	this.len = veclen(this.difx, this.dify);
+	this.len = vecLen(this.difx, this.dify);
 	this.shx = -this.dify * bondspace / this.len; // Ortohonal (ACW) shift vector, X
 	this.shy = this.difx * bondspace / this.len; // Ortohonal (ACW) shift vector, Y
 	this.pdshift = 0;
@@ -36,11 +36,9 @@ function ChemBond(node0, node1, id=null, multiplicity=1) {
 	backrect.transform.baseVal.appendItem(rotate);
 	this.g.appendChild(backrect);
 
-	this.adjustlength(0);
-	this.adjustlength(1);
+	this.adjustLength(0);
+	this.adjustLength(1);
 	this.multiplicity = multiplicity;
-
-	this.render_nodes();
 }
 
 ChemBond.counter = 0;
@@ -50,28 +48,28 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.translate = function() {
-	this.adjustlength(0);
-	this.adjustlength(1);
+	this.adjustLength(0);
+	this.adjustLength(1);
 	this.renderBond();
 
 	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getnodecenters();
+	[x0, y0, x1, y1] = this.getNodeCenters();
 	var backrect = this.g.firstChild;
 	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
 	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
 };
 
-ChemBond.prototype.moveterminal = function() {
+ChemBond.prototype.moveTerminal = function() {
 	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getnodecenters();
+	[x0, y0, x1, y1] = this.getNodeCenters();
 	this.difx = x1 - x0;
 	this.dify = y1 - y0;
-	this.len = veclen(this.difx, this.dify);
+	this.len = vecLen(this.difx, this.dify);
 	this.shx = -this.dify * bondspace / this.len; // Ortohonal (ACW) shift vector, X
 	this.shy = this.difx * bondspace / this.len; // Ortohonal (ACW) shift vector, Y
 	
-	this.adjustlength(0);
-	this.adjustlength(1);
+	this.adjustLength(0);
+	this.adjustLength(1);
 	this.renderBond();
 
 	var backrect = this.g.firstChild;
@@ -86,15 +84,15 @@ ChemBond.prototype.moveterminal = function() {
 	rotateTransform.setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
 };
 
-ChemBond.prototype.getnodevec = function(node) {
+ChemBond.prototype.getNodeVec = function(node) {
 	if (node == this.nodes[0]) return [this.difx, this.dify];
 	else if (node == this.nodes[1]) return [-this.difx, -this.dify];
 	else console.log('Invalid node!');
 };
 
-ChemBond.prototype.adjustlength = function(node) { // Prevents overlapping of the chemical symbol and bond
+ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of the chemical symbol and bond
 	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getnodecenters();
+	[x0, y0, x1, y1] = this.getNodeCenters();
 	var curx = node == 0 ? x0 : x1, cury = node == 0 ? y0 : y1;
 
 	if (this.nodes[node].text != '') {
@@ -118,12 +116,12 @@ ChemBond.prototype.adjustlength = function(node) { // Prevents overlapping of th
 		var multab = [[0.5, -0.5, 0.5, 0.5], [-0.5, -0.5, 0.5, -0.5], [-0.5, -0.5, -0.5, 0.5], [-0.5, 0.5, 0.5, 0.5]];
 		var mulrow = multab[dir];
 
-		[this['x' + node], this['y' + node]] = line_intersec(x0, y0, x1, y1, curx + mulrow[0] * tb_w, cury + mulrow[1] * tb_h, curx + mulrow[2] * tb_w, cury + mulrow[3] * tb_h);
+		[this['x' + node], this['y' + node]] = lineIntersec(x0, y0, x1, y1, curx + mulrow[0] * tb_w, cury + mulrow[1] * tb_h, curx + mulrow[2] * tb_w, cury + mulrow[3] * tb_h);
 	}
 	else [this['x' + node], this['y' + node]] = [curx, cury]
 };
 
-ChemBond.prototype.getnodecenters = function(node=null) {
+ChemBond.prototype.getNodeCenters = function(node=null) {
 	if (node == 0) return [
 		parseInt(this.nodes[0].g.firstChild.getAttribute('cx')),
 		parseInt(this.nodes[0].g.firstChild.getAttribute('cy')),
@@ -140,34 +138,34 @@ ChemBond.prototype.getnodecenters = function(node=null) {
 	]
 };
 
-ChemBond.prototype.render_nodes = function() {
+ChemBond.prototype.renderNodes = function() {
 	this.nodes[0].renderAtom();
 	this.nodes[1].renderAtom();
 };
 
-ChemBond.prototype.rotatemultiplicity = function() {
+ChemBond.prototype.rotateMultiplicity = function() {
 	this.multiplicity = this.multiplicity % 3 + 1;
 	this.renderBond();
-	this.renderAtom();
+	this.renderNodes();
 };
 
 ChemBond.prototype.renderBond = function() {
 	while (this.g.childNodes[1]) this.g.childNodes[1].remove(); // Remove all bond lines
 	switch (this.multiplicity) {
 		case 1:
-			this.drawbondlines(0);
+			this.drawBondLines(0);
 			break;
 		case 2:
-			var pdshift = this.posdouble();
-			this.drawbondlines(-1 + pdshift, 1 + pdshift);
+			var pdshift = this.posDouble();
+			this.drawBondLines(-1 + pdshift, 1 + pdshift);
 			break;
 		case 3:
-			this.drawbondlines(-2, 0, 2);
+			this.drawBondLines(-2, 0, 2);
 			break;
 	}
 };
 
-ChemBond.prototype.drawbondlines = function() {
+ChemBond.prototype.drawBondLines = function() {
 	for (const shiftfactor of arguments) {
 		var bondline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 		bondline.setAttribute('class', 'sympoi');
@@ -183,21 +181,21 @@ ChemBond.prototype.drawbondlines = function() {
 				curnode = this.nodes[node];
 				if (curnode.connections.length >= 2 && curnode.g.childNodes[2].firstChild.nodeValue == '') {
 					var x0, y0, x1, y1, angles = [];
-					[x0, y0] = this.getnodevec(curnode);
+					[x0, y0] = this.getNodeVec(curnode);
 					for (const connection of curnode.connections) {
 						var bond = connection.bond;
 						if (bond != this) {
-							[x1, y1] = bond.getnodevec(curnode);
-							angles.push(angle_vec(x0, y0, x1, y1));
+							[x1, y1] = bond.getNodeVec(curnode);
+							angles.push(angleVec(x0, y0, x1, y1));
 						}
 					}
 					var nodeshiftfactor = shiftfactor > 0 != Boolean(node);
 					var theang = nodeshiftfactor ? Math.min(...angles) : Math.max(...angles);
 					if (theang != 1 && nodeshiftfactor == theang < 1) {
 						var x2, y2, x3, y3;
-						[x2, y2] = rotate_vec(x0, y0, theang * Math.PI / 2);
-						[x3, y3] = this.getnodecenters(node);
-						[linepoints[0 + 2 * node], linepoints[1 + 2 * node]] = line_intersec(...linepoints, x3, y3, x3 + x2, y3 + y2);
+						[x2, y2] = rotateVec(x0, y0, theang * Math.PI / 2);
+						[x3, y3] = this.getNodeCenters(node);
+						[linepoints[0 + 2 * node], linepoints[1 + 2 * node]] = lineIntersec(...linepoints, x3, y3, x3 + x2, y3 + y2);
 					}
 				}
 			}
@@ -210,25 +208,8 @@ ChemBond.prototype.drawbondlines = function() {
 	}
 };
 
-ChemBond.prototype.erase = function() {
-	var surbonds = new Set();
-	for (var node = 0; node < 2; node++) {
-		var curnode = this.nodes[node];
-		for (var idx = 0; idx < curnode.connections.length; idx++) {
-			if (curnode.connections[idx].bond == this) {
-				curnode.connections.splice(idx, 1);
-				curnode.renderAtom();
-				break;
-			}
-		}
-		surbonds = new Set([...surbonds, ...curnode.connections.map(conn => conn.bond)]);
-	}
-	this.g.remove();
-	delete this.nodes;
-	return surbonds;
-};
-
 ChemBond.prototype.destruct = function() {
+	// Remove bond from connections list
 	for (var node = 0; node < 2; node++) {
 		var curnode = this.nodes[node];
 		for (var idx = 0; idx < curnode.connections.length; idx++) {
@@ -242,7 +223,37 @@ ChemBond.prototype.destruct = function() {
 	delete this.nodes;
 };
 
-ChemBond.prototype.posdouble = function() { // Find the best shift of double bond
+ChemBond.prototype.getSurBonds = function() {
+	var aos = this.nodes.map(node => new Set(node.getAdjBonds())); // Array of sets
+	surbonds = new Set([...aos[0], ...aos[1]]);
+	surbonds.delete(this);
+	return surbonds
+}; // Set
+
+ChemBond.prototype.deleteBond = function() {
+	var nodes = this.nodes;
+	var surbonds = this.getSurBonds();
+	this.destruct();
+	nodes.forEach(node => node.renderAtom());
+	surbonds.forEach(bond => {if (bond.multiplicity == 2) bond.renderBond()});
+};
+
+ChemBond.prototype.restoreBond = function() {
+	this.renderNodes();
+	this.getSurBonds().forEach(bond => {if (bond.multiplicity == 2) bond.renderBond()});
+};
+
+ChemBond.prototype.eraseData = function() {
+	var this_id = this.g.id;
+	var this_data = [this.nodes[0].g.id, this.nodes[1].g.id, this_id, this.multiplicity];
+
+	var redo_data = [dispatcher.deleteChemBondR, this_id];
+	var undo_data = [dispatcher.deleteChemBondU, this_data];
+
+	return [redo_data, undo_data]
+}
+
+ChemBond.prototype.posDouble = function() { // Find the best shift of double bond
 	var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 	for (var node = 0; node < 2; node++) {
 		for (const connection of this.nodes[node].connections) {

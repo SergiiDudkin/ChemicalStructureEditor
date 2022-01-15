@@ -78,7 +78,7 @@ ChemNode.prototype.translate = function(dx, dy) {
 	this.renderAtom();
 };
 
-ChemNode.prototype.changeatom = function(cursortext) {
+ChemNode.prototype.changeAtom = function(cursortext) {
 	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
 	this.text = (cursortext == 'C' && this.text != '' && used_valency > 0) ? '' : cursortext;
 	this.renderAtom();
@@ -88,7 +88,7 @@ ChemNode.prototype.changeatom = function(cursortext) {
 		var bond = connection.bond;
 		for (var term=0; term < 2; term++) {
 			if (bond.nodes[term] == this) {
-				bond.adjustlength(term);
+				bond.adjustLength(term);
 				bond.renderBond();
 				break;
 			}
@@ -213,7 +213,7 @@ ChemNode.prototype.renderAtom = function() {
 				var bond = connection.bond;
 				var bondlength = bond.len;
 				var difx, dify;
-				[difx, dify] = bond.getnodevec(this);
+				[difx, dify] = bond.getNodeVec(this);
 
 				var bondcos = difx / bondlength;
 				var bondsin = dify / bondlength;
