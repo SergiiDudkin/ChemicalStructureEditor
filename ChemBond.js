@@ -5,40 +5,25 @@ function ChemBond(node0, node1, id=null, multiplicity=1) {
 	this.nodes = [node0, node1];
 	node0.connections.push({'adjnode': node1, 'bond': this});
 	node1.connections.push({'adjnode': node0, 'bond': this});
-
-	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getNodeCenters();
-	this.difx = x1 - x0;
-	this.dify = y1 - y0;
-	this.len = vecLen(this.difx, this.dify);
-	this.shx = -this.dify * bondspace / this.len; // Ortohonal (ACW) shift vector, X
-	this.shy = this.difx * bondspace / this.len; // Ortohonal (ACW) shift vector, Y
-	this.pdshift = 0;
-
-	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+	this.recalcDims();
+	
+	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
 	this.g.id = id === null ? this.getNewId() : id;
 	this.g.setAttribute('class', 'bg');
 	this.g.objref = this;
 	bondsall.appendChild(this.g)
-
+	
 	var backrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); // Background rectangle
 	backrect.setAttribute('class', 'brect');
-	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
-	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
-	backrect.setAttribute('width', this.len);
 	backrect.setAttribute('height', 10);
-
-	// Perform rotation of background rectangle
-	var rotang = Math.acos(this.difx / this.len) * 180 / Math.PI; // Rotation angle of backrect
-	rotang = this.dify > 0 ? rotang : 360 - rotang; // Make the angle positive
-	var rotate = canvas.createSVGTransform();
-	rotate.setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
-	backrect.transform.baseVal.appendItem(rotate);
+	backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
 	this.g.appendChild(backrect);
 
+	this.renderBackRect();
 	this.adjustLength(0);
 	this.adjustLength(1);
 	this.multiplicity = multiplicity;
+	this.pdshift = 0;
 }
 
 ChemBond.counter = 0;
@@ -47,41 +32,42 @@ ChemBond.prototype.getNewId = function() {
 	return 'b' + ChemBond.counter++;
 };
 
-ChemBond.prototype.translate = function() {
-	this.adjustLength(0);
-	this.adjustLength(1);
-	this.renderBond();
-
-	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getNodeCenters();
-	var backrect = this.g.firstChild;
-	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
-	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
-};
-
-ChemBond.prototype.moveTerminal = function() {
-	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getNodeCenters();
+ChemBond.prototype.recalcDims = function() {
+	var [x0, y0, x1, y1] = this.getNodeCenters();
 	this.difx = x1 - x0;
 	this.dify = y1 - y0;
 	this.len = vecLen(this.difx, this.dify);
 	this.shx = -this.dify * bondspace / this.len; // Ortohonal (ACW) shift vector, X
 	this.shy = this.difx * bondspace / this.len; // Ortohonal (ACW) shift vector, Y
-	
-	this.adjustLength(0);
-	this.adjustLength(1);
-	this.renderBond();
+};
 
+ChemBond.prototype.renderBackRect = function() {
+	var [x0, y0, x1, y1] = this.getNodeCenters();
 	var backrect = this.g.firstChild;
 	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
 	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
 	backrect.setAttribute('width', this.len);
 
-	var pathTransform = backrect.transform;
-	var rotateTransform = pathTransform.baseVal[0];
 	var rotang = Math.acos(this.difx / this.len) * 180 / Math.PI; // Rotation angle of backrect
 	rotang = this.dify > 0 ? rotang : 360 - rotang; // Make the angle positive
-	rotateTransform.setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
+	backrect.transform.baseVal[0].setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
+};
+
+ChemBond.prototype.moveTerminal = function() {
+	this.recalcDims();
+	this.adjustLength(0);
+	this.adjustLength(1);
+	this.renderBond();
+	this.renderBackRect();
+};
+
+ChemBond.prototype.translate = function() {
+	this.renderBond();
+
+	var [x0, y0, x1, y1] = this.getNodeCenters();
+	var backrect = this.g.firstChild;
+	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
+	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
 };
 
 ChemBond.prototype.getNodeVec = function(node) {
@@ -91,8 +77,7 @@ ChemBond.prototype.getNodeVec = function(node) {
 };
 
 ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of the chemical symbol and bond
-	var x0, y0, x1, y1;
-	[x0, y0, x1, y1] = this.getNodeCenters();
+	var [x0, y0, x1, y1] = this.getNodeCenters();
 	var curx = node == 0 ? x0 : x1, cury = node == 0 ? y0 : y1;
 
 	if (this.nodes[node].text != '') {
@@ -143,10 +128,11 @@ ChemBond.prototype.renderNodes = function() {
 	this.nodes[1].renderAtom();
 };
 
-ChemBond.prototype.rotateMultiplicity = function() {
-	this.multiplicity = this.multiplicity % 3 + 1;
-	this.renderBond();
-	this.renderNodes();
+ChemBond.prototype.rotateMultData = function() {
+	var this_id = this.g.id;
+	var redo_data = [dispatcher.rotateMultUR, this_id, this.multiplicity % 3 + 1];
+	var undo_data = [dispatcher.rotateMultUR, this_id, this.multiplicity];
+	return [redo_data, undo_data]
 };
 
 ChemBond.prototype.renderBond = function() {
@@ -192,9 +178,8 @@ ChemBond.prototype.drawBondLines = function() {
 					var nodeshiftfactor = shiftfactor > 0 != Boolean(node);
 					var theang = nodeshiftfactor ? Math.min(...angles) : Math.max(...angles);
 					if (theang != 1 && nodeshiftfactor == theang < 1) {
-						var x2, y2, x3, y3;
-						[x2, y2] = rotateVec(x0, y0, theang * Math.PI / 2);
-						[x3, y3] = this.getNodeCenters(node);
+						var [x2, y2] = rotateVec(x0, y0, theang * Math.PI / 2);
+						var [x3, y3] = this.getNodeCenters(node);
 						[linepoints[0 + 2 * node], linepoints[1 + 2 * node]] = lineIntersec(...linepoints, x3, y3, x3 + x2, y3 + y2);
 					}
 				}
@@ -209,16 +194,10 @@ ChemBond.prototype.drawBondLines = function() {
 };
 
 ChemBond.prototype.destruct = function() {
-	// Remove bond from connections list
-	for (var node = 0; node < 2; node++) {
-		var curnode = this.nodes[node];
-		for (var idx = 0; idx < curnode.connections.length; idx++) {
-			if (curnode.connections[idx].bond == this) {
-				curnode.connections.splice(idx, 1);
-				break;
-			}
-		}
-	}
+	// Remove bond from the nodes connection lists
+	for (node of this.nodes) node.connections = node.connections.filter(item => item.bond !== this);
+
+	// Destroy
 	this.g.remove();
 	delete this.nodes;
 };

@@ -276,6 +276,24 @@ Dispatcher.prototype.undo = function() {
 	command[0](...command.slice(1)); // Execute the given function with args
 };
 
+Dispatcher.prototype.createSingleR = function(this_id, x, y, cursortext) {
+	new ChemNode(x, y, cursortext, this_id).renderAtom();
+};
+
+Dispatcher.prototype.createSingleU = function(this_id, text) {
+	document.getElementById(this_id).objref.g.remove();
+};
+
+Dispatcher.prototype.setAtomUR = function(this_id, text) {
+	document.getElementById(this_id).objref.changeAtom(text);
+};
+
+Dispatcher.prototype.rotateMultUR = function(this_id, multiplicity) {
+	bond = document.getElementById(this_id).objref;
+	bond.multiplicity = multiplicity;
+	bond.renderBond();
+};
+
 Dispatcher.prototype.deleteChemNodeR = function(this_id) {
 	document.getElementById(this_id).objref.deleteWithBonds(); // Delete the atom [this] with bonds
 };
@@ -345,8 +363,18 @@ function chemNodeHandler(elbtns) {
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			focobj = moveCursor(event, cursoratom, 'x', 'y');
 			var cursortext = cursoratom.textContent;
-			if (focobj) focobj.changeAtom(cursortext); // If some atom was clicked
-			else new ChemNode(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext).renderAtom(); // If blank space was clicked
+			if (focobj) dispatcher.do(focobj.setAtomData(cursortext)); // If some atom was clicked
+			// else new ChemNode(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext).renderAtom(); // If blank space was clicked
+			// else dispatcher.do([], []); // If blank space was clicked
+
+			else {
+				// a = ChemNode.prototype.getNewId();
+				// console.log(a);
+				dispatcher.do(ChemNode.prototype.createSingleData(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext)); // If blank space was clicked
+			}
+
+
+
 		}
 		else { // Click outside the canvas
 			window.removeEventListener('mousemove', movElem);
@@ -371,7 +399,7 @@ function chemBondHandler(bondbtn) {
 		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
 			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
 				focobj = event.target.parentNode.objref;
-				focobj.rotateMultiplicity();
+				dispatcher.do(focobj.rotateMultData());
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				focobjst = moveCursor(event, cursorbond, 'x1', 'y1');
@@ -403,7 +431,9 @@ function chemBondHandler(bondbtn) {
 		if (findDist(stx, sty, enx, eny) >= 16) { // If the new bond is long enough
 			var node0 = focobjst === null ? new ChemNode(stx, sty, '') : focobjst; // Use the existing start node or create a new one if there is none
 			var node1 = focobj === null ? new ChemNode(enx, eny, '') : focobj; // Use the existing end node or create a new one if there is none
-			new ChemBond(node0, node1).renderBond();			
+			bond = new ChemBond(node0, node1);
+			bond.renderNodes();
+			bond.renderBond();
 		}
 		cursorbond.remove(); // Erase the temporary bond
 		window.removeEventListener('mouseup', enBond);

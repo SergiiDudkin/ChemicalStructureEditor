@@ -41,6 +41,15 @@ ChemNode.prototype.getNewId = function() {
 	return 'a' + ChemNode.counter++;
 };
 
+ChemNode.prototype.createSingleData = function(x, y, cursortext) {
+	// console.log(this);
+	// var this_id = ChemNode.prototype.getNewId();
+	var this_id = this.getNewId();
+	var redo_data = [dispatcher.createSingleR, this_id, x, y, cursortext];
+	var undo_data = [dispatcher.createSingleU, this_id];
+	return [redo_data, undo_data]
+};
+
 ChemNode.prototype.highlight = function() {
 	this.hlcirc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	this.hlcirc.setAttribute('class', 'hlcirc');
@@ -94,6 +103,13 @@ ChemNode.prototype.changeAtom = function(cursortext) {
 			}
 		}
 	}
+};
+
+ChemNode.prototype.setAtomData = function(cursortext) {
+	var this_id = this.g.id;
+	var redo_data = [dispatcher.setAtomUR, this_id, cursortext];
+	var undo_data = [dispatcher.setAtomUR, this_id, this.text];
+	return [redo_data, undo_data]
 };
 
 ChemNode.prototype.getAdjBonds = function() {
