@@ -411,6 +411,11 @@ function chemNodeHandler(elbtns) {
 		corrAtomPos(cursoratom, 0);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
+
+		// id = ChemNode.prototype.getNewId();
+		// text = event.target.id.slice(4);
+		// var [x, y] = getSvgPoint(event);
+		// editStructure(new_atoms_data=[[id, clampX(x), clampY(y), text]]);
 	}
 
 	function movElem(event) {
@@ -422,13 +427,13 @@ function chemNodeHandler(elbtns) {
 			focobj = moveCursor(event, cursoratom, 'x', 'y');
 			var cursortext = cursoratom.textContent;
 			if (focobj) dispatcher.do(focobj.setAtomData(cursortext)); // If some atom was clicked
-			// else new ChemNode(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext).renderAtom(); // If blank space was clicked
-			// else dispatcher.do([], []); // If blank space was clicked
-
 			else {
-				// a = ChemNode.prototype.getNewId();
-				// console.log(a);
-				dispatcher.do(ChemNode.prototype.createSingleData(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext)); // If blank space was clicked
+				// dispatcher.do(ChemNode.prototype.createSingleData(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext)); // If blank space was clicked
+				// id = ChemNode.prototype.getNewId();
+				// ToDo: ! Integrate with dispatcher.
+				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]};
+				editStructure(kwargs);
+				// editStructure(new_atoms_data=[[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]);
 			}
 
 
@@ -482,16 +487,40 @@ function chemBondHandler(bondbtn) {
 
 	function enBond(event) { // Finish drawing bond
 		focobj = moveCursor(event, cursorbond, "x2", "y2");
-		var stx = parseInt(cursorbond.getAttribute("x1"));
-		var sty = parseInt(cursorbond.getAttribute("y1"));
-		var enx = parseInt(cursorbond.getAttribute("x2"));
-		var eny = parseInt(cursorbond.getAttribute("y2"));
+		// var stx = parseInt(cursorbond.getAttribute("x1"));
+		// var sty = parseInt(cursorbond.getAttribute("y1"));
+		// var enx = parseInt(cursorbond.getAttribute("x2"));
+		// var eny = parseInt(cursorbond.getAttribute("y2"));
+		// if (findDist(stx, sty, enx, eny) >= 16) { // If the new bond is long enough
+		// 	var node0 = focobjst === null ? new ChemNode(stx, sty, '') : focobjst; // Use the existing start node or create a new one if there is none
+		// 	var node1 = focobj === null ? new ChemNode(enx, eny, '') : focobj; // Use the existing end node or create a new one if there is none
+		// 	bond = new ChemBond(node0, node1);
+		// 	bond.renderNodes();
+		// 	bond.renderBond();
+
+		// var points = ['x1', 'y1', 'x2', 'y2'].map(item => parseInt(cursorbond.getAttribute(item)))
+		// if (findDist(...points) >= 16) { // If the new bond is long enough
+
+		var [stx, sty, enx, eny] = ['x1', 'y1', 'x2', 'y2'].map(item => parseInt(cursorbond.getAttribute(item)))
 		if (findDist(stx, sty, enx, eny) >= 16) { // If the new bond is long enough
-			var node0 = focobjst === null ? new ChemNode(stx, sty, '') : focobjst; // Use the existing start node or create a new one if there is none
-			var node1 = focobj === null ? new ChemNode(enx, eny, '') : focobj; // Use the existing end node or create a new one if there is none
-			bond = new ChemBond(node0, node1);
-			bond.renderNodes();
-			bond.renderBond();
+			var new_atoms_data = [];
+			var node0 = focobjst === null ? ChemNode.prototype.getNewId() : focobjst; // Use the existing start node or create a new one if there is none
+			var node1 = focobj === null ? ChemNode.prototype.getNewId() : focobj; // Use the existing end node or create a new one if there is none
+			if (focobjst === null) new_atoms_data.push([node0, stx, sty, '']);
+			if (focobj === null) new_atoms_data.push([node1, enx, eny, '']);
+			
+			// var nodes = [focobjst, focobj].map(item => item === null ? ChemNode.prototype.getNewId() : item);
+			// var new_atoms_data = nodes.filter(item => typeof item === 'string').map((item, index) => [item, points[index * 2], points[index * 2 + 1]])
+			// console.log(nodes[0]);
+			// console.log(nodes[1]);
+			// kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: [ChemBond.prototype.getNewId, node0, node1, 1]};
+			kwargs = {
+				new_atoms_data: new_atoms_data,
+				// new_atoms_data: nodes.filter(item => typeof item === 'string').map((item, index) => [item, points[index * 2], points[index * 2 + 1], '']), 
+				// new_bonds_data: [[ChemBond.prototype.getNewId(), ...nodes, 1]]
+				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, 1]]
+			};
+			editStructure(kwargs);
 		}
 		cursorbond.remove(); // Erase the temporary bond
 		window.removeEventListener('mouseup', enBond);

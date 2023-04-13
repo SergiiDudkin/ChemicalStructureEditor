@@ -1,196 +1,117 @@
-function ChemNode(x, y, nodetext, id=null) {
+function ChemNode(id, x, y, text) {
+	Object.assign(this, ChemNode.default_style);
+	this.text = text.toString(); // ??? maybe .toString() is not needed
 	this.connections = [];
-	this.hlcirc = null;
-	this.text = nodetext == 'C' ? '' : nodetext.toString();
-
+	this.select_circ = null;
+	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-	this.g.id = id === null ? this.getNewId() : id;
-	this.g.setAttribute('class', 'ag');
+	this.g.id = id;
 	this.g.objref = this;
-	atomsall.appendChild(this.g);
-
-	var corner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	corner.setAttribute('class', 'sympoi');
-	corner.setAttribute('cx', x);
-	corner.setAttribute('cy', y);
-	corner.setAttribute('r', 0.55);
-	corner.setAttribute('fill', 'none');
-	this.g.appendChild(corner);
+	this.g.setAttribute('class', 'ag');
+	document.getElementById('atomsall').appendChild(this.g);
 
 	var backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	backcircle.setAttribute('class', 'anode');
-	backcircle.setAttribute('cx', x);
-	backcircle.setAttribute('cy', y);
 	backcircle.setAttribute('r', 8);
 	this.g.appendChild(backcircle);
 
 	var atom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-	atom.setAttribute('x', x);
-	atom.setAttribute('y', y);
 	atom.setAttribute('class', 'chemtxt sympoi');
-	atom.setAttribute('style', "font-family:'Arial';font-size:12px;");
+	atom.setAttribute('style', `fill:${this.color};font-family:'${this.default_font_family}';font-size:${this.default_size}px;`);
 	atom.setAttribute('dy', 4.5);
 	this.g.appendChild(atom);
 
+	this.translate(x, y)
 	atom.appendChild(document.createTextNode('')); // Add atom text (without hydrogens)
 }
 
 ChemNode.counter = 0;
 
+ChemNode.default_style = {
+	color: 'black',
+	default_font_family: 'Arial',
+	default_size: 12
+};
+
+ChemNode.hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
+
 ChemNode.prototype.getNewId = function() {
 	return 'a' + ChemNode.counter++;
 };
 
-ChemNode.prototype.createSingleData = function(x, y, cursortext) {
-	// console.log(this);
-	// var this_id = ChemNode.prototype.getNewId();
-	var this_id = this.getNewId();
-	var redo_data = [dispatcher.createSingleR, this_id, x, y, cursortext];
-	var undo_data = [dispatcher.createSingleU, this_id];
-	return [redo_data, undo_data]
+ChemNode.prototype.delete = function() {
+	this.g.remove();
+	delete this.connections;
 };
 
-ChemNode.prototype.highlight = function() {
-	this.hlcirc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	this.hlcirc.setAttribute('class', 'hlcirc');
-	this.hlcirc.setAttribute('cx', parseInt(this.g.firstChild.getAttribute('cx')));
-	this.hlcirc.setAttribute('cy', parseInt(this.g.firstChild.getAttribute('cy')));
-	this.hlcirc.setAttribute('r', 10);
-	ahl.appendChild(this.hlcirc);
-};
-
-ChemNode.prototype.dehighlight = function() {
-	this.hlcirc.remove();
-	this.hlcirc = null;
-};
-
-ChemNode.prototype.translate = function(dx, dy) {
-	var x = parseInt(this.g.firstChild.getAttribute('cx')) + Math.round(dx);
-	var y = parseInt(this.g.firstChild.getAttribute('cy')) + Math.round(dy);
-
-	var corner = this.g.firstChild;
-	corner.setAttribute('cx', x);
-	corner.setAttribute('cy', y);
-
-	var backcircle = this.g.childNodes[1];
-	backcircle.setAttribute('cx', x);
-	backcircle.setAttribute('cy', y);
-
-	if (this.hlcirc != null) {
-		this.hlcirc.setAttribute('cx', x);
-		this.hlcirc.setAttribute('cy', y);
-	}
-
-	var atom = this.g.childNodes[2];
-	atom.setAttribute('x', x);
-	atom.setAttribute('y', y);
-	this.renderAtom();
-};
-
-ChemNode.prototype.changeAtom = function(cursortext) {
-	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
-	this.text = (cursortext == 'C' && this.text != '' && used_valency > 0) ? '' : cursortext.toString();
-	this.renderAtom();
-
-	// Adjust length of the surrounding bonds
-	for (const connection of this.connections) {
-		var bond = connection.bond;
-		for (var term=0; term < 2; term++) {
-			if (bond.nodes[term] == this) {
-				bond.adjustLength(term);
-				bond.renderBond();
-				break;
-			}
-		}
-	}
-};
-
-ChemNode.prototype.setAtomData = function(cursortext) {
-	var this_id = this.g.id;
-	var redo_data = [dispatcher.setAtomUR, this_id, cursortext];
-	var undo_data = [dispatcher.setAtomUR, this_id, this.text];
-	return [redo_data, undo_data]
-};
-
-ChemNode.prototype.getAdjBonds = function() {
-	return this.connections.map(connection => connection.bond);
-}; // Array
-
-ChemNode.prototype.getAdjNodes = function() {
-	return this.connections.map(connection => connection.adjnode);
-}; // Array
-
-ChemNode.prototype.getNextAdjBonds = function() {
-	return new Set(this.getAdjNodes().reduce((prev, curr) => prev.concat(curr.getAdjBonds()), []));
-}; // Set
-
-ChemNode.prototype.getSurBonds = function() {
-	var adjbonds = this.getAdjBonds();
-	var nextadjbonds = this.getNextAdjBonds();
-	for (var bond of adjbonds) nextadjbonds.delete(bond);
-	return nextadjbonds;
-}; // Set
-
-ChemNode.prototype.eraseData = function() {
-	var this_id = this.g.id;
-	var this_data = [this.g.firstChild.getAttribute('cx'), this.g.firstChild.getAttribute('cy'), this.g.childNodes[2].firstChild.nodeValue, this_id];
-
-	var adjbonds = this.getAdjBonds();
-	var adjbonds_data = adjbonds.map(adjbond => [adjbond.nodes[0].g.id, adjbond.nodes[1].g.id, adjbond.g.id, adjbond.multiplicity]);
-
-	var redo_data = [dispatcher.deleteChemNodeR, this_id];
-	var undo_data = [dispatcher.deleteChemNodeU, this_data, adjbonds_data];
-
-	return [redo_data, undo_data]
-}
-
-ChemNode.prototype.restoreWithBonds = function() {
-	var adjnodes = this.getAdjNodes();
-	var adjbonds = this.getAdjBonds();
-	var surbonds = this.getSurBonds();
-
-	for (const node of [...adjnodes, this]) node.renderAtom(); // Draw hydrogens [this, ...adjnodes]
-	for (const adjbond of adjbonds) adjbond.renderBond(); // Draw surrounding bonds
-	for (const surbond of surbonds) if (surbond.multiplicity == 2) surbond.renderBond(); // Refresh surrounding double bonds
-};
-
-ChemNode.prototype.deleteWithBonds = function() {
-	var adjbonds = this.getAdjBonds();
-	var surbonds = this.getSurBonds();
-	var adjnodes = this.getAdjNodes();
-
-	for (const adjbond of adjbonds) adjbond.destruct(); // Delete bonds [...adjbonds]
-	this.g.remove(); // Delete the atom [this]
-	this.connections = [];
-	for (const surbond of surbonds) if (surbond.multiplicity == 2) surbond.renderBond(); // Update double bond shifts [...surbonds]
-	for (const adjnode of adjnodes) adjnode.renderAtom(); // Draw hydrogens [...adjnodes]
-};
-
-ChemNode.prototype.renderAtom = function() {
-	hydrogens = this.g.childNodes[3];
-	if (hydrogens !== undefined) hydrogens.remove();
-
-	var atom = this.g.childNodes[2];
-	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
-
-	target_text = used_valency == 0 && this.text == '' ? 'C' : this.text; // Convert floating C atoms into CH4
+ChemNode.prototype.renderSymb = function() {
+	var atom = this.g.childNodes[1];
+	target_text = this.connections.length == 0 && this.text == '' ? 'C' : this.text; // Convert floating C atoms into CH4
 	if (atom.firstChild.nodeValue != target_text) { // Update text, if needed
 		atom.firstChild.nodeValue = target_text;
 		atom.setAttribute('dx', -atom.getBBox().width / 2); // Adjust (center) position of text
-		this.widthcorr = corrAtomPos(atom, this.g.firstChild.getAttribute('cx'));
+		this.corrSymbPos();
 	}
+};
 
-	var count = 0;
-	for (const connection of this.connections) if (connection.bond.multiplicity != 2 || connection.bond.pdshift != 0) count++;
-	this.g.firstChild.setAttribute('fill', count >= 2 && atom.firstChild.nodeValue == '' ? 'black' : 'none'); // Show or hide the corner circle
+ChemNode.prototype.corrSymbPos = function() {
+	// ToDo: ? Reuse corrAtomPos from main0.js
+	var atom = this.g.childNodes[1]
+	var bbox = atom.getBBox();
+	var bboxxctr = bbox.x + bbox.width / 2;
+	ctr_err = (this.x - bboxxctr).toFixed(1);
+	this.width_err = -ctr_err * 1.5; // ??? Why 1.5? Should be 2
+	if (ctr_err != 0) atom.setAttribute('dx', -(bbox.width + this.width_err) / 2); // Adjust (center) position of text
+};
 
-	// Find hydrogens count
-	var H_cnt;
-	if (atom.firstChild.nodeValue in hmaxtab) H_cnt = Math.max(hmaxtab[atom.firstChild.nodeValue] - used_valency, 0);
-	else H_cnt = 0;
+ChemNode.prototype.calcHydr = function() {
+	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
+	hmax = this.g.childNodes[1].firstChild.nodeValue;
+	this.H_cnt = hmax in hmaxtab ? 
+		Math.max(ChemNode.hmaxtab[hmax] - used_valency, 0) : 0;
+};
 
-	if (H_cnt > 0) { // If there are hydrogens
-		hydrogens = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+ChemNode.prototype.translate = function(new_x, new_y) {
+	this.x = new_x;
+	this.y = new_y;
+
+	var backcircle = this.g.childNodes[0];
+	backcircle.setAttribute('cx', new_x);
+	backcircle.setAttribute('cy', new_y);
+
+	var atom = this.g.childNodes[1];
+	atom.setAttribute('x', new_x);
+	atom.setAttribute('y', new_y);
+
+	if (this.select_circ != null) {
+		this.select_circ.setAttribute('cx', new_x);
+		this.select_circ.setAttribute('cy', new_y);
+	}
+};
+
+ChemNode.prototype.select = function() { // !!! Temp
+	this.select_circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	this.select_circ.setAttribute('class', 'hlcirc');
+	this.select_circ.setAttribute('cx', parseInt(this.g.firstChild.getAttribute('cx')));
+	this.select_circ.setAttribute('cy', parseInt(this.g.firstChild.getAttribute('cy')));
+	this.select_circ.setAttribute('r', 10);
+	ahl.appendChild(this.select_circ);
+};
+
+ChemNode.prototype.deselect = function() { // !!! Temp
+	this.select_circ.remove();
+	this.select_circ = null;
+};
+
+ChemNode.prototype.renderHydr = function() {
+	var hydrogens = this.g.childNodes[2];
+	if (hydrogens !== undefined) hydrogens.remove(); // Erase old hydrogens
+
+	if (this.H_cnt > 0) { // If there are hydrogens
+		var atom = this.g.childNodes[1]
+
+		// Create H box
+		var hydrogens = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 		hydrogens.setAttribute('class', 'sympoi');
 		hydrogens.setAttribute('x', atom.getAttribute('x'));
 		hydrogens.setAttribute('y', atom.getAttribute('y'));
@@ -203,67 +124,63 @@ ChemNode.prototype.renderAtom = function() {
 		hsymb.appendChild(document.createTextNode('H'));
 		hydrogens.appendChild(hsymb);
 
-		var hwidth = hydrogens.getBBox().width;
-
-		// Draw count of hydrogens
-		if (H_cnt > 1) {
+		// Draw count of hydrogens, if more then 1
+		if (this.H_cnt > 1) {
 			var hnumb = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
 			hnumb.setAttribute('class', 'chemtxt');
 			hnumb.setAttribute('style', "font-family:'Arial';font-size:8px;");
 			hnumb.setAttribute('dy', 3);
-			hnumb.appendChild(document.createTextNode(H_cnt));
+			hnumb.appendChild(document.createTextNode(this.H_cnt));
 			hydrogens.appendChild(hnumb);
 		}
 
-		var atbox = atom.getBBox();
-		var halfatom_w = (atbox.width + this.widthcorr) / 2;//  + this.widthcorr;
-
 		// Place hydrogens in correct position
-		if (this.connections.length == 0) { // If there are no bonds, draw hydrogens right
-			hydrogens.setAttribute('dx', halfatom_w);
-			hydrogens.setAttribute('dy', 4.5);
+		var atbox = atom.getBBox();
+		var halfatom_w = (atbox.width + this.width_err) / 2;
+		var hwidth = hydrogens.getBBox().width;
+		this.locateHydr();
+		if (this.position_idx == 0) { // Right
+			hydrogens.setAttribute("dx", halfatom_w);
+			hydrogens.setAttribute("dy", 4.5);
 		}
-		else { // Find the least ocupied direction in terms of the most interfearing bond angle (or to be exect, unit vector projection)
-			var proj_rldu = [[], [], [], []]; // Unit vector projections in each direction, right, left, down and up respectively
-			for (const connection of this.connections) {
-				var bond = connection.bond;
-				var bondlength = bond.len;
-				var difx, dify;
-				[difx, dify] = bond.getNodeVec(this);
-
-				var bondcos = difx / bondlength;
-				var bondsin = dify / bondlength;
-				proj_rldu[0].push(bondcos > 0 ? bondcos : 0);
-				proj_rldu[1].push(-bondcos > 0 ? -bondcos : 0);
-				proj_rldu[2].push(bondsin > 0 ? bondsin : 0);
-				proj_rldu[3].push(-bondsin > 0 ? -bondsin : 0);
-			}
-
-			var max_rldu = [];
-			for (var k = 0; k < 4; k++) max_rldu.push(Math.max(...proj_rldu[k])); // Within each direction, isolate projections of the most interfearing bonds
-			var position_idx = max_rldu.indexOf(Math.min(...max_rldu)); // Find index of the least ocupied direction
-
-			if (position_idx == 0) { // Right
-				hydrogens.setAttribute("dx", halfatom_w);
-				hydrogens.setAttribute("dy", 4.5);
-			}
-			else if (position_idx == 1) { // Left
-				hydrogens.setAttribute("dx", -(halfatom_w + hydrogens.getBBox().width));
-				hydrogens.setAttribute("dy", 4.5);
-			}
-			else if (position_idx == 2) { // Down
-				hydrogens.setAttribute("dx", -(hwidth + this.widthcorr) / 2);
-				hydrogens.setAttribute("dy", atbox.height + 1);
-			}
-			else { // Up
-				hydrogens.setAttribute("dx", -(hwidth + this.widthcorr) / 2);
-				hydrogens.setAttribute("dy", H_cnt > 1 ? -atbox.height + 8 : -atbox.height + 8);
-			}
+		else if (this.position_idx == 1) { // Left
+			hydrogens.setAttribute("dx", -(halfatom_w + hydrogens.getBBox().width));
+			hydrogens.setAttribute("dy", 4.5);
+		}
+		else if (this.position_idx == 2) { // Down
+			hydrogens.setAttribute("dx", -(hwidth + this.width_err) / 2);
+			hydrogens.setAttribute("dy", atbox.height + 1);
+		}
+		else { // Up
+			hydrogens.setAttribute("dx", -(hwidth + this.width_err) / 2);
+			hydrogens.setAttribute("dy", this.H_cnt > 1 ? -atbox.height + 8 : -atbox.height + 8);
 		}
 	}
 };
 
-ChemNode.prototype.sortConnections = function() { // Sort by the angle between surrounding bonds and x-axis
+ChemNode.prototype.locateHydr = function() { 
+	// Find the least ocupied direction in terms of the most interfearing bond angle (or to be exect, unit vector projection)
+	if (this.connections.length == 0) this.position_idx = 0; // If there are no bonds, draw hydrogens right
+	else {
+		var proj_rldu = [[], [], [], []]; // Unit vector projections in each direction, right, left, down and up respectively
+		for (const {bond, adjnode} of this.connections) {
+			var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len)
+			proj_rldu[0].push(bondcos > 0 ? bondcos : 0);
+			proj_rldu[1].push(-bondcos > 0 ? -bondcos : 0);
+			proj_rldu[2].push(bondsin > 0 ? bondsin : 0);
+			proj_rldu[3].push(-bondsin > 0 ? -bondsin : 0);
+		}
+		var max_rldu = proj_rldu.map(projs => Math.max(...projs)) // Within each direction, isolate projections of the most interfearing bonds
+		this.position_idx = max_rldu.indexOf(Math.min(...max_rldu)); // Find index of the least ocupied direction
+	}
+};
+
+ChemNode.prototype.calcLineTips = function() {
+	// !!!
+};
+
+ChemNode.prototype.sortConnections = function() {
+	// Sort by the angle between surrounding bonds and x-axis
 	var x0 = 1, y0 = 0;
 	var x = this.g.firstChild.getAttribute('cx');
 	var y = this.g.firstChild.getAttribute('cy');
@@ -272,21 +189,18 @@ ChemNode.prototype.sortConnections = function() { // Sort by the angle between s
 		connection.adjnode.g.firstChild.getAttribute('cy') - y)
 	); // Calculate angles between every bond and x-axis
 	this.connections = argSort(bond_angles).map(i => this.connections[i]); // Perform sorting
-
-	/* this.connections.map((connection, index) => connection.adjnode.changeAtom(index)); // For testing */
 };
 
-ChemNode.prototype.goToBond = function(bond, step) { // Go to another bond
+ChemNode.prototype.goToBond = function(bond, step) {
+	// Go to another bond
 	var bonds = this.connections.map(connection => connection.bond);
 	var idx = bonds.indexOf(bond);
 	var bond_cnt = this.connections.length;
 	var target_idx = (idx + bond_cnt + step % bond_cnt) % bond_cnt;
-	// console.log('idx', idx, 'target_idx', target_idx);
 	return bonds[target_idx];
 };
 
-ChemNode.prototype.getBondJunc = function(bond0, bond1) { // Get junction point of the borders
+ChemNode.prototype.getBondJunc = function(bond0, bond1) {
+	// Get junction point of the borders
 	return lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
 };
-
-
