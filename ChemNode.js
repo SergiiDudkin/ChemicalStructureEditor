@@ -1,7 +1,7 @@
 function ChemNode(x, y, nodetext, id=null) {
 	this.connections = [];
 	this.hlcirc = null;
-	this.text = nodetext == 'C' ? '' : nodetext;
+	this.text = nodetext == 'C' ? '' : nodetext.toString();
 
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 	this.g.id = id === null ? this.getNewId() : id;
@@ -89,7 +89,7 @@ ChemNode.prototype.translate = function(dx, dy) {
 
 ChemNode.prototype.changeAtom = function(cursortext) {
 	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
-	this.text = (cursortext == 'C' && this.text != '' && used_valency > 0) ? '' : cursortext;
+	this.text = (cursortext == 'C' && this.text != '' && used_valency > 0) ? '' : cursortext.toString();
 	this.renderAtom();
 
 	// Adjust length of the surrounding bonds
@@ -152,7 +152,7 @@ ChemNode.prototype.restoreWithBonds = function() {
 	for (const node of [...adjnodes, this]) node.renderAtom(); // Draw hydrogens [this, ...adjnodes]
 	for (const adjbond of adjbonds) adjbond.renderBond(); // Draw surrounding bonds
 	for (const surbond of surbonds) if (surbond.multiplicity == 2) surbond.renderBond(); // Refresh surrounding double bonds
-}
+};
 
 ChemNode.prototype.deleteWithBonds = function() {
 	var adjbonds = this.getAdjBonds();
@@ -164,7 +164,7 @@ ChemNode.prototype.deleteWithBonds = function() {
 	this.connections = [];
 	for (const surbond of surbonds) if (surbond.multiplicity == 2) surbond.renderBond(); // Update double bond shifts [...surbonds]
 	for (const adjnode of adjnodes) adjnode.renderAtom(); // Draw hydrogens [...adjnodes]
-}
+};
 
 ChemNode.prototype.renderAtom = function() {
 	hydrogens = this.g.childNodes[3];
@@ -173,7 +173,7 @@ ChemNode.prototype.renderAtom = function() {
 	var atom = this.g.childNodes[2];
 	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
 
-	target_text = used_valency == 0 && this.text == '' ? 'C' : this.text // Convert floating C atoms into CH4
+	target_text = used_valency == 0 && this.text == '' ? 'C' : this.text; // Convert floating C atoms into CH4
 	if (atom.firstChild.nodeValue != target_text) { // Update text, if needed
 		atom.firstChild.nodeValue = target_text;
 		atom.setAttribute('dx', -atom.getBBox().width / 2); // Adjust (center) position of text
@@ -262,3 +262,31 @@ ChemNode.prototype.renderAtom = function() {
 		}
 	}
 };
+
+ChemNode.prototype.sortConnections = function() { // Sort by the angle between surrounding bonds and x-axis
+	var x0 = 1, y0 = 0;
+	var x = this.g.firstChild.getAttribute('cx');
+	var y = this.g.firstChild.getAttribute('cy');
+	var bond_angles = this.connections.map(connection => angleVec(x0, y0, 
+		connection.adjnode.g.firstChild.getAttribute('cx') - x,
+		connection.adjnode.g.firstChild.getAttribute('cy') - y)
+	); // Calculate angles between every bond and x-axis
+	this.connections = argSort(bond_angles).map(i => this.connections[i]); // Perform sorting
+
+	/* this.connections.map((connection, index) => connection.adjnode.changeAtom(index)); // For testing */
+};
+
+ChemNode.prototype.goToBond = function(bond, step) { // Go to another bond
+	var bonds = this.connections.map(connection => connection.bond);
+	var idx = bonds.indexOf(bond);
+	var bond_cnt = this.connections.length;
+	var target_idx = (idx + bond_cnt + step % bond_cnt) % bond_cnt;
+	// console.log('idx', idx, 'target_idx', target_idx);
+	return bonds[target_idx];
+};
+
+ChemNode.prototype.getBondJunc = function(bond0, bond1) { // Get junction point of the borders
+	return lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
+};
+
+

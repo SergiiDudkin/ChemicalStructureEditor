@@ -97,7 +97,7 @@ function fancyBtnAnimation(btns) { // Button click animation
 }
 
 // Resize the canvas
-pt = canvas.createSVGPoint();		
+pt = canvas.createSVGPoint();       
 function svgWidth(event) {
 	canvas.setAttribute("width", 0);
 	wmax = mainframe.offsetWidth - 40;
@@ -253,6 +253,64 @@ function corrAtomPos(atom, x){
 }
 
 
+
+function argSort(arr) {
+	var indices = [...Array(arr.length).keys()];
+	// indices.sort((a, b) => arr[a].localeCompare(arr[b])); // For strings
+	indices.sort((a, b) => arr[a] - arr[b]); // For numbers
+	return indices;
+}
+
+// var ta = ['b', 'e', 'c', 'f', 'd', 'a'];
+// var tb = [2, 1, 5, 7, 6, 0, 4, 3];
+
+// var ind_a = argSort(ta);
+// console.log('ind_a', ind_a);
+// console.log(ind_a.map(idx => ta[idx]));
+// console.log(argSort(ta).map(i => ta[i]));
+// console.log(argSort(tb).map(i => tb[i]));
+
+function unitVec(x, y) { // Find unit vector
+	len = Math.sqrt(x * x + y * y);
+	return [x / len, y / len];
+}
+
+function vecDotProd(x0, y0, x1, y1) { // Find dot product
+	return x0 * x1 + y0 * y1;
+}
+
+function vecSum(x0, y0, x1, y1) { // Find sum of vector
+	return [x0 + x1, y0 + y1];
+}
+
+function angleBisector(x0, y0, x1, y1) { // Not normalized, no direction control
+	if (vecDotProd(x0, y0, x1, y1) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
+		[x0, y0] = [-y0, x0];
+		[x1, y1] = [y1, -x1];
+	}
+	return vecSum(...unitVec(x0, y0), ...unitVec(x1, y1));
+}
+
+/*
+function testAngleBisector() { // For testing
+	var x, y, difx, dify
+	var bond0 = document.getElementById('b0').objref;
+	var bond1 = document.getElementById('b1').objref;
+	[x, y] = bond0.getNodeCenters(0);
+	[difx, dify] = angleBisector(bond0.difx, bond0.dify, bond1.difx, bond1.dify);
+
+	var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+	line.setAttribute('style', "fill:none;stroke:#FF0000;stroke-width:1.0;");
+	line.setAttribute('x1', x);
+	line.setAttribute('y1', y);
+	line.setAttribute('x2', x + difx * 20);
+	line.setAttribute('y2', y + dify * 20);
+	canvas.appendChild(line);
+}
+*/
+
+
+
 function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.commands = [];
 	this.ptr = 0;
@@ -299,7 +357,7 @@ Dispatcher.prototype.deleteChemNodeR = function(this_id) {
 };
 
 Dispatcher.prototype.deleteChemNodeU = function(this_data, adjbonds_data, nextadjbonds_id, adjnodes_id) {
-	node = new ChemNode(...this_data);	// Create atom [this]
+	node = new ChemNode(...this_data);  // Create atom [this]
 	for (const data of adjbonds_data) { // Create bonds [...adjbonds]
 		node0 = document.getElementById(data[0]).objref;
 		node1 = document.getElementById(data[1]).objref;

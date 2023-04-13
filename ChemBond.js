@@ -39,6 +39,14 @@ ChemBond.prototype.recalcDims = function() {
 	this.len = vecLen(this.difx, this.dify);
 	this.shx = -this.dify * bondspace / this.len; // Ortohonal (ACW) shift vector, X
 	this.shy = this.difx * bondspace / this.len; // Ortohonal (ACW) shift vector, Y
+
+	// Orthohonal unit vector ACW
+	this.ouvax = -this.dify / this.len;
+	this.ouvay = this.difx / this.len;
+
+	// Start and end half width of the bond line (determined by bond type)
+	this.hw_st = 0.55;
+	this.hw_en = 0.55;
 };
 
 ChemBond.prototype.renderBackRect = function() {
@@ -247,3 +255,13 @@ ChemBond.prototype.posDouble = function() { // Find the best shift of double bon
 	this.pdshift = pdshift == 0 ? 0 : (pdshift < 0 ? -1 : 1);
 	return this.pdshift;
 };
+
+ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
+	var side = (node == this.nodes[0]) == acw ? 1 : -1; // Node = 0, acw = 1 => side = 1
+	var x0 = cx0 + this.hw_st * this.ouvax * side;
+	var y0 = cy0 + this.hw_st * this.ouvay * side;
+	var x1 = cx1 + this.hw_en * this.ouvax * side;
+	var y1 = cy1 + this.hw_en * this.ouvay * side;
+	return [x0, y0, x1, y1];
+};
+
