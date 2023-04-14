@@ -82,20 +82,21 @@ ChemBond.prototype.getNodeVec = function(node) {
 ChemBond.prototype.setType = function(type) {
 	this.type = type;
 	this.multiplicity = ChemBond.mult[type];
-	this.lines = Array(ChemBond.linecnt[type]).fill(null).map(() => 
+	this.lines = Array(ChemBond.linecnt[type]).fill(
 		[ // Line
 			[ // Start tip
-				[NaN, NaN], 
+				[NaN, NaN], // x, y
 				[NaN, NaN], 
 				[NaN, NaN]
 			], 
 			[ // End tip
-				[NaN, NaN], 
+				[NaN, NaN], // x, y
 				[NaN, NaN], 
 				[NaN, NaN]
 			]
 		]
 	); // [line][tip(start, end)][corner(prev, crt, next)][axis (x, y)]
+	// console.log(this.lines);
 }
 
 ChemBond.prototype.destruct = function() {
@@ -145,5 +146,14 @@ ChemBond.prototype.updateRect = function() {
 
 ChemBond.prototype.getNodeCenters = function() {
 	return [this.nodes[0].x, this.nodes[0].y, this.nodes[1].x, this.nodes[1].y]
+};
+
+ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
+	var side = (node == this.nodes[0]) == acw ? 1 : -1; // Node = 0, acw = 1 => side = 1
+	var x0 = cx0 + this.hw_st * this.ouvax * side;
+	var y0 = cy0 + this.hw_st * this.ouvay * side;
+	var x1 = cx1 + this.hw_en * this.ouvax * side;
+	var y1 = cy1 + this.hw_en * this.ouvay * side;
+	return [x0, y0, x1, y1];
 };
 
