@@ -1,3 +1,20 @@
+class TipSet extends Set{
+	constructor(...args) {
+		super(...args);
+		this.inner_set = new Set(); // Set of stringified elements
+	}
+	add(elem) {
+		if (!this.has(elem)) {
+			this.inner_set.add(elem.map(item => item.g.id).join()); // Add stringified element
+			super.add(elem);
+		}
+	}
+	has(elem) {
+		return this.inner_set.has(elem.map(item => item.g.id).join()); // Check stringified element
+	}
+}
+
+
 function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_bonds=[], atoms_text=[], bonds_type=[], moving_data=[[], []]}) {
 	var [moving_vec, moving_atoms] = moving_data,
 		atoms_change_symb = new Set(), 
@@ -5,7 +22,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		atoms_reloc_hydr = new Set(), 
 		atoms_auto_d_bond = new Set(), 
 		atoms_refresh_tips = new Set(), 
-		tips_update = new Set(),
+		tips_update = new TipSet(),
 		bonds_d_adjust = new Set(), 
 		bonds_to_render = new Set(), 
 		bonds_transl = new Set(), 
@@ -15,7 +32,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	// Delete bonds
 	for (const bond of del_bonds) {
 		for (const node of bond.nodes) {
-			if (~del_atoms.has(node)) {
+			if (!del_atoms.has(node)) {
 				atoms_recalc_hydr.add(node);
 				atoms_auto_d_bond.add(node);
 				if (node.text == '') atoms_refresh_tips.add(node);
@@ -138,7 +155,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		}
 	}
 
-	// Reshape converging line tips
+	// Reshape converging line tips (no symbol; implicit C)
 	for (const atom of atoms_refresh_tips) {
 		atom.calcLineTips();
 		for (const {bond, adjnode} of atom.connections) {
@@ -146,7 +163,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		}
 	}
 
-	// Reshape floating tips
+	// Reshape floating tips (some symbol is present)
 	for (const [node, bond] of tips_update) {
 		bond.updateTip(node)
 		bonds_to_render.add(bond);

@@ -175,10 +175,6 @@ ChemNode.prototype.locateHydr = function() {
 	}
 };
 
-ChemNode.prototype.calcLineTips = function() {
-	// !!!
-};
-
 ChemNode.prototype.sortConnections = function() {
 	// Sort by the angle between surrounding bonds and x-axis
 	var x0 = 1, y0 = 0;
@@ -204,3 +200,12 @@ ChemNode.prototype.getBondJunc = function(bond0, bond1) {
 	// Get junction point of the borders
 	return lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
 };
+
+ChemNode.prototype.calcLineTips = function() {
+	// !!!
+	this.sortConnections();
+	var ctr_cons = this.connections.filter(connection => ChemBond.ctrline[connection.bond.type] !== undefined);
+	var ctr_indices = ctr_cons.map(connection => ChemBond.ctrline[connection.bond.type]);
+};
+
+
