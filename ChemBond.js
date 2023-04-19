@@ -52,9 +52,6 @@ ChemBond.default_style = {
 ChemBond.mult = [0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
 ChemBond.linecnt = [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
 ChemBond.ctrline = [0, 0, 0, 0, 0, 0, 0, 0, 1,  , 0, 1,  , 0,  , 1];
-// ChemBond.ctrline = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 13, 14];
-
-
 
 ChemBond.prototype.getNewId = function() {
 	return 'b' + ChemBond.counter++;
@@ -86,25 +83,12 @@ ChemBond.prototype.setType = function(type) {
 	this.multiplicity = ChemBond.mult[type];
 
 	// Start and end half width of the bond line (determined by bond type)
-	this.hw0 = 0.55;
-	this.hw1 = 0.55;
+	this.hw0 = 2;//0.55;
+	this.hw1 = 2;//0.55;
 	// ToDo: ! Create table and paste actual values depending on type
 
-	this.lines = Array(ChemBond.linecnt[type]).fill([[], []]);
-		// [ // Line
-		// 	[ // Start tip
-		// 		[NaN, NaN], // x, y
-		// 		[NaN, NaN], 
-		// 		[NaN, NaN]
-		// 	], 
-		// 	[ // End tip
-		// 		[NaN, NaN], // x, y
-		// 		[NaN, NaN], 
-		// 		[NaN, NaN]
-		// 	]
-		// ]
-	// [line][tip(start, end)][corner(prev, cntr, next)][axis (x, y)]
-	// console.log(this.lines);
+	this.lines = new Array(ChemBond.linecnt[type]).fill().map(() => [[], []]);
+	// this.lines[line][tip(start | end)][corner(prev | cntr | next)][axis(x | y)]
 }
 
 ChemBond.prototype.destruct = function() {
@@ -135,19 +119,31 @@ ChemBond.prototype.posDouble = function() {
 ChemBond.prototype.updateTip = function(node) {
 	// ToDo: ! Process other types of bonds
 	var node_idx = this.getNodeIdx(node);
-	var [x, y] = this.adjustLength(node_idx);
+	this.setButtTip(node, 0, this.adjustLength(node_idx));
+}
+
+ChemBond.prototype.setCtrTip = function(node, corners=undefined) {
+	ctr_line_idx = ChemBond.ctrline[this.type];
+	if (corners === undefined) this.setButtTip(node, ctr_line_idx);
+	else this.lines[ctr_line_idx][this.getNodeIdx(node)] = corners;
+}
+
+ChemBond.prototype.setButtTip = function(node, line, term_pt=undefined) {
+	var [x, y] = term_pt === undefined ? [node.x, node.y] : term_pt;
+	var node_idx = this.getNodeIdx(node);
 	var cur_hw = this['hw' + node_idx];
 	var [hwx, hwy] = [this.ouvax, this.ouvay].map(item => item * cur_hw);
 	var dir = node_idx ? 1 : -1;
-	this.lines[0][node_idx][0] = vecSum(x, y, hwx * dir, hwy * dir);
-	this.lines[0][node_idx][2] = vecSum(x, y, -hwx * dir, -hwy * dir);
-}
+	this.lines[line][node_idx][0] = vecSum(x, y, hwx * dir, hwy * dir);
+	this.lines[line][node_idx][2] = vecSum(x, y, -hwx * dir, -hwy * dir);
+};
 
 ChemBond.prototype.renderLines = function() {
 	for (const line of this.lines) {
+		while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		polygon.setAttribute('fill', 'black');
+		polygon.setAttribute('fill', getColor());
 		this.g.appendChild(polygon);
 	}
 }
@@ -177,7 +173,7 @@ ChemBond.prototype.getNodeIdx = function(node) {
 
 ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
 	// var side = (node == this.nodes[0]) == acw ? 1 : -1; // Node = 0, acw = 1 => side = 1
-	var side = getNodeIdx(node) == acw ? -1 : 1; // Node = 0, acw = true => side = 1
+	var side = this.getNodeIdx(node) == acw ? 1 : -1; // Node = 0, acw = true => side = -1
 	var [cx0, cy0, cx1, cy1] = this.getNodeCenters();
 	var x0 = cx0 + this.hw0 * this.ouvax * side;
 	var y0 = cy0 + this.hw0 * this.ouvay * side;
@@ -191,7 +187,7 @@ ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of th
 	var curx = node == 0 ? x0 : x1, cury = node == 0 ? y0 : y1;
 
 	if (this.nodes[node].text != '') { // ToDo: ? Consider removing this checkup
-		var textbox = this.nodes[node].g.childNodes[2].getBBox();
+		var textbox = this.nodes[node].g.childNodes[1].getBBox();
 		var tb_w = textbox.width;
 		var tb_h = textbox.height;
 

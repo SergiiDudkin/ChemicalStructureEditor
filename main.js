@@ -487,37 +487,15 @@ function chemBondHandler(bondbtn) {
 
 	function enBond(event) { // Finish drawing bond
 		focobj = moveCursor(event, cursorbond, "x2", "y2");
-		// var stx = parseInt(cursorbond.getAttribute("x1"));
-		// var sty = parseInt(cursorbond.getAttribute("y1"));
-		// var enx = parseInt(cursorbond.getAttribute("x2"));
-		// var eny = parseInt(cursorbond.getAttribute("y2"));
-		// if (findDist(stx, sty, enx, eny) >= 16) { // If the new bond is long enough
-		// 	var node0 = focobjst === null ? new ChemNode(stx, sty, '') : focobjst; // Use the existing start node or create a new one if there is none
-		// 	var node1 = focobj === null ? new ChemNode(enx, eny, '') : focobj; // Use the existing end node or create a new one if there is none
-		// 	bond = new ChemBond(node0, node1);
-		// 	bond.renderNodes();
-		// 	bond.renderBond();
-
-		// var points = ['x1', 'y1', 'x2', 'y2'].map(item => parseInt(cursorbond.getAttribute(item)))
-		// if (findDist(...points) >= 16) { // If the new bond is long enough
-
-		var [stx, sty, enx, eny] = ['x1', 'y1', 'x2', 'y2'].map(item => parseInt(cursorbond.getAttribute(item)))
+		var [stx, sty, enx, eny] = ['x1', 'y1', 'x2', 'y2'].map(item => parseFloat(cursorbond.getAttribute(item)))
 		if (findDist(stx, sty, enx, eny) >= 16) { // If the new bond is long enough
 			var new_atoms_data = [];
 			var node0 = focobjst === null ? ChemNode.prototype.getNewId() : focobjst; // Use the existing start node or create a new one if there is none
 			var node1 = focobj === null ? ChemNode.prototype.getNewId() : focobj; // Use the existing end node or create a new one if there is none
 			if (focobjst === null) new_atoms_data.push([node0, stx, sty, '']);
 			if (focobj === null) new_atoms_data.push([node1, enx, eny, '']);
-			
-			// var nodes = [focobjst, focobj].map(item => item === null ? ChemNode.prototype.getNewId() : item);
-			// var new_atoms_data = nodes.filter(item => typeof item === 'string').map((item, index) => [item, points[index * 2], points[index * 2 + 1]])
-			// console.log(nodes[0]);
-			// console.log(nodes[1]);
-			// kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: [ChemBond.prototype.getNewId, node0, node1, 1]};
 			kwargs = {
 				new_atoms_data: new_atoms_data,
-				// new_atoms_data: nodes.filter(item => typeof item === 'string').map((item, index) => [item, points[index * 2], points[index * 2 + 1], '']), 
-				// new_bonds_data: [[ChemBond.prototype.getNewId(), ...nodes, 1]]
 				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, 1]]
 			};
 			editStructure(kwargs);
