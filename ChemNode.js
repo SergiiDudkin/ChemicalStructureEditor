@@ -202,48 +202,19 @@ ChemNode.prototype.getBondJunc = function(bond0, bond1) {
 };
 
 ChemNode.prototype.calcLineTips = function() {
-	// !!!
-	// console.log('calcLineTips');
+	console.log('calcLineTips');
 	this.sortConnections();
-	var ctr_cons = this.connections.filter(connection => ChemBond.ctrline[connection.bond.type] !== undefined);
-	// var ctr_indices = ctr_cons.map(connection => ChemBond.ctrline[connection.bond.type]);
-	// var ctr_cons = this.connections.map(connection => {ctr_idx: ChemBond.ctrline[connection.bond.type, ...connection]});
-	// var ctr_cons = this.connections.map(connection => ({ctr_idx: ChemBond.ctrline[connection.bond.type], ...connection})).filter(connection => connection.ctr_idx !== undefined);
-	// console.log(ctr_cons);
-	// console.log(ctr_cons.length, ctr_cons.length == 0);
-	if (ctr_cons.length > 1) {
-		// clearDebug();
-		// for (var i = 0; i < ctr_cons.length; i++) {
-		// 	j = (i + 1) % ctr_cons.length;
-		// 	// console.log(i, j);
-		// 	// var [x0, y0, x1, y1] = ctr_cons[i].bond.getBorder(this, true);
-		// 	// var [x2, y2, x3, y3] = ctr_cons[j].bond.getBorder(this, true);
-		// 	var junc = this.getBondJunc(ctr_cons[i].bond, ctr_cons[j].bond);
-		// 	// console.log(x0, y0, x1, y1);
-			
-		// 	// drawPoint(...junc);
-		// 	// drawPoint(x1, y1);
-		// }
-		tip_pts = new Array(ctr_cons.length).fill().map(() => []);
-		ctr_cons.forEach((connection, i) => {
-			j = (i + 1) % ctr_cons.length;
-			var junc = this.getBondJunc(connection.bond, ctr_cons[j].bond);
-			// console.log(i, j);
+	var ctr_bonds = this.connections.map(connection => connection.bond).filter(bond => ChemBond.ctrline[bond.type] !== undefined);
+	if (ctr_bonds.length > 1) {
+		tip_pts = new Array(ctr_bonds.length).fill().map(() => []);
+		ctr_bonds.forEach((bond, i) => {
+			j = (i + 1) % ctr_bonds.length;
+			var junc = this.getBondJunc(bond, ctr_bonds[j]);
 			tip_pts[i][2] = [...junc];
 			tip_pts[i][1] = [this.x, this.y];
 			tip_pts[j][0] = [...junc];
 		});
-		// console.log(tip_pts);
-		ctr_cons.forEach((connection, i) => connection.bond.setCtrTip(this, tip_pts[i]));
+		ctr_bonds.forEach((bond, i) => bond.setCtrTip(this, tip_pts[i]));
 	}
-	else {
-		// console.log('ToDo: ! Single terminal.')
-		ctr_cons[0].bond.setCtrTip(this);
-	}
-
-	// console.log(ctr_indices);
-	// clearDebug();
-	// for (const xy of line.flat()) drawPoint(...xy);
+	else ctr_bonds[0].setCtrTip(this);
 };
-
-

@@ -146,7 +146,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 
 	// Find shifts of auto double bonds
 	for (const bond of bonds_d_adjust) {
-		if (bond.type in [11, 12, 13, 14]) {
+		if (ChemBond.auto_d_bonds.includes(bond.type)) {
 			bond.posDouble();
 			for (const node of bond.nodes) {
 				if (node.text == '') atoms_refresh_tips.add(node);

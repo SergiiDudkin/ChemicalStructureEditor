@@ -52,6 +52,7 @@ ChemBond.default_style = {
 ChemBond.mult = [0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
 ChemBond.linecnt = [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
 ChemBond.ctrline = [0, 0, 0, 0, 0, 0, 0, 0, 1,  , 0, 1,  , 0,  , 1];
+ChemBond.auto_d_bonds = [11, 12, 13, 14];
 
 ChemBond.prototype.getNewId = function() {
 	return 'b' + ChemBond.counter++;
@@ -119,7 +120,7 @@ ChemBond.prototype.posDouble = function() {
 ChemBond.prototype.updateTip = function(node) {
 	// ToDo: ! Process other types of bonds
 	var node_idx = this.getNodeIdx(node);
-	this.setButtTip(node, 0, this.adjustLength(node_idx));
+	this.setButtTip(node, 0, this.adjustLength(node));
 }
 
 ChemBond.prototype.setCtrTip = function(node, corners=undefined) {
@@ -184,37 +185,35 @@ ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
 
 ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of the chemical symbol and bond
 	var [x0, y0, x1, y1] = this.getNodeCenters();
-	var curx = node == 0 ? x0 : x1, cury = node == 0 ? y0 : y1;
+	var node_idx = this.getNodeIdx(node);
+	var curx = node_idx == 0 ? x0 : x1, cury = node_idx == 0 ? y0 : y1;
 
-	if (this.nodes[node].text != '') { // ToDo: ? Consider removing this checkup
-		var textbox = this.nodes[node].g.childNodes[1].getBBox();
-		var tb_w = textbox.width;
-		var tb_h = textbox.height;
+	var textbox = node.g.childNodes[1].getBBox();
+	var tb_w = textbox.width;
+	var tb_h = textbox.height;
 
-		// Adjust textbox borders
-		tb_w += 2;
-		tb_h = Math.max(0, tb_h - 2);
+	// Adjust textbox borders
+	tb_w += 2;
+	tb_h = Math.max(0, tb_h - 2);
 
-		var threshold = tb_h / tb_w;
-		var tan = Math.abs(this.dify / (this.difx == 0 ? 0.001 : this.difx));
-		var dirtab = [
-						[[2, 2],
-						 [0, 0]],
-						[[3, 1],
-						 [3, 1]]
-					 ];
-		var dir = dirtab[+(tan > threshold)][+(node == 0 ? this.difx > 0 : this.difx < 0)][+(node == 0 ? this.dify < 0 : this.dify > 0)];
-		var multab = [[0.5, -0.5, 0.5, 0.5], [-0.5, -0.5, 0.5, -0.5], [-0.5, -0.5, -0.5, 0.5], [-0.5, 0.5, 0.5, 0.5]];
-		var mulrow = multab[dir];
+	var threshold = tb_h / tb_w;
+	var tan = Math.abs(this.dify / (this.difx == 0 ? 0.001 : this.difx));
+	var dirtab = [
+					[[2, 2],
+					 [0, 0]],
+					[[3, 1],
+					 [3, 1]]
+				 ];
+	var dir = dirtab[+(tan > threshold)][+(node_idx == 0 ? this.difx > 0 : this.difx < 0)][+(node_idx == 0 ? this.dify < 0 : this.dify > 0)];
+	var multab = [[0.5, -0.5, 0.5, 0.5], [-0.5, -0.5, 0.5, -0.5], [-0.5, -0.5, -0.5, 0.5], [-0.5, 0.5, 0.5, 0.5]];
+	var mulrow = multab[dir];
 
-		[this['x' + node], this['y' + node]] = lineIntersec(
-			x0, y0, x1, y1, 
-			curx + mulrow[0] * tb_w, 
-			cury + mulrow[1] * tb_h, 
-			curx + mulrow[2] * tb_w, 
-			cury + mulrow[3] * tb_h
-		);
-	}
-	else [this['x' + node], this['y' + node]] = [curx, cury];
-	return [this['x' + node], this['y' + node]];
+	[this['x' + node_idx], this['y' + node_idx]] = lineIntersec(
+		x0, y0, x1, y1, 
+		curx + mulrow[0] * tb_w, 
+		cury + mulrow[1] * tb_h, 
+		curx + mulrow[2] * tb_w, 
+		cury + mulrow[3] * tb_h
+	);
+	return [this['x' + node_idx], this['y' + node_idx]];
 };
