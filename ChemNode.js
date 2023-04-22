@@ -196,36 +196,26 @@ ChemNode.prototype.goToBond = function(bond, step) {
 	return bonds[target_idx];
 };
 
-ChemNode.prototype.getBondJunc = function(bond0, bond1) {
-	// Get junction point of the borders
-	return lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
-};
+ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
+	var junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
+	bond0.juncs[bond0.getNodeIdx(this)][1] = junc;
+	bond1.juncs[bond1.getNodeIdx(this)][0] = junc;
+}
 
 ChemNode.prototype.calcLineTips = function() {
-	// console.log('calcLineTips');
 	this.sortConnections();
-	all_bonds = this.connections.map(connection => connection.bond);
-
+	var all_bonds = this.connections.map(connection => connection.bond);
 	var ctr_bonds = all_bonds.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
-	// console.log(ctr_bonds);
+	this.ctr_bonds_cnt = ctr_bonds.length;
 	if (ctr_bonds.length > 1) {
-		tip_pts = new Array(ctr_bonds.length).fill().map(() => []);
-		ctr_bonds.forEach((bond, i) => {
-			j = (i + 1) % ctr_bonds.length;
-			var junc = this.getBondJunc(bond, ctr_bonds[j]);
-			tip_pts[i][2] = [...junc];
-			tip_pts[i][1] = [this.x, this.y];
-			tip_pts[j][0] = [...junc];
-		});
-		ctr_bonds.forEach((bond, i) => bond.setCtrTip(this, tip_pts[i]));
+		ctr_bonds.forEach((bond, i) => this.computeBondsJunc(bond, ctr_bonds[(i + 1) % ctr_bonds.length]));
 	}
-	else if (ctr_bonds.length == 1) ctr_bonds[0].setCtrTip(this);
-
-	var mult_bonds = all_bonds.filter(bond => ChemBond.linecnt[bond.type] >= 2);
-	// console.log(all_bonds);
-	// console.log(mult_bonds);
-	for (const bond of mult_bonds) {
+	for (const bond of all_bonds) {
 		bond.setSideTip(this);
 	}
-
 };
+
+
+
+
+

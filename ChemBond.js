@@ -90,6 +90,7 @@ ChemBond.prototype.setType = function(type) {
 	this.type = type;
 	this.multiplicity = ChemBond.mult[type];
 	this.pdshift = ChemBond.type_to_pdshift[type];
+	this.linecnt = ChemBond.linecnt[type]
 
 	// Start and end half width of the bond line (determined by bond type)
 	this.hw0 = 0.75;//0.55;
@@ -98,7 +99,8 @@ ChemBond.prototype.setType = function(type) {
 	this.hsp = 2; // Half of space between lines in multiple bonds
 	// ToDo: ! Create table and paste actual values depending on type
 
-	this.lines = new Array(ChemBond.linecnt[type]).fill().map(() => [[], []]);
+	this.juncs = [new Array(2), new Array(2)];
+	this.lines = new Array(this.linecnt).fill().map(() => [[], []]);
 	// this.lines[line][tip(start | end)][corner(prev | cntr | next)][axis(x | y)]
 };
 
@@ -124,100 +126,63 @@ ChemBond.prototype.posDouble = function() {
 		}
 	}
 	pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
-	// this.type = ChemBond.pdshift1p_to_type[this.pdshift + 1];
 	this.setType(ChemBond.pdshift1p_to_type[pdshift + 1]);
 	return pdshift;
 };
 
 ChemBond.prototype.updateTip = function(node) {
-	// ToDo: ! Process other types of bonds
-	var node_idx = this.getNodeIdx(node);
-	this.setButtTip(node, 0, this.adjustLength(node));
+	this.adjustLength(node);
+	this.setSideTip(node);
 }
 
-ChemBond.prototype.setCtrTip = function(node, corners=undefined) {
-	ctr_line_idx = ChemBond.ctrline[this.type];
-	if (corners === undefined) this.setButtTip(node, ctr_line_idx);
-	else this.lines[ctr_line_idx][this.getNodeIdx(node)] = corners;
-}
-
-ChemBond.prototype.setButtTip = function(node, line, term_pt=undefined) {
-	var [x, y] = term_pt === undefined ? [node.x, node.y] : term_pt;
+ChemBond.prototype.setButtTip = function(node, line, term_xy) {
 	var node_idx = this.getNodeIdx(node);
 	var cur_hw = this['hw' + node_idx];
 	var [hwx, hwy] = [this.ouvax, this.ouvay].map(item => item * cur_hw);
 	var dir = node_idx ? 1 : -1;
-	this.lines[line][node_idx][0] = vecSum(x, y, hwx * dir, hwy * dir);
-	this.lines[line][node_idx][2] = vecSum(x, y, -hwx * dir, -hwy * dir);
+	this.lines[line][node_idx][0] = vecSum(...term_xy, hwx * dir, hwy * dir);
+	this.lines[line][node_idx][2] = vecSum(...term_xy, -hwx * dir, -hwy * dir);
 };
 
-
 ChemBond.prototype.getShiftFactors = function() {
-	var linecnt = ChemBond.linecnt[this.type];
-	return [...Array(linecnt).keys()].map(idx => [idx, idx * 2 - linecnt + 1 + this.pdshift]);
+	return [...Array(this.linecnt).keys()].map(idx => [idx, idx * 2 - this.linecnt + 1 + this.pdshift]);
 }
-
 
 ChemBond.prototype.setSideTip = function(node) {
 	var node_idx = this.getNodeIdx(node);
-	// var prev_bond = node.goToBond(bond, -1);
-	// var next_bond = node.goToBond(bond, 1);
+	var is_text = node.text != ''
+	var lines_and_factors = this.getShiftFactors();
 
-	// drawPoint(node.x + this.ouvax * this.hsp * 2 * this.pdshift, node.y + this.ouvay * this.hsp * 2 * this.pdshift);
-
-	// linecnt = ChemBond.linecnt[this.type];
-	// shift_factors = [-1 + this.pdshift, 1 + this.pdshift].filter(item => item != 0);
-	// line_idcs = [...Array(5).keys()].filter();
-	// console.log(linecnt, this.pdshift);
-	// console.log(0 * 2 - linecnt + this.pdshift * 2, 1 * 2 - linecnt + this.pdshift * 2);
-	//			  0   -    2    +      -2
-	lines_and_factors = this.getShiftFactors().filter(item => item[1] != 0);
-	console.log(lines_and_factors);
-
-	for (const [line_idx, shift_factor] of lines_and_factors) {
-		// console.log(line_idx);
-		// console.log(shift_factor);
-		var shift_val = (this.hws + this.hsp) * shift_factor;
-		// console.log(shift_val);
-		var xy = [node.x + this.ouvax * shift_val, node.y + this.ouvay * shift_val];
-		// drawPoint(...xy);
-		// console.log('xy', xy);
-		if ((node.connections.length > 1) && (ChemBond.linecnt[this.type] == 2)) {
-			// console.log('node', node.g.id);
-			var step = shift_factor > 0 == node_idx ? -1 : 1;
-			// console.log('step', step);
-			var adj_bond = node.goToBond(this, step);
-			// console.log('adj_bond', adj_bond.g.id);
-			// var dir = node_idx == adj_bond.getNodeIdx(node) ? 1 : -1;
-			// console.log('dir', dir);
-			// var adj_bond_vec = adj_bond.difx * dir, adj_bond.dify * dir
-			// var [bisect_x, bisect_y] = angleBisector(this.difx, this.dify, adj_bond.difx * dir, adj_bond.dify * dir);
-			// xy = lineIntersec(...xy, xy[0] + this.difx, xy[1] + this.dify, node.x, node.y, node.x + bisect_x, node.y + bisect_y);
-
-
-			this_vec = this.getNodeVec(node);
-			adj_bond_vec = adj_bond.getNodeVec(node);
-
-			// var dir = (node_idx == adj_bond.getNodeIdx(node)) != (shift_factor == step > 0);
-			var is_cw = node_idx == (shift_factor < 0); // True if clockwise
-			// console.log(node_idx, shift_factor > 0, step > 0);
-			console.log('is_cw', is_cw);
-			angle = is_cw ? angleVec(...this_vec, ...adj_bond_vec) : angleVec(...adj_bond_vec, ...this_vec);
-			// angle = angleVec(... dir ? [...this_vec, ...adj_bond_vec] : [...adj_bond_vec, ...this_vec]);
-			console.log('angle', angle);
-			if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
-				var [bisect_x, bisect_y] = angleBisector(...this_vec, ...adj_bond_vec);
-				xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), node.x, node.y, node.x + bisect_x, node.y + bisect_y);
-			}
-			else if ((angle <= 0.75) && (Math.abs(shift_factor) == 1)) {
-				console.log('ToDo: ! Centrered double bond');
-			}
+	for (const [line_idx, shift_factor] of lines_and_factors) { // Iterate over lines
+		if ((shift_factor == 0) && (!is_text) && (node.ctr_bonds_cnt > 1)) { // Converging line tip
+			this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], [node.x, node.y], this.juncs[node_idx][1]];
 		}
-		this.setButtTip(node, line_idx, xy);
+		else { // Floating line tip
+			var shift_val = (this.hws + this.hsp) * shift_factor;
+			var term_xy = is_text ? [this['x' + node_idx], this['y' + node_idx]] : [node.x, node.y];
+			var xy = [term_xy[0] + this.ouvax * shift_val, term_xy[1] + this.ouvay * shift_val];
+			if ((node.connections.length > 1) && (this.linecnt == 2) && !is_text) {
+				var step = shift_factor > 0 == node_idx ? -1 : 1;
+				var adj_bond = node.goToBond(this, step);
+
+				var this_vec = this.getNodeVec(node); // This bond vector
+				var adj_vec = adj_bond.getNodeVec(node); // Adjacent bond vector
+
+				var is_cw = node_idx == (shift_factor < 0); // True if clockwise
+				var angle = is_cw ? angleVec(...this_vec, ...adj_vec) : angleVec(...adj_vec, ...this_vec);
+
+				if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
+					var bisect_xy = angleBisector(...this_vec, ...adj_vec);
+					// xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), node.x, node.y, node.x + bisect_x, node.y + bisect_y);
+					xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), ...term_xy, ...vecSum(...term_xy, ...bisect_xy));
+				}
+				else if ((angle <= 0.75) && (Math.abs(shift_factor) == 1)) {
+					console.log('ToDo: ! Centrered double bond');
+				}
+			}
+			this.setButtTip(node, line_idx, xy);
+		}
 	}
-	// console.log(shift_factors);
-	// console.log([...Array(2).keys()].map(idx => [idx, idx * 2 - 2 + this.pdshift * 2]));
-	console.log('ToDo: ! Calc side tip');
 }
 
 ChemBond.prototype.renderLines = function() {
@@ -254,7 +219,6 @@ ChemBond.prototype.getNodeIdx = function(node) {
 }
 
 ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
-	// var side = (node == this.nodes[0]) == acw ? 1 : -1; // Node = 0, acw = 1 => side = 1
 	var side = this.getNodeIdx(node) == acw ? 1 : -1; // Node = 0, acw = true => side = -1
 	var [cx0, cy0, cx1, cy1] = this.getNodeCenters();
 	var x0 = cx0 + this.hw0 * this.ouvax * side;
