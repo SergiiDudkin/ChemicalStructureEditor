@@ -49,10 +49,13 @@ ChemBond.default_style = {
 14 - double auto undef
 15 - triple 
 */
-ChemBond.mult = [0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
-ChemBond.linecnt = [1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3];
-ChemBond.ctrline = [0, 0, 0, 0, 0, 0, 0, 0, 1,  , 0, 1,  , 0,  , 1];
-ChemBond.auto_d_bonds = [11, 12, 13, 14];
+ChemBond.mult = 				[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
+ChemBond.linecnt = 				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
+ChemBond.ctrline = 				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
+ChemBond.auto_d_bonds = 		[11, 12, 13, 14];
+ChemBond.next_type = 			[ 1, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15,  1];
+ChemBond.pdshift1p_to_type = 	[11, 12, 13];
+ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];
 
 ChemBond.prototype.getNewId = function() {
 	return 'b' + ChemBond.counter++;
@@ -79,18 +82,25 @@ ChemBond.prototype.getNodeVec = function(node) {
 	// [this.difx * dir_factor, this.dify * dir_factor]
 };
 
+ChemBond.prototype.getNextType = function() {
+	return ChemBond.next_type[this.type];
+}
+
 ChemBond.prototype.setType = function(type) {
 	this.type = type;
 	this.multiplicity = ChemBond.mult[type];
+	this.pdshift = ChemBond.type_to_pdshift[type];
 
 	// Start and end half width of the bond line (determined by bond type)
-	this.hw0 = 2;//0.55;
-	this.hw1 = 2;//0.55;
+	this.hw0 = 0.75;//0.55;
+	this.hw1 = 0.75;//0.55;
+	this.hws = 0.75;//0.55; // Side line half width 
+	this.hsp = 2; // Half of space between lines in multiple bonds
 	// ToDo: ! Create table and paste actual values depending on type
 
 	this.lines = new Array(ChemBond.linecnt[type]).fill().map(() => [[], []]);
 	// this.lines[line][tip(start | end)][corner(prev | cntr | next)][axis(x | y)]
-}
+};
 
 ChemBond.prototype.destruct = function() {
 	for (node of this.nodes) node.connections = node.connections.filter(item => item.bond !== this);
@@ -103,7 +113,7 @@ ChemBond.prototype.translate = function() {
 };
 
 ChemBond.prototype.posDouble = function() {
-	// Find the best shift of double bond
+	// Find the best shift of double bond; set type accordingly
 	var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 	for (const [node_idx, node] of this.nodes.entries()) {
 		for (const {bond, adjnode} of node.connections) {
@@ -113,8 +123,10 @@ ChemBond.prototype.posDouble = function() {
 			else if (sin < -0.1305) sinflags[node_idx][1] = -1;
 		}
 	}
-	this.pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
-	return this.pdshift;
+	pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
+	// this.type = ChemBond.pdshift1p_to_type[this.pdshift + 1];
+	this.setType(ChemBond.pdshift1p_to_type[pdshift + 1]);
+	return pdshift;
 };
 
 ChemBond.prototype.updateTip = function(node) {
@@ -139,9 +151,78 @@ ChemBond.prototype.setButtTip = function(node, line, term_pt=undefined) {
 	this.lines[line][node_idx][2] = vecSum(x, y, -hwx * dir, -hwy * dir);
 };
 
+
+ChemBond.prototype.getShiftFactors = function() {
+	var linecnt = ChemBond.linecnt[this.type];
+	return [...Array(linecnt).keys()].map(idx => [idx, idx * 2 - linecnt + 1 + this.pdshift]);
+}
+
+
+ChemBond.prototype.setSideTip = function(node) {
+	var node_idx = this.getNodeIdx(node);
+	// var prev_bond = node.goToBond(bond, -1);
+	// var next_bond = node.goToBond(bond, 1);
+
+	// drawPoint(node.x + this.ouvax * this.hsp * 2 * this.pdshift, node.y + this.ouvay * this.hsp * 2 * this.pdshift);
+
+	// linecnt = ChemBond.linecnt[this.type];
+	// shift_factors = [-1 + this.pdshift, 1 + this.pdshift].filter(item => item != 0);
+	// line_idcs = [...Array(5).keys()].filter();
+	// console.log(linecnt, this.pdshift);
+	// console.log(0 * 2 - linecnt + this.pdshift * 2, 1 * 2 - linecnt + this.pdshift * 2);
+	//			  0   -    2    +      -2
+	lines_and_factors = this.getShiftFactors().filter(item => item[1] != 0);
+	console.log(lines_and_factors);
+
+	for (const [line_idx, shift_factor] of lines_and_factors) {
+		// console.log(line_idx);
+		// console.log(shift_factor);
+		var shift_val = (this.hws + this.hsp) * shift_factor;
+		// console.log(shift_val);
+		var xy = [node.x + this.ouvax * shift_val, node.y + this.ouvay * shift_val];
+		// drawPoint(...xy);
+		// console.log('xy', xy);
+		if ((node.connections.length > 1) && (ChemBond.linecnt[this.type] == 2)) {
+			// console.log('node', node.g.id);
+			var step = shift_factor > 0 == node_idx ? -1 : 1;
+			// console.log('step', step);
+			var adj_bond = node.goToBond(this, step);
+			// console.log('adj_bond', adj_bond.g.id);
+			// var dir = node_idx == adj_bond.getNodeIdx(node) ? 1 : -1;
+			// console.log('dir', dir);
+			// var adj_bond_vec = adj_bond.difx * dir, adj_bond.dify * dir
+			// var [bisect_x, bisect_y] = angleBisector(this.difx, this.dify, adj_bond.difx * dir, adj_bond.dify * dir);
+			// xy = lineIntersec(...xy, xy[0] + this.difx, xy[1] + this.dify, node.x, node.y, node.x + bisect_x, node.y + bisect_y);
+
+
+			this_vec = this.getNodeVec(node);
+			adj_bond_vec = adj_bond.getNodeVec(node);
+
+			// var dir = (node_idx == adj_bond.getNodeIdx(node)) != (shift_factor == step > 0);
+			var is_cw = node_idx == (shift_factor < 0); // True if clockwise
+			// console.log(node_idx, shift_factor > 0, step > 0);
+			console.log('is_cw', is_cw);
+			angle = is_cw ? angleVec(...this_vec, ...adj_bond_vec) : angleVec(...adj_bond_vec, ...this_vec);
+			// angle = angleVec(... dir ? [...this_vec, ...adj_bond_vec] : [...adj_bond_vec, ...this_vec]);
+			console.log('angle', angle);
+			if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
+				var [bisect_x, bisect_y] = angleBisector(...this_vec, ...adj_bond_vec);
+				xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), node.x, node.y, node.x + bisect_x, node.y + bisect_y);
+			}
+			else if ((angle <= 0.75) && (Math.abs(shift_factor) == 1)) {
+				console.log('ToDo: ! Centrered double bond');
+			}
+		}
+		this.setButtTip(node, line_idx, xy);
+	}
+	// console.log(shift_factors);
+	// console.log([...Array(2).keys()].map(idx => [idx, idx * 2 - 2 + this.pdshift * 2]));
+	console.log('ToDo: ! Calc side tip');
+}
+
 ChemBond.prototype.renderLines = function() {
+	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 	for (const line of this.lines) {
-		while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
 		polygon.setAttribute('fill', getColor());

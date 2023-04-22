@@ -67,7 +67,6 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	for (const [atom, text] of atoms_text) {
 		atom.text = text;
 		atoms_change_symb.add(atom);
-		atoms_refresh_tips.add(atom);
 		if (text == '') atoms_refresh_tips.add(atom);
 		for (const {bond, adjnode} of atom.connections) {
 			bonds_update_recht.add(bond);
@@ -81,7 +80,6 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		bonds_d_adjust.add(bond);
 		for (const node of bond.nodes) {
 			atoms_recalc_hydr.add(node);
-			atoms_refresh_tips.add(node);
 			if (node.text == '') atoms_refresh_tips.add(node);
 			else tips_update.add([node, bond]);
 		}

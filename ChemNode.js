@@ -202,9 +202,12 @@ ChemNode.prototype.getBondJunc = function(bond0, bond1) {
 };
 
 ChemNode.prototype.calcLineTips = function() {
-	console.log('calcLineTips');
+	// console.log('calcLineTips');
 	this.sortConnections();
-	var ctr_bonds = this.connections.map(connection => connection.bond).filter(bond => ChemBond.ctrline[bond.type] !== undefined);
+	all_bonds = this.connections.map(connection => connection.bond);
+
+	var ctr_bonds = all_bonds.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
+	// console.log(ctr_bonds);
 	if (ctr_bonds.length > 1) {
 		tip_pts = new Array(ctr_bonds.length).fill().map(() => []);
 		ctr_bonds.forEach((bond, i) => {
@@ -216,5 +219,13 @@ ChemNode.prototype.calcLineTips = function() {
 		});
 		ctr_bonds.forEach((bond, i) => bond.setCtrTip(this, tip_pts[i]));
 	}
-	else ctr_bonds[0].setCtrTip(this);
+	else if (ctr_bonds.length == 1) ctr_bonds[0].setCtrTip(this);
+
+	var mult_bonds = all_bonds.filter(bond => ChemBond.linecnt[bond.type] >= 2);
+	// console.log(all_bonds);
+	// console.log(mult_bonds);
+	for (const bond of mult_bonds) {
+		bond.setSideTip(this);
+	}
+
 };

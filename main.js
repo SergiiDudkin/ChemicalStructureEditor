@@ -428,16 +428,10 @@ function chemNodeHandler(elbtns) {
 			var cursortext = cursoratom.textContent;
 			if (focobj) dispatcher.do(focobj.setAtomData(cursortext)); // If some atom was clicked
 			else {
-				// dispatcher.do(ChemNode.prototype.createSingleData(cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext)); // If blank space was clicked
-				// id = ChemNode.prototype.getNewId();
 				// ToDo: ! Integrate with dispatcher.
 				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]};
 				editStructure(kwargs);
-				// editStructure(new_atoms_data=[[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]);
 			}
-
-
-
 		}
 		else { // Click outside the canvas
 			window.removeEventListener('mousemove', movElem);
@@ -462,7 +456,14 @@ function chemBondHandler(bondbtn) {
 		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
 			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
 				focobj = event.target.parentNode.objref;
-				dispatcher.do(focobj.rotateMultData());
+				// ToDo: ! Integrate with dispatcher.
+				kwargs = {
+					bonds_type: [[focobj, focobj.getNextType()]],
+				};
+				editStructure(kwargs);
+
+
+
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				focobjst = moveCursor(event, cursorbond, 'x1', 'y1');
@@ -494,6 +495,7 @@ function chemBondHandler(bondbtn) {
 			var node1 = focobj === null ? ChemNode.prototype.getNewId() : focobj; // Use the existing end node or create a new one if there is none
 			if (focobjst === null) new_atoms_data.push([node0, stx, sty, '']);
 			if (focobj === null) new_atoms_data.push([node1, enx, eny, '']);
+			// ToDo: ! Integrate with dispatcher.
 			kwargs = {
 				new_atoms_data: new_atoms_data,
 				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, 1]]
