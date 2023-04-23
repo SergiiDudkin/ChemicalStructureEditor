@@ -135,14 +135,22 @@ ChemBond.prototype.updateTip = function(node) {
 	this.setSideTip(node);
 }
 
-ChemBond.prototype.setButtTip = function(node, line, term_xy) {
+ChemBond.prototype.setButtTip = function(node, line_idx, term_xy) {
 	var node_idx = this.getNodeIdx(node);
 	var cur_hw = this['hw' + node_idx];
 	var [hwx, hwy] = [this.ouvax, this.ouvay].map(item => item * cur_hw);
 	var dir = node_idx ? 1 : -1;
-	this.lines[line][node_idx][0] = vecSum(...term_xy, hwx * dir, hwy * dir);
-	this.lines[line][node_idx][2] = vecSum(...term_xy, -hwx * dir, -hwy * dir);
+	this.lines[line_idx][node_idx][0] = vecSum(...term_xy, hwx * dir, hwy * dir);
+	this.lines[line_idx][node_idx][2] = vecSum(...term_xy, -hwx * dir, -hwy * dir);
 };
+
+ChemBond.prototype.setHalfButt = function(node, acw) {
+	var node_idx = this.getNodeIdx(node);
+	var hw_len = this['hw' + node_idx] * (node_idx == acw ? -1 : 1);
+	var x = node.x + hw_len * this.ouvax;
+	var y = node.y + hw_len * this.ouvay;
+	this.juncs[node_idx][acw] = [x, y];
+}
 
 ChemBond.prototype.getShiftFactors = function() {
 	return [...Array(this.linecnt).keys()].map(idx => [idx, idx * 2 - this.linecnt + 1 + this.pdshift]);
@@ -151,10 +159,11 @@ ChemBond.prototype.getShiftFactors = function() {
 ChemBond.prototype.setSideTip = function(node) {
 	var node_idx = this.getNodeIdx(node);
 	var is_text = node.text != ''
-	var lines_and_factors = this.getShiftFactors();
 
-	for (const [line_idx, shift_factor] of lines_and_factors) { // Iterate over lines
+	// Iterate over lines
+	for (const [line_idx, shift_factor] of this.getShiftFactors()) {
 		if ((shift_factor == 0) && (!is_text) && (node.ctr_bonds_cnt > 1)) { // Converging line tip
+			// console.log(this.juncs[node_idx][0], this.juncs[node_idx][1]);
 			this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], [node.x, node.y], this.juncs[node_idx][1]];
 		}
 		else { // Floating line tip
@@ -176,8 +185,18 @@ ChemBond.prototype.setSideTip = function(node) {
 					// xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), node.x, node.y, node.x + bisect_x, node.y + bisect_y);
 					xy = lineIntersec(...xy, ...vecSum(...xy, this.difx, this.dify), ...term_xy, ...vecSum(...term_xy, ...bisect_xy));
 				}
-				else if ((angle <= 0.75) && (Math.abs(shift_factor) == 1)) {
-					console.log('ToDo: ! Centrered double bond');
+				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
+					var adj_bond_border = adj_bond.getBorder(node, step > 0);
+					side_shift = vecMul(this.ouvax, this.ouvay, this.hws * (node_idx ? 1 : -1));
+
+					t0 = vecSum(...xy, ...side_shift);
+					t1 = vecSum(...t0, ...this_vec);
+					t2 = vecSum(...xy, ...vecMul(...side_shift, -1));
+					t3 = vecSum(...t2, ...this_vec);
+
+					this.lines[line_idx][node_idx][0] = lineIntersec(...t0, ...t1, ...adj_bond_border);
+					this.lines[line_idx][node_idx][2] = lineIntersec(...t2, ...t3, ...adj_bond_border);
+					continue;
 				}
 			}
 			this.setButtTip(node, line_idx, xy);
@@ -190,7 +209,7 @@ ChemBond.prototype.renderLines = function() {
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		polygon.setAttribute('fill', getColor());
+		// polygon.setAttribute('fill', getColor());
 		this.g.appendChild(polygon);
 	}
 }

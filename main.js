@@ -210,18 +210,27 @@ function vecLen(x, y) { // Find length of vector
 }
 
 function lineIntersec(x1, y1, x2, y2, x3, y3, x4, y4) { // Find intersection point of two lines
-	a = x1 * y2 - y1 * x2;
-	b = x3 - x4;
-	c = x1 - x2;
-	d = x3 * y4 - y3 * x4;
-	e = y3 - y4;
-	f = y1 - y2;
-	g = c * e - f * b;
-	if (g != 0) { // If g is not zero
-		ipoi_y = (a * e - f * d) / g; // Intersection point, x value
-		ipoi_x = (a * b - c * d) / g; // Intersection point, y value
-	}
+	var a = x1 * y2 - y1 * x2;
+	var b = x3 - x4;
+	var c = x1 - x2;
+	var d = x3 * y4 - y3 * x4;
+	var e = y3 - y4;
+	var f = y1 - y2;
+	var g = c * e - f * b;
+	// if (g != 0) { // If g is not zero
+	if (g == 0) {
+		throw new Error('Non-intersecting lines!')
+	};
+	var ipoi_y = (a * e - f * d) / g; // Intersection point, x value
+	var ipoi_x = (a * b - c * d) / g; // Intersection point, y value
+	// }
 	return [ipoi_x, ipoi_y];
+	// return [(a * e - f * d) / g, (a * b - c * d) / g];
+}
+
+function cosVec(x0, y0, x1, y1) { // Find cos between two vectors
+	var cos_abc = (x0 * x1 + y0 * y1) / (vecLen(x0, y0) * vecLen(x1, y1));
+	return Math.min(Math.max(cos_abc, -1), 1); // Clamp cos_abc against calculation noise
 }
 
 function angleVec(x0, y0, x1, y1) { // Calculate angle (in rad*pi) between two vectors
@@ -252,8 +261,6 @@ function corrAtomPos(atom, x){
 	return widthcorr
 }
 
-
-
 function argSort(arr) {
 	var indices = [...Array(arr.length).keys()];
 	// indices.sort((a, b) => arr[a].localeCompare(arr[b])); // For strings
@@ -281,6 +288,10 @@ function vecDotProd(x0, y0, x1, y1) { // Find dot product
 
 function vecSum(x0, y0, x1, y1) { // Find sum of vector
 	return [x0 + x1, y0 + y1];
+}
+
+function vecMul(x, y, factor) { // Multiply vector by scalar value
+	return [x * factor, y * factor];
 }
 
 function angleBisector(x0, y0, x1, y1) { // Not normalized, no direction control

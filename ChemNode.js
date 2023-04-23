@@ -197,9 +197,16 @@ ChemNode.prototype.goToBond = function(bond, step) {
 };
 
 ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
-	var junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
-	bond0.juncs[bond0.getNodeIdx(this)][1] = junc;
-	bond1.juncs[bond1.getNodeIdx(this)][0] = junc;
+	cos_a = cosVec(...bond0.getNodeVec(this), ...bond1.getNodeVec(this));
+	if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
+		bond0.setHalfButt(this, 1);
+		bond1.setHalfButt(this, 0);
+	}
+	else {
+		var junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
+		bond0.juncs[bond0.getNodeIdx(this)][1] = junc;
+		bond1.juncs[bond1.getNodeIdx(this)][0] = junc;
+	}
 }
 
 ChemNode.prototype.calcLineTips = function() {
