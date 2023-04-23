@@ -18,7 +18,7 @@ function ChemNode(id, x, y, text) {
 	var atom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	atom.setAttribute('class', 'chemtxt sympoi');
 	atom.setAttribute('style', `fill:${this.color};font-family:'${this.default_font_family}';font-size:${this.default_size}px;`);
-	atom.setAttribute('dy', 4.5);
+	atom.setAttribute('dy', 5.5);
 	this.g.appendChild(atom);
 
 	this.translate(x, y)
@@ -30,7 +30,7 @@ ChemNode.counter = 0;
 ChemNode.default_style = {
 	color: 'black',
 	default_font_family: 'Arial',
-	default_size: 12
+	default_size: 16
 };
 
 ChemNode.hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
@@ -120,7 +120,7 @@ ChemNode.prototype.renderHydr = function() {
 		// Draw H symbol
 		var hsymb = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
 		hsymb.setAttribute('class', 'chemtxt');
-		hsymb.setAttribute('style', "font-family:'Arial';font-size:12px;");
+		hsymb.setAttribute('style', atom.getAttribute('style'));
 		hsymb.appendChild(document.createTextNode('H'));
 		hydrogens.appendChild(hsymb);
 
@@ -128,7 +128,7 @@ ChemNode.prototype.renderHydr = function() {
 		if (this.H_cnt > 1) {
 			var hnumb = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
 			hnumb.setAttribute('class', 'chemtxt');
-			hnumb.setAttribute('style', "font-family:'Arial';font-size:8px;");
+			hnumb.setAttribute('style', `fill:${this.color};font-family:'${this.default_font_family}';font-size:${this.default_size * 0.7}px;`);
 			hnumb.setAttribute('dy', 3);
 			hnumb.appendChild(document.createTextNode(this.H_cnt));
 			hydrogens.appendChild(hnumb);
@@ -137,23 +137,23 @@ ChemNode.prototype.renderHydr = function() {
 		// Place hydrogens in correct position
 		var atbox = atom.getBBox();
 		var halfatom_w = (atbox.width + this.width_err) / 2;
-		var hwidth = hydrogens.getBBox().width;
+		var hwidth = hydrogens.firstChild.getBBox().width;
 		this.locateHydr();
 		if (this.position_idx == 0) { // Right
 			hydrogens.setAttribute("dx", halfatom_w);
-			hydrogens.setAttribute("dy", 4.5);
+			hydrogens.setAttribute("dy", 5.5);
 		}
 		else if (this.position_idx == 1) { // Left
 			hydrogens.setAttribute("dx", -(halfatom_w + hydrogens.getBBox().width));
-			hydrogens.setAttribute("dy", 4.5);
+			hydrogens.setAttribute("dy", 5.5);
 		}
 		else if (this.position_idx == 2) { // Down
 			hydrogens.setAttribute("dx", -(hwidth + this.width_err) / 2);
-			hydrogens.setAttribute("dy", atbox.height + 1);
+			hydrogens.setAttribute("dy", atbox.height + 2);
 		}
 		else { // Up
 			hydrogens.setAttribute("dx", -(hwidth + this.width_err) / 2);
-			hydrogens.setAttribute("dy", this.H_cnt > 1 ? -atbox.height + 8 : -atbox.height + 8);
+			hydrogens.setAttribute("dy", -atbox.height + 9);
 		}
 	}
 };

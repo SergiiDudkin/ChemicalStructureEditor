@@ -96,7 +96,7 @@ ChemBond.prototype.setType = function(type) {
 	this.hw0 = 0.75;//0.55;
 	this.hw1 = 0.75;//0.55;
 	this.hws = 0.75;//0.55; // Side line half width 
-	this.hsp = 2; // Half of space between lines in multiple bonds
+	this.hsp = 1.5; // Half of space between lines in multiple bonds
 	// ToDo: ! Create table and paste actual values depending on type
 
 	this.juncs = [new Array(2), new Array(2)];
@@ -137,19 +137,19 @@ ChemBond.prototype.updateTip = function(node) {
 
 ChemBond.prototype.setButtTip = function(node, line_idx, term_xy) {
 	var node_idx = this.getNodeIdx(node);
-	var cur_hw = this['hw' + node_idx];
-	var [hwx, hwy] = [this.ouvax, this.ouvay].map(item => item * cur_hw);
+	var hw_vec = vecMul(this.ouvax, this.ouvay, this['hw' + node_idx]);
 	var dir = node_idx ? 1 : -1;
-	this.lines[line_idx][node_idx][0] = vecSum(...term_xy, hwx * dir, hwy * dir);
-	this.lines[line_idx][node_idx][2] = vecSum(...term_xy, -hwx * dir, -hwy * dir);
+	this.lines[line_idx][node_idx] = [
+		vecSum(...term_xy, ...vecMul(...hw_vec, dir)), 
+		, 
+		vecSum(...term_xy, ...vecMul(...hw_vec, -dir))
+	];
 };
 
 ChemBond.prototype.setHalfButt = function(node, acw) {
 	var node_idx = this.getNodeIdx(node);
 	var hw_len = this['hw' + node_idx] * (node_idx == acw ? -1 : 1);
-	var x = node.x + hw_len * this.ouvax;
-	var y = node.y + hw_len * this.ouvay;
-	this.juncs[node_idx][acw] = [x, y];
+	this.juncs[node_idx][acw] = vecSum(node.x, node.y, ...vecMul(this.ouvax, this.ouvay, hw_len))
 }
 
 ChemBond.prototype.getShiftFactors = function() {

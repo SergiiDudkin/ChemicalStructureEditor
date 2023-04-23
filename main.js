@@ -202,7 +202,7 @@ function moveCursor(event, elem, atr0, atr1) { // Move second end of the drawn b
 function findDist(x0, y0, x1, y1) { // Find distance between two points
 	var difx = x1 - x0;
 	var dify = y1 - y0;
-	return Math.sqrt(difx * difx + dify * dify);
+	return vecLen(difx, dify);
 }
 
 function vecLen(x, y) { // Find length of vector
@@ -229,7 +229,7 @@ function lineIntersec(x1, y1, x2, y2, x3, y3, x4, y4) { // Find intersection poi
 }
 
 function cosVec(x0, y0, x1, y1) { // Find cos between two vectors
-	var cos_abc = (x0 * x1 + y0 * y1) / (vecLen(x0, y0) * vecLen(x1, y1));
+	var cos_abc = vecDotProd(x0, y0, x1, y1) / (vecLen(x0, y0) * vecLen(x1, y1));
 	return Math.min(Math.max(cos_abc, -1), 1); // Clamp cos_abc against calculation noise
 }
 
@@ -437,7 +437,11 @@ function chemNodeHandler(elbtns) {
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			focobj = moveCursor(event, cursoratom, 'x', 'y');
 			var cursortext = cursoratom.textContent;
-			if (focobj) dispatcher.do(focobj.setAtomData(cursortext)); // If some atom was clicked
+			if (focobj) { // If some atom was clicked
+				// ToDo: ! Integrate with dispatcher.
+				kwargs = {atoms_text: [[focobj, cursortext]]};
+				editStructure(kwargs);	
+			}
 			else {
 				// ToDo: ! Integrate with dispatcher.
 				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]};
