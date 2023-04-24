@@ -200,13 +200,15 @@ function moveCursor(event, elem, atr0, atr1) { // Move second end of the drawn b
 
 // Geometry utilities
 function findDist(x0, y0, x1, y1) { // Find distance between two points
-	var difx = x1 - x0;
-	var dify = y1 - y0;
-	return vecLen(difx, dify);
+	return vecLen(...vecDif(x0, y0, x1, y1));
+}
+
+function sqVecLen(x, y) { // Find squired length of vector
+	return x * x + y * y;
 }
 
 function vecLen(x, y) { // Find length of vector
-	return Math.sqrt(x * x + y * y);
+	return Math.sqrt(sqVecLen(x, y));
 }
 
 function lineIntersec(x1, y1, x2, y2, x3, y3, x4, y4) { // Find intersection point of two lines
@@ -217,26 +219,27 @@ function lineIntersec(x1, y1, x2, y2, x3, y3, x4, y4) { // Find intersection poi
 	var e = y3 - y4;
 	var f = y1 - y2;
 	var g = c * e - f * b;
-	// if (g != 0) { // If g is not zero
 	if (g == 0) {
 		throw new Error('Non-intersecting lines!')
 	};
 	var ipoi_y = (a * e - f * d) / g; // Intersection point, x value
 	var ipoi_x = (a * b - c * d) / g; // Intersection point, y value
-	// }
 	return [ipoi_x, ipoi_y];
-	// return [(a * e - f * d) / g, (a * b - c * d) / g];
 }
 
 function cosVec(x0, y0, x1, y1) { // Find cos between two vectors
-	var cos_abc = vecDotProd(x0, y0, x1, y1) / (vecLen(x0, y0) * vecLen(x1, y1));
+	var cos_abc = vecDotProd(x0, y0, x1, y1) / sqVecLen(x0, y0);
 	return Math.min(Math.max(cos_abc, -1), 1); // Clamp cos_abc against calculation noise
 }
 
+function sinVec(x0, y0, x1, y1) { // Find cos between two vectors
+	var sin_abc = vecCrossProd(x0, y0, x1, y1) / sqVecLen(x0, y0);
+	return Math.min(Math.max(sin_abc, -1), 1); // Clamp cos_abc against calculation noise
+}
+
 function angleVec(x0, y0, x1, y1) { // Calculate angle (in rad*pi) between two vectors
-	var cos_abc = (x0 * x1 + y0 * y1) / (vecLen(x0, y0) * vecLen(x1, y1)); // Find cos between two vectors
-	cos_abc = Math.min(Math.max(cos_abc, -1), 1); // Clamp cos_abc against calculation noise
-	var sign = (x0 * y1 - y0 * x1) < 0 ? -1 : 1;
+	var cos_abc = cosVec(x0, y0, x1, y1);
+	var sign = Math.sign(vecCrossProd(x0, y0, x1, y1));
 	var angle = Math.acos(cos_abc) / Math.PI; // Find angle between two vectors (in rad*pi)
 	angle = (angle * sign + 2) % 2;
 	return angle;
@@ -286,12 +289,24 @@ function vecDotProd(x0, y0, x1, y1) { // Find dot product
 	return x0 * x1 + y0 * y1;
 }
 
+function vecCrossProd(x0, y0, x1, y1) { // Find dot product
+	return x0 * y1 - x1 * y0;
+}
+
 function vecSum(x0, y0, x1, y1) { // Find sum of vector
 	return [x0 + x1, y0 + y1];
 }
 
+function vecDif(x0, y0, x1, y1) { // Find sum of vector
+	return [x1 - x0, y1 - y0];
+}
+
 function vecMul(x, y, factor) { // Multiply vector by scalar value
 	return [x * factor, y * factor];
+}
+
+function vecDiv(x, y, divisor) { // Multiply vector by scalar value
+	return [x / divisor, y / divisor];
 }
 
 function angleBisector(x0, y0, x1, y1) { // Not normalized, no direction control
