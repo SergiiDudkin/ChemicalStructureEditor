@@ -46,7 +46,8 @@ ChemNode.prototype.delete = function() {
 
 ChemNode.prototype.renderSymb = function() {
 	var atom = this.g.childNodes[1];
-	target_text = this.connections.length == 0 && this.text == '' ? 'C' : this.text; // Convert floating C atoms into CH4
+	this.is_methane = this.connections.length == 0 && this.text == '';
+	target_text = this.is_methane ? 'C' : this.text; // Convert floating C atoms into CH4
 	if (atom.firstChild.nodeValue != target_text) { // Update text, if needed
 		atom.firstChild.nodeValue = target_text;
 		atom.setAttribute('dx', -atom.getBBox().width / 2); // Adjust (center) position of text
@@ -102,10 +103,12 @@ ChemNode.prototype.deselect = function() { // !!! Temp
 	this.select_circ = null;
 };
 
-ChemNode.prototype.renderHydr = function() {
+ChemNode.prototype.removeHydr = function() {
 	var hydrogens = this.g.childNodes[2];
 	if (hydrogens !== undefined) hydrogens.remove(); // Erase old hydrogens
+}
 
+ChemNode.prototype.renderHydr = function() {
 	if (this.H_cnt > 0) { // If there are hydrogens
 		var atom = this.g.childNodes[1]
 

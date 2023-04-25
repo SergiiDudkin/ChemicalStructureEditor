@@ -126,7 +126,8 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 
 	// Render H
 	for (const atom of atoms_reloc_hydr) {
-		if (atom.text != '') atom.renderHydr();
+		atom.removeHydr();
+		if ((atom.text != '') || atom.is_methane) atom.renderHydr();
 	}
 
 	// Move bonds

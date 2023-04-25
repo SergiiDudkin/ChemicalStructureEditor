@@ -458,12 +458,12 @@ function chemNodeHandler(elbtns) {
 			var cursortext = cursoratom.textContent;
 			if (focobj) { // If some atom was clicked
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {atoms_text: [[focobj, cursortext]]};
-				editStructure(kwargs);	
+				kwargs = {atoms_text: [[focobj, focobj.text == cursortext ? '' : cursortext]]};
+				editStructure(kwargs);
 			}
-			else {
+			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), cursoratom.getAttribute('x'), cursoratom.getAttribute('y'), cursortext]]};
+				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), parseFloat(cursoratom.getAttribute('x')), parseFloat(cursoratom.getAttribute('y')), cursortext]]};
 				editStructure(kwargs);
 			}
 		}
@@ -495,9 +495,6 @@ function chemBondHandler(bondbtn) {
 					bonds_type: [[focobj, focobj.getNextType()]],
 				};
 				editStructure(kwargs);
-
-
-
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				focobjst = moveCursor(event, cursorbond, 'x1', 'y1');
