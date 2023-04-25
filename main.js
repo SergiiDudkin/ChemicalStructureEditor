@@ -297,7 +297,7 @@ function sinVec(x0, y0, x1, y1) { // Find sin between two vectors
 }
 
 function angleVec(x0, y0, x1, y1) { // Calculate angle (in rad*pi) between two vectors
-	var angle = Math.atan2(vecCrossProd(x0, y0, x1, y1), vecDotProd(x0, y0, x1, y1))
+	var angle = Math.atan2(vecCrossProd(x0, y0, x1, y1), vecDotProd(x0, y0, x1, y1));
 	return (angle / Math.PI + 2) % 2;
 }
 
