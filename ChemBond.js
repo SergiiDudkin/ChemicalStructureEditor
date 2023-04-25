@@ -221,8 +221,7 @@ ChemBond.prototype.updateRect = function() {
 	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
 	backrect.setAttribute('width', this.len);
 
-	var rotang = Math.acos(this.difx / this.len) * 180 / Math.PI; // Rotation angle of backrect
-	rotang = this.dify > 0 ? rotang : 360 - rotang; // Make the angle positive
+	var rotang = Math.atan2(this.dify, this.difx) * 180 / Math.PI; // Rotation angle of backrect
 	backrect.transform.baseVal[0].setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
 }
 
