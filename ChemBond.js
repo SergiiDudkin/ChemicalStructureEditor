@@ -62,14 +62,10 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.recalcDims = function() {
-	this.difxy = vecDif(...this.getNodeCenters())
+	this.difxy = vecDif(...this.getNodeCenters());
 	this.len = vecLen(...this.difxy); // Distance between nodes
 	this.uv = vecDiv(...this.difxy, this.len); // Unit vector
-	
-	// this.ouvax = -this.difxy[1] / this.len;
-	// this.ouvay = this.difxy[0] / this.len;
 	[this.ouvax, this.ouvay] = rot90(...this.uv); // Orthohonal unit vector ACW
-
 	[this.shx, this.shy] = vecMul(this.ouvax, this.ouvay, bondspace); // Orthohonal shift vector ACW
 };
 
@@ -115,10 +111,12 @@ ChemBond.prototype.posDouble = function() {
 	var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 	for (const [node_idx, node] of this.nodes.entries()) {
 		for (const {bond, adjnode} of node.connections) {
-			var sin = sinVec(...this.difxy, ...bond.difxy);
-			if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)
-			if (sin > 0.1305) sinflags[node_idx][0] = 1;
-			else if (sin < -0.1305) sinflags[node_idx][1] = -1;
+			if (this != bond) {
+				var sin = sinVec(...this.difxy, ...bond.difxy);
+				if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)
+				if (sin > 0.1305) sinflags[node_idx][0] = 1;
+				else if (sin < -0.1305) sinflags[node_idx][1] = -1;
+			}
 		}
 	}
 	pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
@@ -159,7 +157,6 @@ ChemBond.prototype.setSideTip = function(node) {
 	// Iterate over lines
 	for (const [line_idx, shift_factor] of this.getShiftFactors()) {
 		if ((shift_factor == 0) && (!is_text) && (node.ctr_bonds_cnt > 1)) { // Converging line tip
-			// console.log(this.juncs[node_idx][0], this.juncs[node_idx][1]);
 			this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], node.xy, this.juncs[node_idx][1]];
 		}
 		else { // Floating line tip
@@ -178,12 +175,7 @@ ChemBond.prototype.setSideTip = function(node) {
 
 				if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
 					var bisect_xy = angleBisector(...this_vec, ...adj_vec);
-					clearDebug();
-					drawPoint(...xy);
-					drawPoint(...vecSum(...xy, ...this.difxy));
-					drawPoint(...term_xy);
-					drawPoint(...vecSum(...term_xy, ...bisect_xy));
-					xy = lineIntersec(...xy, ...vecSum(...xy, ...this.difxy), ...term_xy, ...vecSum(...term_xy, ...bisect_xy));
+					xy = lineIntersec(...xy, ...vecSum(...xy, ...this_vec), ...term_xy, ...vecSum(...term_xy, ...bisect_xy));
 				}
 				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
 					var adj_bond_border = adj_bond.getBorder(node, step > 0);
@@ -221,7 +213,7 @@ ChemBond.prototype.updateRect = function() {
 	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
 	backrect.setAttribute('width', this.len);
 
-	var rotang = Math.atan2(...this.difxy.reverse()) * 180 / Math.PI; // Rotation angle of backrect
+	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
 	backrect.transform.baseVal[0].setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
 }
 

@@ -198,14 +198,6 @@ function moveCursor(event, elem, atr0, atr1) { // Move second end of the drawn b
 	return focobj;
 }
 
-
-
-
-
-
-
-
-
 function corrAtomPos(atom, x){
 	var bbox = atom.getBBox();
 	var bboxxctr = bbox.x + bbox.width / 2;
@@ -292,14 +284,16 @@ function vecCrossProd(x0, y0, x1, y1) { // Find dot product
 	return x0 * y1 - x1 * y0;
 }
 
-function cosVec(x0, y0, x1, y1) { // Find cos between two vectors
-	var cos_abc = vecDotProd(x0, y0, x1, y1) / sqVecLen(x0, y0);
-	return Math.min(Math.max(cos_abc, -1), 1); // Clamp cos_abc against calculation noise
+function clampSinCos(val) {
+	return Math.min(Math.max(val, -1), 1); // Clamp sin or cos against calculation noise
 }
 
-function sinVec(x0, y0, x1, y1) { // Find cos between two vectors
-	var sin_abc = vecCrossProd(x0, y0, x1, y1) / sqVecLen(x0, y0);
-	return Math.min(Math.max(sin_abc, -1), 1); // Clamp cos_abc against calculation noise
+function cosVec(x0, y0, x1, y1) { // Find cos between two vectors
+	return clampSinCos(vecDotProd(x0, y0, x1, y1) / (vecLen(x0, y0) * vecLen(x1, y1)));
+}
+
+function sinVec(x0, y0, x1, y1) { // Find sin between two vectors
+	return clampSinCos(vecCrossProd(x0, y0, x1, y1) / (vecLen(x0, y0) * vecLen(x1, y1)));
 }
 
 function angleVec(x0, y0, x1, y1) { // Calculate angle (in rad*pi) between two vectors
