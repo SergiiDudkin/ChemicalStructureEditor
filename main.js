@@ -315,6 +315,10 @@ function rotateVec(x, y, angle) { // Rotate vector
 	return [newx, newy];
 }
 
+function rot90(x, y) {
+	return [-y, x];
+}
+
 function angleBisector(x0, y0, x1, y1) { // Not normalized, no direction control
 	if (vecDotProd(x0, y0, x1, y1) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
 		[x0, y0] = [-y0, x0];
