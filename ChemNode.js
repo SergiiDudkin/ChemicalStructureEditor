@@ -59,7 +59,7 @@ ChemNode.prototype.corrSymbPos = function() {
 	var atom = this.g.childNodes[1]
 	var bbox = atom.getBBox();
 	var bboxxctr = bbox.x + bbox.width / 2;
-	ctr_err = (this.x - bboxxctr).toFixed(1);
+	ctr_err = (this.xy[0] - bboxxctr).toFixed(1);
 	this.width_err = -ctr_err * 1.5; // ??? Why 1.5? Should be 2
 	if (ctr_err != 0) atom.setAttribute('dx', -(bbox.width + this.width_err) / 2); // Adjust (center) position of text
 };
@@ -72,8 +72,7 @@ ChemNode.prototype.calcHydr = function() {
 };
 
 ChemNode.prototype.translate = function(new_x, new_y) {
-	this.x = new_x;
-	this.y = new_y;
+	this.xy = [new_x, new_y];
 
 	var backcircle = this.g.childNodes[0];
 	backcircle.setAttribute('cx', new_x);

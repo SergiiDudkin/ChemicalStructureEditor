@@ -149,7 +149,7 @@ ChemBond.prototype.setButtTip = function(node, line_idx, term_xy) {
 ChemBond.prototype.setHalfButt = function(node, acw) {
 	var node_idx = this.getNodeIdx(node);
 	var hw_len = this['hw' + node_idx] * (node_idx == acw ? -1 : 1);
-	this.juncs[node_idx][acw] = vecSum(node.x, node.y, ...vecMul(this.ouvax, this.ouvay, hw_len))
+	this.juncs[node_idx][acw] = vecSum(...node.xy, ...vecMul(this.ouvax, this.ouvay, hw_len))
 }
 
 ChemBond.prototype.getShiftFactors = function() {
@@ -164,11 +164,11 @@ ChemBond.prototype.setSideTip = function(node) {
 	for (const [line_idx, shift_factor] of this.getShiftFactors()) {
 		if ((shift_factor == 0) && (!is_text) && (node.ctr_bonds_cnt > 1)) { // Converging line tip
 			// console.log(this.juncs[node_idx][0], this.juncs[node_idx][1]);
-			this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], [node.x, node.y], this.juncs[node_idx][1]];
+			this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], node.xy, this.juncs[node_idx][1]];
 		}
 		else { // Floating line tip
 			var shift_val = (this.hws + this.hsp) * shift_factor;
-			var term_xy = is_text ? [this['x' + node_idx], this['y' + node_idx]] : [node.x, node.y];
+			var term_xy = is_text ? [this['x' + node_idx], this['y' + node_idx]] : node.xy;
 			var xy = [term_xy[0] + this.ouvax * shift_val, term_xy[1] + this.ouvay * shift_val];
 			if ((node.connections.length > 1) && (this.linecnt == 2) && !is_text) {
 				var step = shift_factor > 0 == node_idx ? -1 : 1;
@@ -227,7 +227,7 @@ ChemBond.prototype.updateRect = function() {
 }
 
 ChemBond.prototype.getNodeCenters = function() {
-	return [this.nodes[0].x, this.nodes[0].y, this.nodes[1].x, this.nodes[1].y].map(Number);
+	return [...this.nodes[0].xy, ...this.nodes[1].xy].map(Number);
 };
 
 ChemBond.prototype.getNodeIdx = function(node) {
