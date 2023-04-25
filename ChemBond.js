@@ -66,7 +66,6 @@ ChemBond.prototype.recalcDims = function() {
 	this.len = vecLen(...this.difxy); // Distance between nodes
 	this.uv = vecDiv(...this.difxy, this.len); // Unit vector
 	this.ouva = rot90(...this.uv); // Orthohonal unit vector ACW
-	[this.shx, this.shy] = vecMul(...this.ouva, bondspace); // Orthohonal shift vector ACW
 };
 
 ChemBond.prototype.getNodeVec = function(node) {
