@@ -119,7 +119,7 @@ ChemBond.prototype.posDouble = function() {
 	var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 	for (const [node_idx, node] of this.nodes.entries()) {
 		for (const {bond, adjnode} of node.connections) {
-			var sin = (this.difx * bond.dify - this.dify * bond.difx) / (this.len * bond.len); // Calculate sin of angle between bonds
+			var sin = sinVec(this.difx, this.dify, bond.difx, bond.dify);
 			if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)
 			if (sin > 0.1305) sinflags[node_idx][0] = 1;
 			else if (sin < -0.1305) sinflags[node_idx][1] = -1;
