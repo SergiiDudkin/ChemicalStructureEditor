@@ -268,7 +268,7 @@ function vecDif(x0, y0, x1, y1) { // Find sum of vector
 	return [x1 - x0, y1 - y0];
 }
 
-function vecMul(x, y, factor) { // Multiply vector by scalar value
+function vecMul([x, y], factor) { // Multiply vector by scalar value
 	return [x * factor, y * factor];
 }
 
