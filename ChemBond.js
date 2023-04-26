@@ -62,7 +62,7 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.recalcDims = function() {
-	this.difxy = vecDif(...this.getNodeCenters());
+	this.difxy = vecDif(...this.getNodeCenters().flat()); // Vector between nodes
 	this.len = vecLen(...this.difxy); // Distance between nodes
 	this.uv = vecDiv(...this.difxy, this.len); // Unit vector
 	this.ouva = rot90(...this.uv); // Orthohonal unit vector ACW
@@ -206,18 +206,18 @@ ChemBond.prototype.renderLines = function() {
 }
 
 ChemBond.prototype.updateRect = function() {
-	var [x0, y0, x1, y1] = this.getNodeCenters();
-	var backrect = this.g.firstChild;
-	backrect.setAttribute('x', (x0 + x1) / 2 - this.len / 2);
-	backrect.setAttribute('y', (y0 + y1) / 2 - 5);
-	backrect.setAttribute('width', this.len);
-
+	var [ctrx, ctry] = vecDiv(...vecSum(...this.getNodeCenters().flat()), 2); // Center of bond
 	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
-	backrect.transform.baseVal[0].setRotate(rotang, (x0 + x1) / 2, (y0 + y1) / 2);
+
+	var backrect = this.g.firstChild;
+	backrect.setAttribute('x', ctrx - this.len / 2);
+	backrect.setAttribute('y', ctry - 5);
+	backrect.setAttribute('width', this.len);
+	backrect.transform.baseVal[0].setRotate(rotang, ctrx, ctry);
 }
 
 ChemBond.prototype.getNodeCenters = function() {
-	return [...this.nodes[0].xy, ...this.nodes[1].xy].map(Number);
+	return [this.nodes[0].xy, this.nodes[1].xy];
 };
 
 ChemBond.prototype.getNodeIdx = function(node) {
@@ -227,18 +227,18 @@ ChemBond.prototype.getNodeIdx = function(node) {
 	else throw new Error('The bond does not have this node!');
 }
 
-ChemBond.prototype.getBorder = function(node, acw) { // Get border line of bond
+ChemBond.prototype.getBorder = function(node, acw) { // Get border of central bond line
 	var side = this.getNodeIdx(node) == acw ? 1 : -1; // Node = 0, acw = true => side = -1
-	var [cx0, cy0, cx1, cy1] = this.getNodeCenters();
-	var xy0 = vecSum(cx0, cy0, ...vecMul(...this.ouva, this.hw0 * side))
-	var xy1 = vecSum(cx1, cy1, ...vecMul(...this.ouva, this.hw1 * side))
+	var [cxy0, cxy1] = this.getNodeCenters();
+	var xy0 = vecSum(...cxy0, ...vecMul(...this.ouva, this.hw0 * side))
+	var xy1 = vecSum(...cxy1, ...vecMul(...this.ouva, this.hw1 * side))
 	return [...xy0, ...xy1];
 };
 
 ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of the chemical symbol and bond
-	var [x0, y0, x1, y1] = this.getNodeCenters();
+	var [cxy0, cxy1] = this.getNodeCenters();
 	var node_idx = this.getNodeIdx(node);
-	var curx = node_idx == 0 ? x0 : x1, cury = node_idx == 0 ? y0 : y1;
+	var curxy = node_idx == 0 ? cxy0 : cxy1;
 
 	var textbox = node.g.childNodes[1].getBBox();
 	var tb_w = textbox.width;
@@ -251,22 +251,24 @@ ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of th
 	var threshold = tb_h / tb_w;
 	var [difx, dify] = this.difxy;
 	var tan = Math.abs(dify / difx);
-	var dirtab = [
+	var dirtab = [ // 0: R, 1: U, 2: L, 3: D
 					[[2, 2],
 					 [0, 0]],
 					[[3, 1],
 					 [3, 1]]
 				 ];
-	var dir = dirtab[+(tan > threshold)][+(node_idx == 0 ? difx > 0 : difx < 0)][+(node_idx == 0 ? dify < 0 : dify > 0)];
-	var multab = [[0.5, -0.5, 0.5, 0.5], [-0.5, -0.5, 0.5, -0.5], [-0.5, -0.5, -0.5, 0.5], [-0.5, 0.5, 0.5, 0.5]];
-	var mulrow = multab[dir];
-
+	var dir = dirtab[+(tan > threshold)][+(node_idx == 0 == difx > 0)][+(node_idx == 0 == dify < 0)];
+	var multab = [
+		[ 0.5, -0.5,  0.5,  0.5], // Right
+		[-0.5, -0.5,  0.5, -0.5], // Up
+		[-0.5, -0.5, -0.5,  0.5], // Left
+		[-0.5,  0.5,  0.5,  0.5]  // Down
+	];
+	var [fx0, fy0, fx1, fy1] = multab[dir];
 	[this['x' + node_idx], this['y' + node_idx]] = lineIntersec(
-		x0, y0, x1, y1, 
-		curx + mulrow[0] * tb_w, 
-		cury + mulrow[1] * tb_h, 
-		curx + mulrow[2] * tb_w, 
-		cury + mulrow[3] * tb_h
+		...cxy0, ...cxy1, 
+		...vecSum(...curxy, ...[fx0 * tb_w, fy0 * tb_h]),
+		...vecSum(...curxy, ...[fx1 * tb_w, fy1 * tb_h])
 	);
 	return [this['x' + node_idx], this['y' + node_idx]];
 };
