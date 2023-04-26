@@ -210,6 +210,7 @@ function corrAtomPos(atom, x){
 }
 
 function argSort(arr) {
+	// ToDo: ! Remove argSort (it is not used)
 	var indices = [...Array(arr.length).keys()];
 	// indices.sort((a, b) => arr[a].localeCompare(arr[b])); // For strings
 	indices.sort((a, b) => arr[a] - arr[b]); // For numbers

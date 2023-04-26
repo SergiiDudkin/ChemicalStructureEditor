@@ -179,10 +179,7 @@ ChemNode.prototype.locateHydr = function() {
 
 ChemNode.prototype.sortConnections = function() {
 	// Sort by the angle between surrounding bonds and x-axis
-	var bond_angles = this.connections.map(
-		connection => angleVec([1, 0], vecDif(this.xy, connection.adjnode.xy))
-	); // Calculate angles between every bond and x-axis
-	this.connections = argSort(bond_angles).map(i => this.connections[i]); // Perform sorting
+	this.connections.sort((a, b) => angleVec([1, 0], a.bond.getNodeVec(this)) - angleVec([1, 0], b.bond.getNodeVec(this)));
 };
 
 ChemNode.prototype.goToBond = function(bond, step) {
