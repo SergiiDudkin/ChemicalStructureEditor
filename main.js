@@ -706,15 +706,14 @@ function moveHandler(movebtn) {
 	function findSlctBonds() { // Find selected bonds
 		var processed_bonds = new Set();
 		for (var it = atoms_slctd.values(), atom; atom = it.next().value;) {
-			for (const connection of atom.connections) {
-				var bond = connection.bond;
+			for (const bond of atom.connections) {
 				if (!processed_bonds.has(bond)) {
 					processed_bonds.add(bond);
 					var othernode = bond.nodes[0] == atom ? 1 : 0;
 					if (atoms_slctd.has(bond.nodes[othernode])) d_slctd.add(bond);
 					else {
 						m_slctd.add(bond);
-						for (const connection of bond.nodes[othernode].connections) if (connection.bond.multiplicity == 2) surbonds.add(connection.bond);
+						for (const bond_ of bond.nodes[othernode].connections) if (bond_.multiplicity == 2) surbonds.add(bond_);
 					}
 				}
 			}

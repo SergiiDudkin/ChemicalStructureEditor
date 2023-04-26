@@ -5,8 +5,8 @@ function ChemBond(id, node0, node1, type) {
 	if (typeof node0 === "string") node0 = document.getElementById(node0).objref;
 	if (typeof node1 === "string") node1 = document.getElementById(node1).objref;
 	this.nodes = [node0, node1];
-	node0.connections.push({adjnode: node1, bond: this});
-	node1.connections.push({adjnode: node0, bond: this});
+	node0.connections.push(this);
+	node1.connections.push(this);
 	this.recalcDims();
 	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
@@ -96,7 +96,7 @@ ChemBond.prototype.setType = function(type) {
 };
 
 ChemBond.prototype.destruct = function() {
-	for (node of this.nodes) node.connections = node.connections.filter(item => item.bond !== this);
+	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
 	delete this.nodes;
 };
@@ -109,7 +109,7 @@ ChemBond.prototype.posDouble = function() {
 	// Find the best shift of double bond; set type accordingly
 	var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 	for (const [node_idx, node] of this.nodes.entries()) {
-		for (const {bond, adjnode} of node.connections) {
+		for (const bond of node.connections) {
 			if (this != bond) {
 				var sin = sinVec(this.difxy, bond.difxy);
 				if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)

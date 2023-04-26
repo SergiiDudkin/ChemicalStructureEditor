@@ -68,7 +68,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		atom.text = text;
 		atoms_change_symb.add(atom);
 		if (text == '') atoms_refresh_tips.add(atom);
-		for (const {bond, adjnode} of atom.connections) {
+		for (const bond of atom.connections) {
 			bonds_update_recht.add(bond);
 			if (text != '') tips_update.add([atom, bond]);
 		}
@@ -89,7 +89,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	for (const atom of moving_atoms) {
 		atom.translate(vecSum(atom.xy, moving_vec));
 		atoms_reloc_hydr.add(atom);
-		for (const {bond, adjnode} of atom.connections) {
+		for (const bond of atom.connections) {
 			if (bonds_scewed.has(bond)) {
 				bonds_scewed.delete(bond);
 				bonds_transl.add(bond);
@@ -138,7 +138,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 
 	// Fetch auto double bonds
 	for (const atom of atoms_auto_d_bond) {
-		for (const {bond, adjnode} of atom.connections) {
+		for (const bond of atom.connections) {
 			bonds_d_adjust.add(bond);
 		}
 	}
@@ -157,7 +157,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	// Reshape converging line tips (no symbol; implicit C)
 	for (const atom of atoms_refresh_tips) {
 		atom.calcLineTips();
-		for (const {bond, adjnode} of atom.connections) {
+		for (const bond of atom.connections) {
 			bonds_to_render.add(bond);
 		}
 	}

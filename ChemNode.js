@@ -66,7 +66,7 @@ ChemNode.prototype.corrSymbPos = function() {
 };
 
 ChemNode.prototype.calcHydr = function() {
-	var used_valency = this.connections.reduce((prev, curr) => prev + curr.bond.multiplicity, 0);
+	var used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
 	hmax = this.g.childNodes[1].firstChild.nodeValue;
 	this.H_cnt = hmax in hmaxtab ? 
 		Math.max(ChemNode.hmaxtab[hmax] - used_valency, 0) : 0;
@@ -165,7 +165,7 @@ ChemNode.prototype.locateHydr = function() {
 	if (this.connections.length == 0) this.position_idx = 0; // If there are no bonds, draw hydrogens right
 	else {
 		var proj_rldu = [[], [], [], []]; // Unit vector projections in each direction, right, left, down and up respectively
-		for (const {bond, adjnode} of this.connections) {
+		for (const bond of this.connections) {
 			var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len)
 			proj_rldu[0].push(bondcos > 0 ? bondcos : 0);
 			proj_rldu[1].push(-bondcos > 0 ? -bondcos : 0);
@@ -179,16 +179,15 @@ ChemNode.prototype.locateHydr = function() {
 
 ChemNode.prototype.sortConnections = function() {
 	// Sort by the angle between surrounding bonds and x-axis
-	this.connections.sort((a, b) => angleVec([1, 0], a.bond.getNodeVec(this)) - angleVec([1, 0], b.bond.getNodeVec(this)));
+	this.connections.sort((a, b) => angleVec([1, 0], a.getNodeVec(this)) - angleVec([1, 0], b.getNodeVec(this)));
 };
 
 ChemNode.prototype.goToBond = function(bond, step) {
 	// Go to another bond
-	var bonds = this.connections.map(connection => connection.bond);
-	var idx = bonds.indexOf(bond);
+	var idx = this.connections.indexOf(bond);
 	var bond_cnt = this.connections.length;
 	var target_idx = (idx + bond_cnt + step % bond_cnt) % bond_cnt;
-	return bonds[target_idx];
+	return this.connections[target_idx];
 };
 
 ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
@@ -206,13 +205,12 @@ ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
 
 ChemNode.prototype.calcLineTips = function() {
 	this.sortConnections();
-	var all_bonds = this.connections.map(connection => connection.bond);
-	var ctr_bonds = all_bonds.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
+	var ctr_bonds = this.connections.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
 	this.ctr_bonds_cnt = ctr_bonds.length;
 	if (ctr_bonds.length > 1) {
 		ctr_bonds.forEach((bond, i) => this.computeBondsJunc(bond, ctr_bonds[(i + 1) % ctr_bonds.length]));
 	}
-	for (const bond of all_bonds) {
+	for (const bond of this.connections) {
 		bond.setSideTip(this);
 	}
 };
