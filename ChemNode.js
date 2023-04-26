@@ -219,8 +219,3 @@ ChemNode.prototype.calcLineTips = function() {
 		bond.setSideTip(this);
 	}
 };
-
-
-
-
-

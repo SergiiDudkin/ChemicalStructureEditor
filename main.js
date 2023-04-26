@@ -248,16 +248,16 @@ function sqVecLen([x, y]) { // Find squired length of vector
 	return x * x + y * y;
 }
 
-function vecLen([x, y]) { // Find length of vector
-	return Math.sqrt(sqVecLen([x, y]));
+function vecLen(xy) { // Find length of vector
+	return Math.sqrt(sqVecLen(xy));
 }
 
-function findDist([x0, y0], [x1, y1]) { // Find distance between two points
-	return vecLen(vecDif([x0, y0], [x1, y1]));
+function findDist(xy0, xy1) { // Find distance between two points
+	return vecLen(vecDif(xy0, xy1));
 }
 
-function unitVec([x, y]) { // Find unit vector
-	return vecDiv([x, y], vecLen([x, y]))
+function unitVec(xy) { // Find unit vector
+	return vecDiv(xy, vecLen(xy))
 }
 
 function vecSum([x0, y0], [x1, y1]) { // Add vectors
@@ -288,16 +288,16 @@ function clampSinCos(val) {
 	return Math.min(Math.max(val, -1), 1); // Clamp sin or cos against calculation noise
 }
 
-function cosVec([x0, y0], [x1, y1]) { // Find cos between two vectors
-	return clampSinCos(vecDotProd([x0, y0], [x1, y1]) / (vecLen([x0, y0]) * vecLen([x1, y1])));
+function cosVec(xy0, xy1) { // Find cos between two vectors
+	return clampSinCos(vecDotProd(xy0, xy1) / (vecLen(xy0) * vecLen(xy1)));
 }
 
-function sinVec([x0, y0], [x1, y1]) { // Find sin between two vectors
-	return clampSinCos(vecCrossProd([x0, y0], [x1, y1]) / (vecLen([x0, y0]) * vecLen([x1, y1])));
+function sinVec(xy0, xy1) { // Find sin between two vectors
+	return clampSinCos(vecCrossProd(xy0, xy1) / (vecLen(xy0) * vecLen(xy1)));
 }
 
-function angleVec([x0, y0], [x1, y1]) { // Calculate angle (in rad*pi) between two vectors
-	var angle = Math.atan2(vecCrossProd([x0, y0], [x1, y1]), vecDotProd([x0, y0], [x1, y1]));
+function angleVec(xy0, xy1) { // Calculate angle (in rad*pi) between two vectors
+	var angle = Math.atan2(vecCrossProd(xy0, xy1), vecDotProd(xy0, xy1));
 	return (angle / Math.PI + 2) % 2;
 }
 
@@ -317,12 +317,12 @@ function rot90acw([x, y]) {
 	return [y, -x];
 }
 
-function angleBisector([x0, y0], [x1, y1]) { // Not normalized, no direction control
-	if (vecDotProd([x0, y0], [x1, y1]) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
-		[x0, y0] = rot90cw([x0, y0]);
-		[x1, y1] = rot90acw([x1, y1]);
+function angleBisector(xy0, xy1) { // Not normalized, no direction control
+	if (vecDotProd(xy0, xy1) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
+		xy0 = rot90cw(xy0);
+		xy1 = rot90acw(xy1);
 	}
-	return vecSum(unitVec([x0, y0]), unitVec([x1, y1]));
+	return vecSum(unitVec(xy0), unitVec(xy1));
 }
 
 /*
