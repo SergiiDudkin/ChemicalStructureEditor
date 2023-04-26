@@ -174,7 +174,7 @@ ChemBond.prototype.setSideTip = function(node) {
 
 				if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
 					var bisect_xy = angleBisector(...this_vec, ...adj_vec);
-					xy = lineIntersec(...xy, ...vecSum(...xy, ...this_vec), ...term_xy, ...vecSum(...term_xy, ...bisect_xy));
+					xy = lineIntersec(xy, vecSum(...xy, ...this_vec), term_xy, vecSum(...term_xy, ...bisect_xy));
 				}
 				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
 					var adj_bond_border = adj_bond.getBorder(node, step > 0);
@@ -185,8 +185,8 @@ ChemBond.prototype.setSideTip = function(node) {
 					t2 = vecSum(...xy, ...vecMul(...side_shift, -1));
 					t3 = vecSum(...t2, ...this_vec);
 
-					this.lines[line_idx][node_idx][0] = lineIntersec(...t0, ...t1, ...adj_bond_border);
-					this.lines[line_idx][node_idx][2] = lineIntersec(...t2, ...t3, ...adj_bond_border);
+					this.lines[line_idx][node_idx][0] = lineIntersec(t0, t1, ...adj_bond_border);
+					this.lines[line_idx][node_idx][2] = lineIntersec(t2, t3, ...adj_bond_border);
 					continue;
 				}
 			}
@@ -232,7 +232,7 @@ ChemBond.prototype.getBorder = function(node, acw) { // Get border of central bo
 	var [cxy0, cxy1] = this.getNodeCenters();
 	var xy0 = vecSum(...cxy0, ...vecMul(...this.ouva, this.hw0 * side))
 	var xy1 = vecSum(...cxy1, ...vecMul(...this.ouva, this.hw1 * side))
-	return [...xy0, ...xy1];
+	return [xy0, xy1];
 };
 
 ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of the chemical symbol and bond
@@ -266,9 +266,9 @@ ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of th
 	];
 	var [fx0, fy0, fx1, fy1] = multab[dir];
 	[this['x' + node_idx], this['y' + node_idx]] = lineIntersec(
-		...cxy0, ...cxy1, 
-		...vecSum(...curxy, ...[fx0 * tb_w, fy0 * tb_h]),
-		...vecSum(...curxy, ...[fx1 * tb_w, fy1 * tb_h])
+		cxy0, cxy1, 
+		vecSum(...curxy, ...[fx0 * tb_w, fy0 * tb_h]),
+		vecSum(...curxy, ...[fx1 * tb_w, fy1 * tb_h])
 	);
 	return [this['x' + node_idx], this['y' + node_idx]];
 };

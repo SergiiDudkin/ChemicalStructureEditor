@@ -228,7 +228,7 @@ function argSort(arr) {
 
 
 // Geometry utilities
-function lineIntersec(x1, y1, x2, y2, x3, y3, x4, y4) { // Find intersection point of two lines
+function lineIntersec([x1, y1], [x2, y2], [x3, y3], [x4, y4]) { // Find intersection point of two lines
 	var a = x1 * y2 - y1 * x2;
 	var b = x3 - x4;
 	var c = x1 - x2;
