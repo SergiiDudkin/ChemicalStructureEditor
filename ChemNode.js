@@ -179,12 +179,8 @@ ChemNode.prototype.locateHydr = function() {
 
 ChemNode.prototype.sortConnections = function() {
 	// Sort by the angle between surrounding bonds and x-axis
-	var x0 = 1, y0 = 0;
-	var x = this.g.firstChild.getAttribute('cx');
-	var y = this.g.firstChild.getAttribute('cy');
-	var bond_angles = this.connections.map(connection => angleVec(x0, y0, 
-		connection.adjnode.g.firstChild.getAttribute('cx') - x,
-		connection.adjnode.g.firstChild.getAttribute('cy') - y)
+	var bond_angles = this.connections.map(
+		connection => angleVec([1, 0], vecDif(this.xy, connection.adjnode.xy))
 	); // Calculate angles between every bond and x-axis
 	this.connections = argSort(bond_angles).map(i => this.connections[i]); // Perform sorting
 };
@@ -199,7 +195,7 @@ ChemNode.prototype.goToBond = function(bond, step) {
 };
 
 ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
-	cos_a = cosVec(...bond0.getNodeVec(this), ...bond1.getNodeVec(this));
+	cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
 	if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
 		bond0.setHalfButt(this, 1);
 		bond1.setHalfButt(this, 0);

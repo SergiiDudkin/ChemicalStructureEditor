@@ -62,10 +62,10 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.recalcDims = function() {
-	this.difxy = vecDif(...this.getNodeCenters().flat()); // Vector between nodes
-	this.len = vecLen(...this.difxy); // Distance between nodes
-	this.uv = vecDiv(...this.difxy, this.len); // Unit vector
-	this.ouva = rot90(...this.uv); // Orthohonal unit vector ACW
+	this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
+	this.len = vecLen(this.difxy); // Distance between nodes
+	this.uv = vecDiv(this.difxy, this.len); // Unit vector
+	this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
 };
 
 ChemBond.prototype.getNodeVec = function(node) {
@@ -111,7 +111,7 @@ ChemBond.prototype.posDouble = function() {
 	for (const [node_idx, node] of this.nodes.entries()) {
 		for (const {bond, adjnode} of node.connections) {
 			if (this != bond) {
-				var sin = sinVec(...this.difxy, ...bond.difxy);
+				var sin = sinVec(this.difxy, bond.difxy);
 				if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)
 				if (sin > 0.1305) sinflags[node_idx][0] = 1;
 				else if (sin < -0.1305) sinflags[node_idx][1] = -1;
@@ -170,10 +170,10 @@ ChemBond.prototype.setSideTip = function(node) {
 				var adj_vec = adj_bond.getNodeVec(node); // Adjacent bond vector
 
 				var is_cw = node_idx == (shift_factor < 0); // True if clockwise
-				var angle = is_cw ? angleVec(...this_vec, ...adj_vec) : angleVec(...adj_vec, ...this_vec);
+				var angle = is_cw ? angleVec(this_vec, adj_vec) : angleVec(adj_vec, this_vec);
 
 				if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
-					var bisect_xy = angleBisector(...this_vec, ...adj_vec);
+					var bisect_xy = angleBisector(this_vec, adj_vec);
 					xy = lineIntersec(xy, vecSum(xy, this_vec), term_xy, vecSum(term_xy, bisect_xy));
 				}
 				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
@@ -206,7 +206,7 @@ ChemBond.prototype.renderLines = function() {
 }
 
 ChemBond.prototype.updateRect = function() {
-	var [ctrx, ctry] = vecDiv(...vecSum(...this.getNodeCenters()), 2); // Center of bond
+	var [ctrx, ctry] = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
 	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
 
 	var backrect = this.g.firstChild;
