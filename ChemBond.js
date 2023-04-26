@@ -95,7 +95,7 @@ ChemBond.prototype.setType = function(type) {
 	// this.lines[line][tip(start | end)][corner(prev | cntr | next)][axis(x | y)]
 };
 
-ChemBond.prototype.destruct = function() {
+ChemBond.prototype.delete = function() {
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
 	delete this.nodes;

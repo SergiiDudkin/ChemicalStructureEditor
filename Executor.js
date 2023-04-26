@@ -32,13 +32,13 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	// Delete bonds
 	for (const bond of del_bonds) {
 		for (const node of bond.nodes) {
-			if (!del_atoms.has(node)) {
+			if (!del_atoms.includes(node)) {
 				atoms_recalc_hydr.add(node);
 				atoms_auto_d_bond.add(node);
 				if (node.text == '') atoms_refresh_tips.add(node);
 			}
 		}
-		bond.deleteBond();
+		bond.delete();
 	}
 
 	// Delete atoms

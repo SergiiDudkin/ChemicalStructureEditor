@@ -564,7 +564,14 @@ function deleteHandler(delbtn) {
 	function erase(event) { // Active eraser
 		if (atomsall.contains(event.target) || bondsall.contains(event.target)) {
 			var focobj = event.target.parentNode.objref;
-			dispatcher.do(focobj.eraseData());
+			if (focobj.constructor == ChemNode) {
+				kwargs = {del_atoms: [focobj], del_bonds: focobj.connections.slice()};
+			}
+			else if (focobj.constructor == ChemBond) {
+				kwargs = {del_bonds: [focobj]};
+			}
+			// ToDo: ! Integrate with dispatcher.
+			editStructure(kwargs);
 		}
 	}
 
