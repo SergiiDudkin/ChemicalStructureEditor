@@ -133,16 +133,16 @@ ChemBond.prototype.setButtTip = function(node, line_idx, term_xy) {
 	var hw_vec = vecMul(...this.ouva, this['hw' + node_idx]);
 	var dir = node_idx ? 1 : -1;
 	this.lines[line_idx][node_idx] = [
-		vecSum(...term_xy, ...vecMul(...hw_vec, dir)), 
+		vecSum(term_xy, vecMul(...hw_vec, dir)), 
 		, 
-		vecSum(...term_xy, ...vecMul(...hw_vec, -dir))
+		vecSum(term_xy, vecMul(...hw_vec, -dir))
 	];
 };
 
 ChemBond.prototype.setHalfButt = function(node, acw) {
 	var node_idx = this.getNodeIdx(node);
 	var hw_len = this['hw' + node_idx] * (node_idx == acw ? -1 : 1);
-	this.juncs[node_idx][acw] = vecSum(...node.xy, ...vecMul(...this.ouva, hw_len))
+	this.juncs[node_idx][acw] = vecSum(node.xy, vecMul(...this.ouva, hw_len))
 }
 
 ChemBond.prototype.getShiftFactors = function() {
@@ -161,7 +161,7 @@ ChemBond.prototype.setSideTip = function(node) {
 		else { // Floating line tip
 			var shift_val = (this.hws + this.hsp) * shift_factor;
 			var term_xy = is_text ? [this['x' + node_idx], this['y' + node_idx]] : node.xy;
-			var xy = vecSum(...term_xy, ...vecMul(...this.ouva, shift_val));
+			var xy = vecSum(term_xy, vecMul(...this.ouva, shift_val));
 			if ((node.connections.length > 1) && (this.linecnt == 2) && !is_text) {
 				var step = shift_factor > 0 == node_idx ? -1 : 1;
 				var adj_bond = node.goToBond(this, step);
@@ -174,16 +174,16 @@ ChemBond.prototype.setSideTip = function(node) {
 
 				if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
 					var bisect_xy = angleBisector(...this_vec, ...adj_vec);
-					xy = lineIntersec(xy, vecSum(...xy, ...this_vec), term_xy, vecSum(...term_xy, ...bisect_xy));
+					xy = lineIntersec(xy, vecSum(xy, this_vec), term_xy, vecSum(term_xy, bisect_xy));
 				}
 				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
 					var adj_bond_border = adj_bond.getBorder(node, step > 0);
 					side_shift = vecMul(...this.ouva, this.hws * (node_idx ? 1 : -1));
 
-					t0 = vecSum(...xy, ...side_shift);
-					t1 = vecSum(...t0, ...this_vec);
-					t2 = vecSum(...xy, ...vecMul(...side_shift, -1));
-					t3 = vecSum(...t2, ...this_vec);
+					t0 = vecSum(xy, side_shift);
+					t1 = vecSum(t0, this_vec);
+					t2 = vecSum(xy, vecMul(...side_shift, -1));
+					t3 = vecSum(t2, this_vec);
 
 					this.lines[line_idx][node_idx][0] = lineIntersec(t0, t1, ...adj_bond_border);
 					this.lines[line_idx][node_idx][2] = lineIntersec(t2, t3, ...adj_bond_border);
@@ -206,7 +206,7 @@ ChemBond.prototype.renderLines = function() {
 }
 
 ChemBond.prototype.updateRect = function() {
-	var [ctrx, ctry] = vecDiv(...vecSum(...this.getNodeCenters().flat()), 2); // Center of bond
+	var [ctrx, ctry] = vecDiv(...vecSum(...this.getNodeCenters()), 2); // Center of bond
 	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
 
 	var backrect = this.g.firstChild;
@@ -230,8 +230,8 @@ ChemBond.prototype.getNodeIdx = function(node) {
 ChemBond.prototype.getBorder = function(node, acw) { // Get border of central bond line
 	var side = this.getNodeIdx(node) == acw ? 1 : -1; // Node = 0, acw = true => side = -1
 	var [cxy0, cxy1] = this.getNodeCenters();
-	var xy0 = vecSum(...cxy0, ...vecMul(...this.ouva, this.hw0 * side))
-	var xy1 = vecSum(...cxy1, ...vecMul(...this.ouva, this.hw1 * side))
+	var xy0 = vecSum(cxy0, vecMul(...this.ouva, this.hw0 * side))
+	var xy1 = vecSum(cxy1, vecMul(...this.ouva, this.hw1 * side))
 	return [xy0, xy1];
 };
 
@@ -267,8 +267,8 @@ ChemBond.prototype.adjustLength = function(node) { // Prevents overlapping of th
 	var [fx0, fy0, fx1, fy1] = multab[dir];
 	[this['x' + node_idx], this['y' + node_idx]] = lineIntersec(
 		cxy0, cxy1, 
-		vecSum(...curxy, ...[fx0 * tb_w, fy0 * tb_h]),
-		vecSum(...curxy, ...[fx1 * tb_w, fy1 * tb_h])
+		vecSum(curxy, [fx0 * tb_w, fy0 * tb_h]),
+		vecSum(curxy, [fx1 * tb_w, fy1 * tb_h])
 	);
 	return [this['x' + node_idx], this['y' + node_idx]];
 };

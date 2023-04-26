@@ -87,7 +87,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 
 	// Find tranclated and scewed bonds and move atoms
 	for (const atom of moving_atoms) {
-		atom.translate(vecSum(...atom.xy, ...moving_vec));
+		atom.translate(vecSum(atom.xy, moving_vec));
 		atoms_reloc_hydr.add(atom);
 		for (const {bond, adjnode} of atom.connections) {
 			if (bonds_scewed.has(bond)) {

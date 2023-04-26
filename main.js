@@ -260,7 +260,7 @@ function unitVec(x, y) { // Find unit vector
 	return vecDiv(x, y, vecLen(x, y))
 }
 
-function vecSum(x0, y0, x1, y1) { // Find sum of vector
+function vecSum([x0, y0], [x1, y1]) { // Find sum of vector
 	return [x0 + x1, y0 + y1];
 }
 
@@ -318,7 +318,7 @@ function angleBisector(x0, y0, x1, y1) { // Not normalized, no direction control
 		[x0, y0] = [-y0, x0];
 		[x1, y1] = [y1, -x1];
 	}
-	return vecSum(...unitVec(x0, y0), ...unitVec(x1, y1));
+	return vecSum(unitVec(x0, y0), unitVec(x1, y1));
 }
 
 /*
