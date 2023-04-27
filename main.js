@@ -464,13 +464,12 @@ function chemNodeHandler(elbtns) {
 			if (focobj) { // If some atom was clicked
 				// ToDo: ! Integrate with dispatcher.
 				kwargs = {atoms_text: [[focobj, focobj.text == cursortext ? '' : cursortext]]};
-				editStructure(kwargs);
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
 				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), parseFloat(cursoratom.getAttribute('x')), parseFloat(cursoratom.getAttribute('y')), cursortext]]};
-				editStructure(kwargs);
 			}
+			editStructure(kwargs);
 		}
 		else { // Click outside the canvas
 			window.removeEventListener('mousemove', movElem);

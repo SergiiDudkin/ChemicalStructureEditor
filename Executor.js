@@ -28,17 +28,21 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		bonds_transl = new Set(), 
 		bonds_update_recht = new Set(), 
 		bonds_scewed = new Set();
+		implicit_cand = new Set();
+		methane_cand = new Set();
 
 	// Delete bonds
 	for (const bond of del_bonds) {
-		for (const node of bond.nodes) {
+		var bond_nodes = bond.nodes;
+		bond.delete();
+		for (const node of bond_nodes) {
 			if (!del_atoms.includes(node)) {
 				atoms_recalc_hydr.add(node);
+				if (node.isMethane()) atoms_text.push([node, node.text]);
 				atoms_auto_d_bond.add(node);
 				if (node.text == '') atoms_refresh_tips.add(node);
 			}
 		}
-		bond.delete();
 	}
 
 	// Delete atoms
@@ -57,6 +61,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		bonds_update_recht.add(bond);
 		for (const node of bond.nodes) {
 			atoms_recalc_hydr.add(node);
+			if (node.isImplicit()) atoms_text.push([node, node.text]);
 			atoms_auto_d_bond.add(node);
 			if (node.text == '') atoms_refresh_tips.add(node);
 			else tips_update.add([node, bond]);
@@ -64,7 +69,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	}
 
 	// Edit atoms
-	for (const [atom, text] of atoms_text) {
+	for (const [atom, text] of new Set(atoms_text)) {
 		atom.text = text;
 		atoms_change_symb.add(atom);
 		if (text == '') atoms_refresh_tips.add(atom);
@@ -127,7 +132,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	// Render H
 	for (const atom of atoms_reloc_hydr) {
 		atom.removeHydr();
-		if ((atom.text != '') || atom.is_methane) atom.renderHydr();
+		if (atom.hasSymb()) atom.renderHydr();
 	}
 
 	// Move bonds

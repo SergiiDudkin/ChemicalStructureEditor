@@ -44,10 +44,23 @@ ChemNode.prototype.delete = function() {
 	delete this.connections;
 };
 
+ChemNode.prototype.isImplicit = function() {
+	// Is it implicit carbon (line terminal, no explicit atom symbol)
+	return this.connections.length > 0 && this.text == '';
+}
+
+ChemNode.prototype.isMethane = function() {
+	// Is is lonely implicit carbon (should be displayed as CH4)
+	return this.connections.length == 0 && this.text == '';
+}
+
+ChemNode.prototype.hasSymb = function() {
+	return this.text != '' || this.isMethane();
+}
+
 ChemNode.prototype.renderSymb = function() {
 	var atom = this.g.childNodes[1];
-	this.is_methane = this.connections.length == 0 && this.text == '';
-	target_text = this.is_methane ? 'C' : this.text; // Convert floating C atoms into CH4
+	target_text = this.isMethane() ? 'C' : this.text; // Convert floating C atoms into CH4
 	if (atom.firstChild.nodeValue != target_text) { // Update text, if needed
 		atom.firstChild.nodeValue = target_text;
 		atom.setAttribute('dx', -atom.getBBox().width / 2); // Adjust (center) position of text
