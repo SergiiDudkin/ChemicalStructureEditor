@@ -54,10 +54,6 @@ ChemNode.prototype.isMethane = function() {
 	return this.connections.length == 0 && this.text == '';
 }
 
-ChemNode.prototype.hasSymb = function() {
-	return this.text != '' || this.isMethane();
-}
-
 ChemNode.prototype.renderSymb = function() {
 	var atom = this.g.childNodes[1];
 	target_text = this.isMethane() ? 'C' : this.text; // Convert floating C atoms into CH4
