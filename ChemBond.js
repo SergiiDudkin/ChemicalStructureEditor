@@ -53,7 +53,8 @@ ChemBond.mult = 				[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,
 ChemBond.linecnt = 				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.ctrline = 				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
 ChemBond.auto_d_bonds = 		[11, 12, 13, 14];
-ChemBond.next_type = 			[ 1, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15,  1];
+ChemBond.next_type = 		   [[ 1, 14, 14, 14, 14, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15,  1],
+								[ 2,  2,  3,  4,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2]];
 ChemBond.pdshift1p_to_type = 	[11, 12, 13];
 ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];
 
@@ -73,8 +74,8 @@ ChemBond.prototype.getNodeVec = function(node) {
 	return vecMul(this.difxy, dir_factor);
 };
 
-ChemBond.prototype.getNextType = function() {
-	return ChemBond.next_type[this.type];
+ChemBond.prototype.getNextType = function(map_idx) {
+	return ChemBond.next_type[map_idx][this.type];
 }
 
 ChemBond.prototype.setType = function(type) {
