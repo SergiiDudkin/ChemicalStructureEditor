@@ -202,8 +202,8 @@ ChemNode.prototype.goToBond = function(bond, step) {
 ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
 	cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
 	if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
-		bond0.setHalfButt(this, 1);
-		bond1.setHalfButt(this, 0);
+		bond0.setHalfButt(this, true);
+		bond1.setHalfButt(this, false);
 	}
 	else {
 		var junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
@@ -220,6 +220,6 @@ ChemNode.prototype.calcLineTips = function() {
 		ctr_bonds.forEach((bond, i) => this.computeBondsJunc(bond, ctr_bonds[(i + 1) % ctr_bonds.length]));
 	}
 	for (const bond of this.connections) {
-		bond.setSideTip(this);
+		bond.updateConvTip(this);
 	}
 };

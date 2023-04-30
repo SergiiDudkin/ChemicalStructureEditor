@@ -67,6 +67,7 @@ insertFancyBtn(filters, 'move', 'fancybtn but brick');
 insertFancyBtn(filters, 'erase', 'fancybtn but brick');
 insertFancyBtn(filters, 'bond', 'fancybtn but brick');
 insertFancyBtn(filters, 'up', 'fancybtn but brick');
+insertFancyBtn(filters, 'db', 'fancybtn but brick');
 var elbtnseq = ['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H'];
 for (const txt of elbtnseq) insertFancyBtn(filters, txt, 'elbut fancybtn but brick');
 var elbut = document.getElementsByClassName('elbut');
@@ -74,6 +75,7 @@ var bondbtn = document.getElementById('btn_bond');
 var delbtn = document.getElementById('btn_erase');
 var movebtn = document.getElementById('btn_move');
 var upperbtn = document.getElementById('btn_up');
+var dbondbtn = document.getElementById('btn_db');
 
 function fancyBtnAnimation(btns) { // Button click animation
 
@@ -481,12 +483,12 @@ function chemNodeHandler(elbtns) {
 	}
 }
 
-function chemBondHandler(bondbtn) {
+function chemBondHandler(btn, init_type, rotation_schema) {
 	var focobj, focobjst;
 	var cursorbond = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 	cursorbond.setAttribute('class', 'sympoi');
 	cursorbond.setAttribute('style', "fill:none;stroke:#000000;stroke-width:1.1;");
-	bondbtn.addEventListener('click', crBond);
+	btn.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
 		window.addEventListener('mousedown', stBond);
@@ -498,7 +500,7 @@ function chemBondHandler(bondbtn) {
 				focobj = event.target.parentNode.objref;
 				// ToDo: ! Integrate with dispatcher.
 				kwargs = {
-					bonds_type: [[focobj, focobj.getNextType(0)]],
+					bonds_type: [[focobj, focobj.getNextType(rotation_schema)]],
 				};
 				editStructure(kwargs);
 			}
@@ -535,7 +537,7 @@ function chemBondHandler(bondbtn) {
 			// ToDo: ! Integrate with dispatcher.
 			kwargs = {
 				new_atoms_data: new_atoms_data,
-				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, 1]]
+				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, init_type]]
 			};
 			editStructure(kwargs);
 		}
@@ -544,78 +546,6 @@ function chemBondHandler(bondbtn) {
 		window.removeEventListener('mousemove', movBond);
 	}
 }
-
-
-
-
-
-function chemUpperHandler(upperbtn) {
-	var focobj, focobjst;
-	var cursorbond = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-	cursorbond.setAttribute('class', 'sympoi');
-	cursorbond.setAttribute('style', "fill:none;stroke:#000000;stroke-width:1.1;");
-	upperbtn.addEventListener('click', crBond);
-
-	function crBond(event) { // Create bond. Called when the bond button is cklicked.
-		window.addEventListener('mousedown', stBond);
-	}
-
-	function stBond(event) { // Start drawing bond. Called when mouse button 1 is down.
-		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
-			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
-				focobj = event.target.parentNode.objref;
-				// ToDo: ! Integrate with dispatcher.
-				kwargs = {
-					bonds_type: [[focobj, focobj.getNextType(1)]],
-				};
-				editStructure(kwargs);
-			}
-			else { // If blank space or a chem node was clicked, start drawing a new bond
-				focobjst = moveCursor(event, cursorbond, 'x1', 'y1');
-
-				cursorbond.setAttribute('x2', cursorbond.getAttribute('x1'));
-				cursorbond.setAttribute('y2', cursorbond.getAttribute('y1'));
-				canvas.appendChild(cursorbond);
-
-				window.addEventListener('mousemove', movBond);
-				window.addEventListener('mouseup', enBond);
-			}
-		}
-		else { // Bond starts outside of canvas. Exit drawing.
-			window.removeEventListener('mousemove', movBond);
-			window.removeEventListener('mousedown', stBond);
-		}
-	}
-
-	function movBond(event) { // Move second end of the drawn bond
-		moveCursor(event, cursorbond, "x2", "y2");
-	}
-
-	function enBond(event) { // Finish drawing bond
-		focobj = moveCursor(event, cursorbond, "x2", "y2");
-		var [stx, sty, enx, eny] = ['x1', 'y1', 'x2', 'y2'].map(item => parseFloat(cursorbond.getAttribute(item)))
-		if (findDist([stx, sty], [enx, eny]) >= 16) { // If the new bond is long enough
-			var new_atoms_data = [];
-			var node0 = focobjst === null ? ChemNode.prototype.getNewId() : focobjst; // Use the existing start node or create a new one if there is none
-			var node1 = focobj === null ? ChemNode.prototype.getNewId() : focobj; // Use the existing end node or create a new one if there is none
-			if (focobjst === null) new_atoms_data.push([node0, stx, sty, '']);
-			if (focobj === null) new_atoms_data.push([node1, enx, eny, '']);
-			// ToDo: ! Integrate with dispatcher.
-			kwargs = {
-				new_atoms_data: new_atoms_data,
-				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, 2]]
-			};
-			editStructure(kwargs);
-		}
-		cursorbond.remove(); // Erase the temporary bond
-		window.removeEventListener('mouseup', enBond);
-		window.removeEventListener('mousemove', movBond);
-	}
-}
-
-
-
-
 
 function deleteHandler(delbtn) {
 	delbtn.addEventListener('click', delNodeOrBond);
@@ -668,7 +598,7 @@ function moveHandler(movebtn) {
 
 	movebtn.addEventListener('click', moveInit);
 
-	function moveInit(event) { // Delete atom or bond. Called when del button is pressed
+	function moveInit(event) {
 		window.addEventListener('mousedown', moveAct);
 	}
 
@@ -805,7 +735,11 @@ function moveHandler(movebtn) {
 
 fancyBtnAnimation(fancybtns);
 chemNodeHandler(elbut);
-chemBondHandler(bondbtn);
 deleteHandler(delbtn);
 moveHandler(movebtn);
-chemUpperHandler(upperbtn);
+chemBondHandler(bondbtn, 1, 0); // Normal bond
+chemBondHandler(upperbtn, 2, 1); // Upper bond
+chemBondHandler(dbondbtn, 8, 2); // Upper bond
+
+
+
