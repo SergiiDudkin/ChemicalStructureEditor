@@ -108,8 +108,19 @@ ChemBond.prototype.delete = function() {
 	delete this.nodes;
 };
 
-ChemBond.prototype.translate = function() {
+ChemBond.prototype.translate = function(moving_vec) {
 	// !!! Move poligon corners
+	for (line of this.lines) {
+		for (tip of line) {
+			// for (var [i, pt] of tip.entries()) {
+			// 	console.log(pt);
+			// 	if (pt) {
+			// 		tip[i] = vecSum(pt, moving_vec)
+			// 	}
+			// }
+			tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec));
+		}
+	}
 };
 
 ChemBond.prototype.posDouble = function() {

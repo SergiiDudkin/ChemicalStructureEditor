@@ -471,7 +471,12 @@ function chemNodeHandler(elbtns) {
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), parseFloat(cursoratom.getAttribute('x')), parseFloat(cursoratom.getAttribute('y')), cursortext]]};
+				kwargs = {new_atoms_data: [[
+					ChemNode.prototype.getNewId(), 
+					parseFloat(cursoratom.getAttribute('x')), 
+					parseFloat(cursoratom.getAttribute('y')), 
+					cursortext
+				]]};
 			}
 			editStructure(kwargs);
 		}
@@ -584,16 +589,168 @@ function deleteHandler(delbtn) {
 	}
 }
 
-function moveHandler(movebtn) {
-	var selectrect = document.createElement('div');
-	selectrect.id = 'selectrect';
-	var is_selected = false;
-	var x_st = 0, y_st = 0, x_en = 0, y_en = 0;
+// function moveHandler(movebtn) {
+// 	var selectrect = document.createElement('div');
+// 	selectrect.id = 'selectrect';
+// 	var is_selected = false;
+// 	var x_st = 0, y_st = 0, x_en = 0, y_en = 0;
 
+// 	var atoms_slctd = new Set(); // Selected atoms
+// 	var m_slctd = new Set(); // Bonds with one node selected
+// 	var d_slctd = new Set(); // Bonds with both nodes selected
+// 	var surbonds = new Set(); // Adjacent double bonds that require appearance update 
+// 	var mo_x_st, mo_y_st; // Cursor coordinates when dragging was started
+
+// 	movebtn.addEventListener('click', moveInit);
+
+// 	function moveInit(event) {
+// 		window.addEventListener('mousedown', moveAct);
+// 	}
+
+// 	function moveAct(event) { // When mouse button is down
+// 		var parnode = event.target.parentNode;
+// 		var is_atom = atomsall.contains(event.target.parentNode);
+// 		var is_bond = bondsall.contains(event.target.parentNode);
+// 		if (is_atom || is_bond) { // If atom or bond was clicked
+// 			poiobj = event.target.parentNode.objref;
+// 			if (!atoms_slctd.has(poiobj) && !d_slctd.has(poiobj)) { // Clicked element was not previously selected
+// 				atoms_slctd.forEach(atom => atom.dehighlight());
+// 				clearSlct();
+// 				if (is_atom) {
+// 					atoms_slctd.add(poiobj);
+// 					findSlctBonds();
+// 				}
+// 				else if (is_bond) {
+// 					for (const node of poiobj.nodes) atoms_slctd.add(node);
+// 					findSlctBonds();
+// 				}
+// 			}
+// 			[mo_x_st, mo_y_st] = getSvgPoint(event);
+// 			window.addEventListener('mousemove', moveSlct);
+// 			window.addEventListener('mouseup', moveSlctStop);
+// 		}
+// 		else {
+// 			atoms_slctd.forEach(atom => atom.dehighlight());
+// 			clearSlct();
+// 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
+// 				canvas.after(selectrect);
+// 				x_st = event.clientX;
+// 				y_st = event.clientY;
+// 				recalc(event);
+// 				window.addEventListener('mousemove', recalc);
+// 				window.addEventListener('mouseup', selectStop);
+// 			}
+// 			else window.removeEventListener('mousedown', moveAct); // If clicked out of canvas, exit moving routine.
+// 		}
+// 	}
+
+// 	function moveSlct(event) { // Active moving
+// 		var x, y;
+// 		[x, y] = getSvgPoint(event);
+// 		var dx = x - mo_x_st;
+// 		var dy = y - mo_y_st;
+
+// 		atoms_slctd.forEach(atom => atom.translate(dx, dy));
+// 		d_slctd.forEach(bond => bond.moveTerminal());
+// 		m_slctd.forEach(bond => bond.moveTerminal());
+// 		surbonds.forEach(bond => bond.renderBond());
+// 		mo_x_st = x;
+// 		mo_y_st = y;
+// 	}
+
+// 	function moveSlctStop() {
+// 		if (!is_selected) clearSlct();
+// 		window.removeEventListener('mousemove', moveSlct);
+// 		window.removeEventListener('mouseup', moveSlctStop);
+// 	}
+
+// 	function clearSlct() {
+// 		atoms_slctd.clear();
+// 		m_slctd.clear();
+// 		d_slctd.clear();
+// 		surbonds.clear();
+// 		is_selected = false;
+// 	}
+
+// 	function recalc(event) {
+// 		x_en = event.clientX;
+// 		y_en = event.clientY;
+// 		var x_left = Math.min(x_st, x_en);
+// 		var y_top = Math.min(y_st, y_en);
+// 		var x_right = Math.max(x_st, x_en);
+// 		var y_bottom = Math.max(y_st, y_en);
+// 		selectrect.style.left = x_left + 'px';
+// 		selectrect.style.top = y_top + 'px';
+// 		selectrect.style.width = x_right - x_left + 'px';
+// 		selectrect.style.height = y_bottom - y_top + 'px';
+// 	}
+
+// 	function selectStop() {
+// 		window.removeEventListener('mousemove', recalc);
+// 		window.removeEventListener('mouseup', selectStop);
+// 		selectrect.remove();
+
+// 		pt.x = x_st;
+// 		pt.y = y_st;
+// 		var svgP0 = pt.matrixTransform(matrixrf);
+
+// 		pt.x = x_en;
+// 		pt.y = y_en;
+// 		var svgP1 = pt.matrixTransform(matrixrf);
+
+// 		var x_min = Math.min(svgP0.x, svgP1.x);
+// 		var x_max = Math.max(svgP0.x, svgP1.x);
+// 		var y_min = Math.min(svgP0.y, svgP1.y);
+// 		var y_max = Math.max(svgP0.y, svgP1.y);
+
+// 		// Find selected atoms
+// 		for (const atom of atomsall.children) {
+// 			var x = atom.firstChild.getAttribute('cx');
+// 			var y = atom.firstChild.getAttribute('cy');
+// 			if (x_min < x && x < x_max && y_min < y && y < y_max) {
+// 				atoms_slctd.add(atom.objref);
+// 				atom.objref.highlight();
+// 			}
+// 		}
+
+// 		findSlctBonds();
+
+// 		is_selected = atoms_slctd.size == 0 && m_slctd.size == 0 && d_slctd.size == 0 ? false : true;
+// 	}
+
+// 	function findSlctBonds() { // Find selected bonds
+// 		var processed_bonds = new Set();
+// 		for (var it = atoms_slctd.values(), atom; atom = it.next().value;) {
+// 			for (const bond of atom.connections) {
+// 				if (!processed_bonds.has(bond)) {
+// 					processed_bonds.add(bond);
+// 					var othernode = bond.nodes[0] == atom ? 1 : 0;
+// 					if (atoms_slctd.has(bond.nodes[othernode])) d_slctd.add(bond);
+// 					else {
+// 						m_slctd.add(bond);
+// 						for (const bond_ of bond.nodes[othernode].connections) if (bond_.multiplicity == 2) surbonds.add(bond_);
+// 					}
+// 				}
+// 			}
+// 		}
+// 		for (const surbond of surbonds) if (m_slctd.has(surbond)) surbonds.delete(surbond);
+// 		surbonds.forEach(bond => {if (m_slctd.has(bond)) surbonds.delete(bond)});
+// 	}
+// }
+
+function moveHandler(movebtn) {
+	var utils = document.getElementById('utils');
+	
+	var selectrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+	selectrect.setAttribute('fill', 'none');
+	selectrect.setAttribute('stroke', 'blue');
+	selectrect.setAttribute('stroke-dasharray', 4);
+	selectrect.setAttribute('stroke-width', 1.5);
+	
+	var svgP0, svgP1;
+	var rect_x, rect_y, rect_w, rect_h;
+	var is_selected = false;
 	var atoms_slctd = new Set(); // Selected atoms
-	var m_slctd = new Set(); // Bonds with one node selected
-	var d_slctd = new Set(); // Bonds with both nodes selected
-	var surbonds = new Set(); // Adjacent double bonds that require appearance update 
 	var mo_x_st, mo_y_st; // Cursor coordinates when dragging was started
 
 	movebtn.addEventListener('click', moveInit);
@@ -609,15 +766,13 @@ function moveHandler(movebtn) {
 		if (is_atom || is_bond) { // If atom or bond was clicked
 			poiobj = event.target.parentNode.objref;
 			if (!atoms_slctd.has(poiobj) && !d_slctd.has(poiobj)) { // Clicked element was not previously selected
-				atoms_slctd.forEach(atom => atom.dehighlight());
+				atoms_slctd.forEach(atom => atom.deselect());
 				clearSlct();
 				if (is_atom) {
 					atoms_slctd.add(poiobj);
-					findSlctBonds();
 				}
 				else if (is_bond) {
-					for (const node of poiobj.nodes) atoms_slctd.add(node);
-					findSlctBonds();
+					poiobj.nodes.forEach(node => atoms_slctd.add(node));
 				}
 			}
 			[mo_x_st, mo_y_st] = getSvgPoint(event);
@@ -625,13 +780,14 @@ function moveHandler(movebtn) {
 			window.addEventListener('mouseup', moveSlctStop);
 		}
 		else {
-			atoms_slctd.forEach(atom => atom.dehighlight());
+			atoms_slctd.forEach(atom => atom.deselect());
 			clearSlct();
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
-				canvas.after(selectrect);
-				x_st = event.clientX;
-				y_st = event.clientY;
+				pt.x = event.clientX;
+				pt.y = event.clientY;
+				svgP0 = pt.matrixTransform(matrixrf);
 				recalc(event);
+				utils.appendChild(selectrect);
 				window.addEventListener('mousemove', recalc);
 				window.addEventListener('mouseup', selectStop);
 			}
@@ -640,17 +796,12 @@ function moveHandler(movebtn) {
 	}
 
 	function moveSlct(event) { // Active moving
-		var x, y;
-		[x, y] = getSvgPoint(event);
-		var dx = x - mo_x_st;
-		var dy = y - mo_y_st;
+		var pt = getSvgPoint(event);
+		var moving_vec = vecDif([mo_x_st, mo_y_st], pt);
+		[mo_x_st, mo_y_st] = pt;
 
-		atoms_slctd.forEach(atom => atom.translate(dx, dy));
-		d_slctd.forEach(bond => bond.moveTerminal());
-		m_slctd.forEach(bond => bond.moveTerminal());
-		surbonds.forEach(bond => bond.renderBond());
-		mo_x_st = x;
-		mo_y_st = y;
+		var kwargs = {moving_data: [moving_vec, atoms_slctd]}
+		editStructure(kwargs);
 	}
 
 	function moveSlctStop() {
@@ -661,23 +812,26 @@ function moveHandler(movebtn) {
 
 	function clearSlct() {
 		atoms_slctd.clear();
-		m_slctd.clear();
-		d_slctd.clear();
-		surbonds.clear();
+		// m_slctd.clear();
+		// d_slctd.clear();
+		// surbonds.clear();
 		is_selected = false;
 	}
 
 	function recalc(event) {
-		x_en = event.clientX;
-		y_en = event.clientY;
-		var x_left = Math.min(x_st, x_en);
-		var y_top = Math.min(y_st, y_en);
-		var x_right = Math.max(x_st, x_en);
-		var y_bottom = Math.max(y_st, y_en);
-		selectrect.style.left = x_left + 'px';
-		selectrect.style.top = y_top + 'px';
-		selectrect.style.width = x_right - x_left + 'px';
-		selectrect.style.height = y_bottom - y_top + 'px';
+		pt.x = event.clientX;
+		pt.y = event.clientY;
+		svgP1 = pt.matrixTransform(matrixrf);
+
+		rect_x = Math.min(svgP0.x, svgP1.x);
+		rect_y = Math.min(svgP0.y, svgP1.y);
+		rect_w = Math.abs(svgP1.x - svgP0.x);
+		rect_h = Math.abs(svgP1.y - svgP0.y);
+
+		selectrect.setAttribute('x', rect_x);
+		selectrect.setAttribute('y', rect_y);
+		selectrect.setAttribute('width', rect_w);
+		selectrect.setAttribute('height', rect_h);
 	}
 
 	function selectStop() {
@@ -685,53 +839,20 @@ function moveHandler(movebtn) {
 		window.removeEventListener('mouseup', selectStop);
 		selectrect.remove();
 
-		pt.x = x_st;
-		pt.y = y_st;
-		var svgP0 = pt.matrixTransform(matrixrf);
-
-		pt.x = x_en;
-		pt.y = y_en;
-		var svgP1 = pt.matrixTransform(matrixrf);
-
-		var x_min = Math.min(svgP0.x, svgP1.x);
-		var x_max = Math.max(svgP0.x, svgP1.x);
-		var y_min = Math.min(svgP0.y, svgP1.y);
-		var y_max = Math.max(svgP0.y, svgP1.y);
-
-		// Find selected atoms
-		for (const atom of atomsall.children) {
-			var x = atom.firstChild.getAttribute('cx');
-			var y = atom.firstChild.getAttribute('cy');
-			if (x_min < x && x < x_max && y_min < y && y < y_max) {
-				atoms_slctd.add(atom.objref);
-				atom.objref.highlight();
+		var rect_x1 = rect_x + rect_w;
+		var rect_y1 = rect_y + rect_h;
+		for (const el of atomsall.children) {
+			node = el.objref;
+			var [x, y] = node.xy;
+			if (rect_x < x && x < rect_x1 && rect_y < y && y < rect_y1) {
+				atoms_slctd.add(node);
+				node.select();
 			}
 		}
-
-		findSlctBonds();
-
-		is_selected = atoms_slctd.size == 0 && m_slctd.size == 0 && d_slctd.size == 0 ? false : true;
-	}
-
-	function findSlctBonds() { // Find selected bonds
-		var processed_bonds = new Set();
-		for (var it = atoms_slctd.values(), atom; atom = it.next().value;) {
-			for (const bond of atom.connections) {
-				if (!processed_bonds.has(bond)) {
-					processed_bonds.add(bond);
-					var othernode = bond.nodes[0] == atom ? 1 : 0;
-					if (atoms_slctd.has(bond.nodes[othernode])) d_slctd.add(bond);
-					else {
-						m_slctd.add(bond);
-						for (const bond_ of bond.nodes[othernode].connections) if (bond_.multiplicity == 2) surbonds.add(bond_);
-					}
-				}
-			}
-		}
-		for (const surbond of surbonds) if (m_slctd.has(surbond)) surbonds.delete(surbond);
-		surbonds.forEach(bond => {if (m_slctd.has(bond)) surbonds.delete(bond)});
+		is_selected = Boolean(atoms_slctd.size);
 	}
 }
+
 
 fancyBtnAnimation(fancybtns);
 chemNodeHandler(elbut);

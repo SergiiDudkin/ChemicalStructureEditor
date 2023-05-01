@@ -101,8 +101,8 @@ ChemNode.prototype.translate = function(new_x, new_y) {
 ChemNode.prototype.select = function() { // !!! Temp
 	this.select_circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	this.select_circ.setAttribute('class', 'hlcirc');
-	this.select_circ.setAttribute('cx', parseInt(this.g.firstChild.getAttribute('cx')));
-	this.select_circ.setAttribute('cy', parseInt(this.g.firstChild.getAttribute('cy')));
+	this.select_circ.setAttribute('cx', this.xy[0]);
+	this.select_circ.setAttribute('cy', this.xy[1]);
 	this.select_circ.setAttribute('r', 10);
 	ahl.appendChild(this.select_circ);
 };
