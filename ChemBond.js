@@ -69,6 +69,7 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.recalcDims = function() {
+	this.xy = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
 	this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 	this.len = vecLen(this.difxy); // Distance between nodes
 	this.uv = vecDiv(this.difxy, this.len); // Unit vector
@@ -109,18 +110,12 @@ ChemBond.prototype.delete = function() {
 };
 
 ChemBond.prototype.translate = function(moving_vec) {
-	// !!! Move poligon corners
 	for (line of this.lines) {
 		for (tip of line) {
-			// for (var [i, pt] of tip.entries()) {
-			// 	console.log(pt);
-			// 	if (pt) {
-			// 		tip[i] = vecSum(pt, moving_vec)
-			// 	}
-			// }
-			tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec));
+			tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec)); // Move poligon corners
 		}
 	}
+	this.xy = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
 };
 
 ChemBond.prototype.posDouble = function() {
@@ -231,14 +226,12 @@ ChemBond.prototype.renderLines = function() {
 }
 
 ChemBond.prototype.updateRect = function() {
-	var [ctrx, ctry] = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
 	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
-
 	var backrect = this.g.firstChild;
-	backrect.setAttribute('x', ctrx - this.len / 2);
-	backrect.setAttribute('y', ctry - 5);
+	backrect.setAttribute('x', this.xy[0] - this.len / 2);
+	backrect.setAttribute('y', this.xy[1] - 5);
 	backrect.setAttribute('width', this.len);
-	backrect.transform.baseVal[0].setRotate(rotang, ctrx, ctry);
+	backrect.transform.baseVal[0].setRotate(rotang, ...this.xy);
 }
 
 ChemBond.prototype.getNodeCenters = function() {
@@ -306,4 +299,12 @@ ChemBond.prototype.adjustLength = function(node) {
 	this.hwt[node_idx] = this.hw[node_idx] * (1 - prop) + this.hw[1 - node_idx] * prop;
 
 	return this.terms[node_idx];
+};
+
+ChemBond.prototype.select = function() {
+	// ToDo: !
+};
+
+ChemBond.prototype.deselect = function() {
+	// ToDo: !
 };
