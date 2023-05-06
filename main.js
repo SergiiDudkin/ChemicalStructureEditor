@@ -49,6 +49,7 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 	if (txt in snippets) svgsnippet = snippets[txt];
 	else svgsnippet = `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' text-anchor='middle'>${txt}</text>`;
 
+	var id = `btn_${txt}`;
 	var htmltemplate = `
 	<svg width='36' height='36' display='block'>
 		<mask class='elmsk' id='mask_${txt}'>
@@ -56,26 +57,22 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 			${svgsnippet}
 		</mask>
 		<g filter='url(#shadow)'>
-			<rect class='${classes}' id='btn_${txt}' x='0' y='0' width='32' height='32' mask='url(#mask_${txt})' />
+			<rect class='${classes}' id='${id}' x='0' y='0' width='32' height='32' mask='url(#mask_${txt})' />
 		</g>
 	</svg>`;
 	domelem.insertAdjacentHTML('afterend', htmltemplate);
+	return document.getElementById(id);
 }
 
 var filters = document.getElementById('filters');
-insertFancyBtn(filters, 'move', 'fancybtn but brick');
-insertFancyBtn(filters, 'erase', 'fancybtn but brick');
-insertFancyBtn(filters, 'bond', 'fancybtn but brick');
-insertFancyBtn(filters, 'up', 'fancybtn but brick');
-insertFancyBtn(filters, 'db', 'fancybtn but brick');
+var movebtn = insertFancyBtn(filters, 'move', 'fancybtn but brick');
+var delbtn = insertFancyBtn(filters, 'erase', 'fancybtn but brick');
+var bondbtn = insertFancyBtn(filters, 'bond', 'fancybtn but brick');
+var upperbtn = insertFancyBtn(filters, 'up', 'fancybtn but brick');
+var dbondbtn = insertFancyBtn(filters, 'db', 'fancybtn but brick');
 var elbtnseq = ['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H'];
-for (const txt of elbtnseq) insertFancyBtn(filters, txt, 'elbut fancybtn but brick');
-var elbut = document.getElementsByClassName('elbut');
-var bondbtn = document.getElementById('btn_bond');
-var delbtn = document.getElementById('btn_erase');
-var movebtn = document.getElementById('btn_move');
-var upperbtn = document.getElementById('btn_up');
-var dbondbtn = document.getElementById('btn_db');
+var elbtns = elbtnseq.map(el => insertFancyBtn(filters, el, 'elbut fancybtn but brick'));
+
 
 function fancyBtnAnimation(btns) { // Button click animation
 
@@ -698,13 +695,13 @@ function moveHandler(movebtn) {
 				obj.select();
 			}
 		}
-		is_selected = Boolean(atoms_slctd.size);
+		is_selected = Boolean(atoms_slctd.size); // ToDo: ? Consider bonds_slctd
 	}
 }
 
 
 fancyBtnAnimation(fancybtns);
-chemNodeHandler(elbut);
+chemNodeHandler(elbtns);
 deleteHandler(delbtn);
 moveHandler(movebtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
