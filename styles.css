@@ -47,6 +47,10 @@ body {
 	-ms-user-select: none;
 	user-select: none;
 }
+.cursor-circ {
+	pointer-events: none;
+	opacity: 0;
+}
 
 /*Chemical structure drawing styles*/
 .chemtxt {

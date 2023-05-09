@@ -116,138 +116,6 @@ window.addEventListener('scroll', function() {
 	matrixrf.f = Math.round(matrixrf.f);
 })
 
-var standard_bondlength = 40;
-var angtab = [0, 15, 30, 45, 60, 75, 90]; // Target bond angles
-var dxtab = []; // Vectors of resulting bond (X)
-var dytab = []; // Vectors of resulting bond (Y)
-for (const angle of angtab) { // Generate tables
-	var angrad = angle * (Math.PI / 180); // Convert degrees to radians
-	dxtab.push(Math.round(standard_bondlength * Math.cos(angrad)));
-	dytab.push(Math.round(standard_bondlength * Math.sin(angrad)));
-}
-
-function getSvgPoint(event) {
-	pt.x = event.clientX;
-	pt.y = event.clientY;
-	var svgP0 = pt.matrixTransform(matrixrf);
-	return [svgP0.x, svgP0.y];
-}
-
-function clampX(x) {return Math.min(Math.max(x, 0), wmax);}
-
-function clampY(y) {return Math.min(Math.max(y, 0), 564);}
-
-var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
-var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
-var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
-
-function pickNodePoint(event) {
-	var node = atomsall.contains(event.target) ? event.target.parentNode.objref : null;
-	var pt = node ? node.xy : getSvgPoint(event);
-	return [pt, node];
-}
-
-function discreteAngle(event, pt0) {
-	var [pt1, node1] = pickNodePoint(event);
-	var difxy = vecDif(pt0, pt1);
-	if (vecLen(difxy) < 16) return [null, null];
-	if (!node1) {
-		tan = Math.abs(difxy[1] / difxy[0]);
-		for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
-		[pt.x, pt.y] = [0, 1].map(i => pt0[i] + Math.sign(difxy[i]) * dxytab[j][i] * standard_bondlength);
-		var svgP2 = pt.matrixTransform(matrixrf.inverse());
-		var poi_elem = document.elementFromPoint(svgP2.x, svgP2.y);
-		if (poi_elem != null && atomsall.contains(poi_elem)) node1 = poi_elem.parentNode.objref;
-		pt1 = node1 ? node1.xy : [pt.x, pt.y];
-	}
-	return [pt1, node1];
-}
-
-function moveCursor(event, elem, atr0, atr1) { // Move second end of the drawn bond
-	var focobj;
-	var focnode = event.target.parentNode; // Get focused element
-	if (atomsall.contains(focnode)) { // If the cursor is over some chemical element,
-		elem.setAttribute(atr0, focnode.firstChild.getAttribute("cx")); // set x
-		elem.setAttribute(atr1, focnode.firstChild.getAttribute("cy")); // and y coordinates of the drawn bond second end
-		focobj = focnode.objref;
-	}
-	else {
-		var x, y;
-		[x, y] = getSvgPoint(event);
-		focobj = null;
-
-		if (atr0 == 'x2') { // Case of the bond end
-			var difx, dify, singdx, singdy, tan, x1int, y1int, bondlength;
-			x1int = parseInt(elem.getAttribute("x1"));
-			y1int = parseInt(elem.getAttribute("y1"));
-			difx = x - x1int;
-			dify = y - y1int;
-			difx = difx == 0 ? 0.001 : difx; // Prevent division by zero
-			tan = Math.abs(dify) / Math.abs(difx);
-			bondlength = Math.sqrt(difx * difx + dify * dify);
-			
-			if (bondlength >= 16) {
-				for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break;
-
-				// Find target of the bond end
-				pt.x = x1int + dxtab[j] * (difx < 0 ? -1 : 1); // Add x length with original sigh
-				pt.y = y1int + dytab[j] * (dify < 0 ? -1 : 1); // Add y length with original sigh
-				var svgP2 = pt.matrixTransform(matrixrf.inverse());
-				var poi_elem = document.elementFromPoint(svgP2.x, svgP2.y);
-
-				if (poi_elem != null && atomsall.contains(poi_elem.parentNode)) { // If end of the bond points an atom
-					focnode = poi_elem.parentNode;
-					elem.setAttribute(atr0, focnode.firstChild.getAttribute("cx"));
-					elem.setAttribute(atr1, focnode.firstChild.getAttribute("cy"));
-					focobj = focnode.objref;
-				}
-				else {
-					elem.setAttribute(atr0, pt.x);
-					elem.setAttribute(atr1, pt.y);
-				}
-			}
-			else { // If the length is too small,
-				elem.setAttribute(atr0, x1int); // contract the line to 0
-				elem.setAttribute(atr1, y1int);
-			}
-		}
-		else { // Case of chem node text of bond start
-			elem.setAttribute(atr0, clampX(x));
-			elem.setAttribute(atr1, clampY(y));
-		}
-	}
-	return focobj;
-}
-
-function corrAtomPos(atom, x){
-	var bbox = atom.getBBox();
-	var bboxxctr = bbox.x + bbox.width / 2;
-	error = (x - bboxxctr).toFixed(1);
-	var widthcorr = -error * 1.5;
-	if (error != 0) {
-		atom.setAttribute('dx', -(atom.getBBox().width + widthcorr) / 2); // Adjust (center) position of text
-	}
-	return widthcorr
-}
-
-function argSort(arr) {
-	// ToDo: ! Remove argSort (it is not used)
-	var indices = [...Array(arr.length).keys()];
-	// indices.sort((a, b) => arr[a].localeCompare(arr[b])); // For strings
-	indices.sort((a, b) => arr[a] - arr[b]); // For numbers
-	return indices;
-}
-
-// var ta = ['b', 'e', 'c', 'f', 'd', 'a'];
-// var tb = [2, 1, 5, 7, 6, 0, 4, 3];
-
-// var ind_a = argSort(ta);
-// console.log('ind_a', ind_a);
-// console.log(ind_a.map(idx => ta[idx]));
-// console.log(argSort(ta).map(i => ta[i]));
-// console.log(argSort(tb).map(i => tb[i]));
-
-
 
 // Geometry utilities
 function lineIntersec([x1, y1], [x2, y2], [x3, y3], [x4, y4]) { // Find intersection point of two lines
@@ -347,25 +215,6 @@ function angleBisector(xy0, xy1) { // Not normalized, no direction control
 	return vecSum(unitVec(xy0), unitVec(xy1));
 }
 
-/*
-function testAngleBisector() { // For testing
-	var x, y, difx, dify
-	var bond0 = document.getElementById('b0').objref;
-	var bond1 = document.getElementById('b1').objref;
-	[x, y] = bond0.getNodeCenters(0);
-	[difx, dify] = angleBisector(bond0.difx, bond0.dify, bond1.difx, bond1.dify);
-
-	var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-	line.setAttribute('style', "fill:none;stroke:#FF0000;stroke-width:1.0;");
-	line.setAttribute('x1', x);
-	line.setAttribute('y1', y);
-	line.setAttribute('x2', x + difx * 20);
-	line.setAttribute('y2', y + dify * 20);
-	canvas.appendChild(line);
-}
-*/
-
-
 
 function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.commands = [];
@@ -450,57 +299,85 @@ keydownHandler.keyfuncs = {
 document.addEventListener('keydown', keydownHandler);
 
 
+function getSvgPoint(event) {
+	pt.x = event.clientX;
+	pt.y = event.clientY;
+	var svgP0 = pt.matrixTransform(matrixrf);
+	return [svgP0.x, svgP0.y];
+}
+
+function clampToCnv([x, y]) {
+	return [Math.min(Math.max(x, 0), wmax), Math.min(Math.max(y, 0), 564)];
+}
+
+function getCursorAtom(event, atomtext) {
+	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), atomtext);
+	cursoratom.renderSymb();
+	cursoratom.g.firstChild.setAttribute('class', 'cursor-circ');
+	return cursoratom;
+}
+
+var standard_bondlength = 40;
+var angtab = [0, 15, 30, 45, 60, 75, 90]; // Target bond angles
+var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
+var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
+var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
+
+function pickNodePoint(event) {
+	var node = atomsall.contains(event.target) ? event.target.parentNode.objref : null;
+	var pt = node ? node.xy : getSvgPoint(event);
+	return [pt, node];
+}
+
+function discreteAngle(event, pt0) {
+	var [pt1, node1] = pickNodePoint(event);
+	var difxy = vecDif(pt0, pt1);
+	if (vecLen(difxy) < 16) return [null, null];
+	if (!node1) {
+		tan = Math.abs(difxy[1] / difxy[0]);
+		for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
+		[pt.x, pt.y] = [0, 1].map(i => pt0[i] + Math.sign(difxy[i]) * dxytab[j][i] * standard_bondlength);
+		var svgP2 = pt.matrixTransform(matrixrf.inverse());
+		var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
+		if (pt_elem != null && atomsall.contains(pt_elem)) node1 = pt_elem.parentNode.objref;
+		pt1 = node1 ? node1.xy : [pt.x, pt.y];
+	}
+	return [pt1, node1];
+}
+
+
 function chemNodeHandler(elbtns) {
-	var focobj, cursoratom; // Atom symbol at the cursor
+	var cursoratom, atomtext;
 	for (const elbtn of elbtns) elbtn.addEventListener('click', crElem);
 
 	function crElem(event) { // Create new atom. Called when a chemical element button is clicked
-		cursoratom = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-		cursoratom.setAttribute('class', 'chemtxt sympoi');
-		cursoratom.setAttribute('style', "font-family:'Arial';font-size:12px;");
-		cursoratom.appendChild(document.createTextNode(event.target.id.slice(4))); // Display atom as text
-		cursoratom.setAttribute('dy', 4.5);
-		canvas.appendChild(cursoratom);
-		cursoratom.setAttribute('dx', -cursoratom.getBBox().width / 2);
-
-		moveCursor(event, cursoratom, 'x', 'y');
-		corrAtomPos(cursoratom, 0);
+		atomtext = event.target.id.slice(4);
+		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
-
-		// id = ChemNode.prototype.getNewId();
-		// text = event.target.id.slice(4);
-		// var [x, y] = getSvgPoint(event);
-		// editStructure(new_atoms_data=[[id, clampX(x), clampY(y), text]]);
 	}
 
 	function movElem(event) {
-		moveCursor(event, cursoratom, 'x', 'y');
+		cursoratom.translate(...clampToCnv(getSvgPoint(event)));
 	}
 
 	function setElem(event) {
 		if (canvas.contains(event.target)) { // Click inside the canvas
-			focobj = moveCursor(event, cursoratom, 'x', 'y');
-			var cursortext = cursoratom.textContent;
-			if (focobj) { // If some atom was clicked
+			var [pt, node] = pickNodePoint(event);
+			if (node) { // If some atom was clicked
 				// ToDo: ! Integrate with dispatcher.
-				var kwargs = {atoms_text: [[focobj, focobj.text == cursortext ? '' : cursortext]]};
+				var kwargs = {atoms_text: [[node, node.text == atomtext ? '' : atomtext]]};
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
-				var kwargs = {new_atoms_data: [[
-					ChemNode.prototype.getNewId(), 
-					parseFloat(cursoratom.getAttribute('x')), 
-					parseFloat(cursoratom.getAttribute('y')), 
-					cursortext
-				]]};
+				var kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), ...pt, atomtext]]};
 			}
 			editStructure(kwargs);
 		}
 		else { // Click outside the canvas
 			window.removeEventListener('mousemove', movElem);
 			window.removeEventListener('mousedown', setElem);
-			cursoratom.remove();
+			cursoratom.delete();
 		}
 	}
 }

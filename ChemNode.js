@@ -223,3 +223,16 @@ ChemNode.prototype.calcLineTips = function() {
 		bond.updateConvTip(this);
 	}
 };
+
+// ChemNode.prototype.makeCursor = function() {
+// 	this.renderSymb();
+// 	this.g.firstChild.setAttribute('class', 'cursor-circ');
+// };
+
+// ChemNode.getCursorAtom = function(event, atomtext) {
+// 	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), atomtext);
+// 	cursoratom.renderSymb();
+// 	cursoratom.g.firstChild.setAttribute('class', 'cursor-circ');
+// 	return cursoratom;
+// };
+
