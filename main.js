@@ -117,20 +117,14 @@ window.addEventListener('scroll', function() {
 })
 
 var standard_bondlength = 40;
-var bondspace = 2;
 var angtab = [0, 15, 30, 45, 60, 75, 90]; // Target bond angles
 var dxtab = []; // Vectors of resulting bond (X)
 var dytab = []; // Vectors of resulting bond (Y)
-var radtab = []; // The same as angtab, but in radians
-var tantab = []; // Table of tan thresholds
 for (const angle of angtab) { // Generate tables
 	var angrad = angle * (Math.PI / 180); // Convert degrees to radians
-	radtab.push(angrad);
 	dxtab.push(Math.round(standard_bondlength * Math.cos(angrad)));
 	dytab.push(Math.round(standard_bondlength * Math.sin(angrad)));
 }
-
-for (var i = 0; i < radtab.length-1; i++) tantab.push(Math.tan((radtab[i] + radtab[i+1]) / 2)); // Find thresholds
 
 function getSvgPoint(event) {
 	pt.x = event.clientX;
@@ -142,6 +136,32 @@ function getSvgPoint(event) {
 function clampX(x) {return Math.min(Math.max(x, 0), wmax);}
 
 function clampY(y) {return Math.min(Math.max(y, 0), 564);}
+
+var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
+var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
+var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
+
+function pickNodePoint(event) {
+	var node = atomsall.contains(event.target) ? event.target.parentNode.objref : null;
+	var pt = node ? node.xy : getSvgPoint(event);
+	return [pt, node];
+}
+
+function discreteAngle(event, pt0) {
+	var [pt1, node1] = pickNodePoint(event);
+	var difxy = vecDif(pt0, pt1);
+	if (vecLen(difxy) < 16) return [null, null];
+	if (!node1) {
+		tan = Math.abs(difxy[1] / difxy[0]);
+		for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
+		[pt.x, pt.y] = [0, 1].map(i => pt0[i] + Math.sign(difxy[i]) * dxytab[j][i] * standard_bondlength);
+		var svgP2 = pt.matrixTransform(matrixrf.inverse());
+		var poi_elem = document.elementFromPoint(svgP2.x, svgP2.y);
+		if (poi_elem != null && atomsall.contains(poi_elem)) node1 = poi_elem.parentNode.objref;
+		pt1 = node1 ? node1.xy : [pt.x, pt.y];
+	}
+	return [pt1, node1];
+}
 
 function moveCursor(event, elem, atr0, atr1) { // Move second end of the drawn bond
 	var focobj;
@@ -464,11 +484,11 @@ function chemNodeHandler(elbtns) {
 			var cursortext = cursoratom.textContent;
 			if (focobj) { // If some atom was clicked
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {atoms_text: [[focobj, focobj.text == cursortext ? '' : cursortext]]};
+				var kwargs = {atoms_text: [[focobj, focobj.text == cursortext ? '' : cursortext]]};
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {new_atoms_data: [[
+				var kwargs = {new_atoms_data: [[
 					ChemNode.prototype.getNewId(), 
 					parseFloat(cursoratom.getAttribute('x')), 
 					parseFloat(cursoratom.getAttribute('y')), 
@@ -485,11 +505,9 @@ function chemNodeHandler(elbtns) {
 	}
 }
 
+
 function chemBondHandler(btn, init_type, rotation_schema) {
-	var focobj, focobjst;
-	var cursorbond = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-	cursorbond.setAttribute('class', 'sympoi');
-	cursorbond.setAttribute('style', "fill:none;stroke:#000000;stroke-width:1.1;");
+	var node0, pt0, node1, pt1, node0_id, node1_id, bond_id;
 	btn.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
@@ -499,20 +517,19 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	function stBond(event) { // Start drawing bond. Called when mouse button 1 is down.
 		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
 			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
-				focobj = event.target.parentNode.objref;
+				var focobj = event.target.parentNode.objref;
 				// ToDo: ! Integrate with dispatcher.
-				kwargs = {
-					bonds_type: [[focobj, focobj.getNextType(rotation_schema)]],
-				};
+				var kwargs = {bonds_type: [[focobj, focobj.getNextType(rotation_schema)]]};
 				editStructure(kwargs);
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
-				focobjst = moveCursor(event, cursorbond, 'x1', 'y1');
-
-				cursorbond.setAttribute('x2', cursorbond.getAttribute('x1'));
-				cursorbond.setAttribute('y2', cursorbond.getAttribute('y1'));
-				canvas.appendChild(cursorbond);
-
+				[pt0, node0] = pickNodePoint(event);
+				node0_id = ChemNode.prototype.getNewId();
+				node1_id = ChemNode.prototype.getNewId();
+				bond_id = ChemBond.prototype.getNewId();
+				var node_selectors = [node0_id, node1_id].map(id => '#' + id).join();
+				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover .anode`;
+				document.styleSheets[0].cssRules[1].selectorText = `${'#' + bond_id}:hover .brect`;
 				window.addEventListener('mousemove', movBond);
 				window.addEventListener('mouseup', enBond);
 			}
@@ -523,31 +540,52 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		}
 	}
 
+	function resetDrawing() {
+		var kwargs = {del_atoms: [], del_bonds: []};
+		bond_g = document.getElementById(bond_id);
+		if (bond_g !== null) kwargs.del_bonds.push(bond_g.objref);
+		if (typeof node0 === 'string') {
+			kwargs.del_atoms.push(document.getElementById(node0_id).objref);
+			node0 = null;
+		}
+		if (typeof node1 === 'string') {
+			kwargs.del_atoms.push(document.getElementById(node1_id).objref);
+			node1 = null;
+		}
+		editStructure(kwargs);
+	}
+
 	function movBond(event) { // Move second end of the drawn bond
-		moveCursor(event, cursorbond, "x2", "y2");
+		resetDrawing();
+		[pt1, node1] = discreteAngle(event, pt0);
+		if (pt1 !== null) {
+			var new_atoms_data = [];
+			if (!node0) {
+				node0 = node0_id;
+				new_atoms_data.push([node0, ...pt0, '']);
+			}
+			if (!node1) {
+				node1 = node1_id;
+				new_atoms_data.push([node1, ...pt1, '']);
+			}
+			var kwargs = {
+				new_atoms_data: new_atoms_data,
+				new_bonds_data: [[bond_id, node0, node1, init_type]]
+			};
+			// ToDo: ! Integrate with dispatcher.
+			editStructure(kwargs);
+		}
 	}
 
 	function enBond(event) { // Finish drawing bond
-		focobj = moveCursor(event, cursorbond, "x2", "y2");
-		var [stx, sty, enx, eny] = ['x1', 'y1', 'x2', 'y2'].map(item => parseFloat(cursorbond.getAttribute(item)))
-		if (findDist([stx, sty], [enx, eny]) >= 16) { // If the new bond is long enough
-			var new_atoms_data = [];
-			var node0 = focobjst === null ? ChemNode.prototype.getNewId() : focobjst; // Use the existing start node or create a new one if there is none
-			var node1 = focobj === null ? ChemNode.prototype.getNewId() : focobj; // Use the existing end node or create a new one if there is none
-			if (focobjst === null) new_atoms_data.push([node0, stx, sty, '']);
-			if (focobj === null) new_atoms_data.push([node1, enx, eny, '']);
-			// ToDo: ! Integrate with dispatcher.
-			kwargs = {
-				new_atoms_data: new_atoms_data,
-				new_bonds_data: [[ChemBond.prototype.getNewId(), node0, node1, init_type]]
-			};
-			editStructure(kwargs);
-		}
-		cursorbond.remove(); // Erase the temporary bond
+		[node0, node1] = [null, null];
+		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
+		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
 		window.removeEventListener('mouseup', enBond);
 		window.removeEventListener('mousemove', movBond);
 	}
 }
+
 
 function deleteHandler(delbtn) {
 	delbtn.addEventListener('click', delNodeOrBond);
@@ -570,10 +608,10 @@ function deleteHandler(delbtn) {
 		if (atomsall.contains(event.target) || bondsall.contains(event.target)) {
 			var focobj = event.target.parentNode.objref;
 			if (focobj.constructor == ChemNode) {
-				kwargs = {del_atoms: [focobj], del_bonds: focobj.connections.slice()};
+				var kwargs = {del_atoms: [focobj], del_bonds: focobj.connections.slice()};
 			}
 			else if (focobj.constructor == ChemBond) {
-				kwargs = {del_bonds: [focobj]};
+				var kwargs = {del_bonds: [focobj]};
 			}
 			// ToDo: ! Integrate with dispatcher.
 			editStructure(kwargs);
@@ -707,6 +745,3 @@ moveHandler(movebtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
 chemBondHandler(dbondbtn, 8, 2); // Upper bond
-
-
-

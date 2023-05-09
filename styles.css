@@ -63,16 +63,9 @@ body {
 .sympoi {
 	pointer-events: none;
 }
-.bondline {
-	stroke-width: 1.1;
-	stroke: black;
-}
 .anode {
 	fill: url(#grad1);
 	opacity: 0;
-}
-.blackcirc {
-	fill: black;
 }
 .ag:hover .anode {
 	opacity: 1;

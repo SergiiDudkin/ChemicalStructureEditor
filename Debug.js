@@ -10,7 +10,6 @@ function getColor() {
 
 
 function drawPoint(x, y) {
-	// console.log(x, y);
 	var point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	point.setAttribute('fill', getColor());
 	point.setAttribute('r', 1);
