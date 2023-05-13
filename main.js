@@ -323,20 +323,25 @@ var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
 var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
 var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
 
+function discreteAngle(pt0, [x, y]) {
+	// Returns pt1 with discrete angle and fixed length
+	tan = Math.abs(y / x);
+	for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
+	return [x, y].map((dim, i) => pt0[i] + Math.sign(dim) * dxytab[j][i] * standard_bondlength);
+}
+
 function pickNodePoint(event) {
 	var node = atomsall.contains(event.target) ? event.target.parentNode.objref : null;
 	var pt = node ? node.xy : getSvgPoint(event);
 	return [pt, node];
 }
 
-function discreteAngle(event, pt0) {
+function getBondEnd(event, pt0) {
 	var [pt1, node1] = pickNodePoint(event);
 	var difxy = vecDif(pt0, pt1);
 	if (vecLen(difxy) < 16) return [null, null];
 	if (!node1) {
-		tan = Math.abs(difxy[1] / difxy[0]);
-		for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
-		[pt.x, pt.y] = [0, 1].map(i => pt0[i] + Math.sign(difxy[i]) * dxytab[j][i] * standard_bondlength);
+		[pt.x, pt.y] = discreteAngle(pt0, difxy);
 		var svgP2 = pt.matrixTransform(matrixrf.inverse());
 		var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
 		if (pt_elem != null && atomsall.contains(pt_elem)) node1 = pt_elem.parentNode.objref;
@@ -347,7 +352,7 @@ function discreteAngle(event, pt0) {
 
 
 function chemNodeHandler(elbtns) {
-	var cursoratom, atomtext;
+	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, node0_id, node1_id, bond_id, node0_is_new;
 	for (const elbtn of elbtns) elbtn.addEventListener('click', crElem);
 
 	function crElem(event) { // Create new atom. Called when a chemical element button is clicked
@@ -362,23 +367,78 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function setElem(event) {
+		node0_id = ChemNode.prototype.getNewId();
+		node1_id = ChemNode.prototype.getNewId();
+		bond_id = ChemBond.prototype.getNewId();
 		if (canvas.contains(event.target)) { // Click inside the canvas
-			var [pt, node] = pickNodePoint(event);
-			if (node) { // If some atom was clicked
+			[pt0, node0] = pickNodePoint(event);
+			if (node0) { // If some atom was clicked
+				if (node0.connections.length == 0 && (node0.text == atomtext || (node0.text == '' && atomtext == 'C'))) {
+					var kwargs = {del_atoms: [node0]};
+					editStructure(kwargs);
+					return;
+				}
 				// ToDo: ! Integrate with dispatcher.
-				var kwargs = {atoms_text: [[node, node.text == atomtext ? '' : atomtext]]};
+				old_atomtext = node0.text;
+				new_atomtext = old_atomtext == atomtext ? '' : atomtext;
+				node0_is_new = false;
+				var kwargs = {atoms_text: [[node0, new_atomtext]]};
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
-				var kwargs = {new_atoms_data: [[ChemNode.prototype.getNewId(), ...pt, atomtext]]};
+				old_atomtext = atomtext;
+				new_atomtext = atomtext;
+				node0_is_new = true;
+				var kwargs = {new_atoms_data: [[node0_id, ...pt0, new_atomtext]]};
 			}
 			editStructure(kwargs);
+			document.styleSheets[0].cssRules[0].selectorText = `${'#' + node1_id}:hover .anode`;
+			document.styleSheets[0].cssRules[1].selectorText = `${'#' + bond_id}:hover .brect`;
+			window.addEventListener('mousemove', movBoundNode);
+			window.addEventListener('mouseup', finNode);
 		}
 		else { // Click outside the canvas
-			window.removeEventListener('mousemove', movElem);
 			window.removeEventListener('mousedown', setElem);
 			cursoratom.delete();
 		}
+		window.removeEventListener('mousemove', movElem);
+	}
+
+	function delNewNode() {
+		bond_g = document.getElementById(bond_id);
+		if (bond_g !== null) { // If a new bond was created
+			var kwargs = {
+				del_atoms: [document.getElementById(node1_id).objref], 
+				del_bonds: [bond_g.objref]
+			};
+			editStructure(kwargs);
+		}
+		cursoratom.delete();
+	}
+
+	function movBoundNode(event) {
+		delNewNode();
+		var kwargs = {};
+		if (node0_is_new) node0 = document.getElementById(node0_id).objref;
+		var difxy = vecDif(pt0, getSvgPoint(event));
+		if (vecLen(difxy) >= 16) {
+			kwargs.new_atoms_data = [[node1_id, ...discreteAngle(pt0, difxy), atomtext]];
+			kwargs.new_bonds_data = [[bond_id, node0, node1_id, 1]];
+			if (!node0_is_new) kwargs.atoms_text = [[node0, old_atomtext]];
+		}
+		else {
+			cursoratom = getCursorAtom(event, atomtext);
+			kwargs.atoms_text = [[node0, new_atomtext]];
+		}
+		editStructure(kwargs);
+	}
+
+	function finNode(event) { // Finish to set node
+		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
+		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
+		window.removeEventListener('mouseup', finNode);
+		window.removeEventListener('mousemove', movBoundNode);
+		window.addEventListener('mousemove', movElem);
 	}
 }
 
@@ -417,9 +477,9 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		}
 	}
 
-	function resetDrawing() {
+	function delNewBond() {
 		var kwargs = {del_atoms: [], del_bonds: []};
-		bond_g = document.getElementById(bond_id);
+		var bond_g = document.getElementById(bond_id);
 		if (bond_g !== null) kwargs.del_bonds.push(bond_g.objref);
 		if (typeof node0 === 'string') {
 			kwargs.del_atoms.push(document.getElementById(node0_id).objref);
@@ -433,8 +493,8 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	}
 
 	function movBond(event) { // Move second end of the drawn bond
-		resetDrawing();
-		[pt1, node1] = discreteAngle(event, pt0);
+		delNewBond();
+		[pt1, node1] = getBondEnd(event, pt0);
 		if (pt1 !== null) {
 			var new_atoms_data = [];
 			if (!node0) {

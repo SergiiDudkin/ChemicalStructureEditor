@@ -53,6 +53,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 
 	// Create atoms
 	for (const data of new_atoms_data) {
+		// console.log(data[0], data[1], data[2], data[3]);
 		atoms_change_symb.add(new ChemNode(...data)) // data: [id, x, y, text]	
 	}
 
