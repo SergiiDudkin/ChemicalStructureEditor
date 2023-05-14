@@ -77,8 +77,7 @@ ChemNode.prototype.corrSymbPos = function() {
 ChemNode.prototype.calcHydr = function() {
 	var used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
 	hmax = this.g.childNodes[1].firstChild.nodeValue;
-	this.H_cnt = hmax in hmaxtab ? 
-		Math.max(ChemNode.hmaxtab[hmax] - used_valency, 0) : 0;
+	this.H_cnt = hmax in ChemNode.hmaxtab ? Math.max(ChemNode.hmaxtab[hmax] - used_valency, 0) : 0;
 };
 
 ChemNode.prototype.translate = function(new_x, new_y) {
@@ -223,16 +222,3 @@ ChemNode.prototype.calcLineTips = function() {
 		bond.updateConvTip(this);
 	}
 };
-
-// ChemNode.prototype.makeCursor = function() {
-// 	this.renderSymb();
-// 	this.g.firstChild.setAttribute('class', 'cursor-circ');
-// };
-
-// ChemNode.getCursorAtom = function(event, atomtext) {
-// 	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), atomtext);
-// 	cursoratom.renderSymb();
-// 	cursoratom.g.firstChild.setAttribute('class', 'cursor-circ');
-// 	return cursoratom;
-// };
-

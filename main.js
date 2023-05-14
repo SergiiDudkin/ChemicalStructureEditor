@@ -6,7 +6,7 @@ var atomsall = document.getElementById('atomsall');
 var fancybtns = document.getElementsByClassName('fancybtn');
 var ahl = document.getElementById('atomhighlights');
 var pt, matrixrf, wmax; // Variables
-var hmaxtab = {'H': 1, 'C': 4, 'N': 3, 'O': 2, 'S': 2, '': 0, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
+// var hmaxtab = {'H': 1, 'C': 4, 'N': 3, 'O': 2, 'S': 2, '': 0, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
 
 function download() { // Download .svg
@@ -221,7 +221,7 @@ function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.ptr = 0;
 }
 
-Dispatcher.prototype.addCmd(func_dir, args_dir, func_rev, args_rev) {
+Dispatcher.prototype.addCmd = function(func_dir, args_dir, func_rev, args_rev) {
 	this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
 	this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); // Add new command to the history
 }
@@ -305,7 +305,7 @@ function getBondEnd(event, pt0) {
 
 
 function chemNodeHandler(elbtns) {
-	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, node0_id, node1_id, bond_id, node0_is_new;
+	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id, node0_is_new, node0_id;
 	for (const elbtn of elbtns) elbtn.addEventListener('click', crElem);
 
 	function crElem(event) { // Create new atom. Called when a chemical element button is clicked
@@ -320,14 +320,14 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function setElem(event) {
-		node0_id = ChemNode.prototype.getNewId();
-		node1_id = ChemNode.prototype.getNewId();
-		bond_id = ChemBond.prototype.getNewId();
+		new_node0id = ChemNode.prototype.getNewId();
+		new_node1id = ChemNode.prototype.getNewId();
+		new_bond_id = ChemBond.prototype.getNewId();
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
 				if (node0.connections.length == 0 && (node0.text == atomtext || (node0.text == '' && atomtext == 'C'))) {
-					var kwargs = {del_atoms: [node0]};
+					var kwargs = {del_atoms: [node0.g.id]};
 					editStructure(kwargs);
 					return;
 				}
@@ -335,18 +335,20 @@ function chemNodeHandler(elbtns) {
 				old_atomtext = node0.text;
 				new_atomtext = old_atomtext == atomtext ? '' : atomtext;
 				node0_is_new = false;
-				var kwargs = {atoms_text: [[node0, new_atomtext]]};
+				node0_id = node0.g.id;
+				var kwargs = {atoms_text: [[node0.g.id, new_atomtext]]};
 			}
 			else { // If blanc space was clicked
 				// ToDo: ! Integrate with dispatcher.
 				old_atomtext = atomtext;
 				new_atomtext = atomtext;
 				node0_is_new = true;
-				var kwargs = {new_atoms_data: [[node0_id, ...pt0, new_atomtext]]};
+				node0_id = new_node0id;
+				var kwargs = {new_atoms_data: [[new_node0id, ...pt0, new_atomtext]]};
 			}
 			editStructure(kwargs);
-			document.styleSheets[0].cssRules[0].selectorText = `${'#' + node1_id}:hover .anode`;
-			document.styleSheets[0].cssRules[1].selectorText = `${'#' + bond_id}:hover .brect`;
+			document.styleSheets[0].cssRules[0].selectorText = `${'#' + new_node1id}:hover .anode`;
+			document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover .brect`;
 			window.addEventListener('mousemove', movBoundNode);
 			window.addEventListener('mouseup', finNode);
 		}
@@ -358,30 +360,25 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function delNewNode() {
-		bond_g = document.getElementById(bond_id);
-		if (bond_g !== null) { // If a new bond was created
-			var kwargs = {
-				del_atoms: [document.getElementById(node1_id).objref], 
-				del_bonds: [bond_g.objref]
-			};
+		if (document.getElementById(new_bond_id) !== null) { // If a new bond was created
+			var kwargs = {del_atoms: [new_node1id], del_bonds: [new_bond_id]};
 			editStructure(kwargs);
 		}
-		cursoratom.delete();
 	}
 
 	function movBoundNode(event) {
 		delNewNode();
+		cursoratom.delete();
 		var kwargs = {};
-		if (node0_is_new) node0 = document.getElementById(node0_id).objref;
 		var difxy = vecDif(pt0, getSvgPoint(event));
 		if (vecLen(difxy) >= 16) {
-			kwargs.new_atoms_data = [[node1_id, ...discreteAngle(pt0, difxy), atomtext]];
-			kwargs.new_bonds_data = [[bond_id, node0, node1_id, 1]];
-			if (!node0_is_new) kwargs.atoms_text = [[node0, old_atomtext]];
+			kwargs.new_atoms_data = [[new_node1id, ...discreteAngle(pt0, difxy), atomtext]];
+			kwargs.new_bonds_data = [[new_bond_id, node0_id, new_node1id, 1]];
+			if (!node0_is_new) kwargs.atoms_text = [[node0_id, old_atomtext]];
 		}
 		else {
 			cursoratom = getCursorAtom(event, atomtext);
-			kwargs.atoms_text = [[node0, new_atomtext]];
+			kwargs.atoms_text = [[node0_id, new_atomtext]];
 		}
 		editStructure(kwargs);
 	}
@@ -397,7 +394,7 @@ function chemNodeHandler(elbtns) {
 
 
 function chemBondHandler(btn, init_type, rotation_schema) {
-	var node0, pt0, node1, pt1, node0_id, node1_id, bond_id;
+	var node0, pt0, node1, pt1, new_node0id, new_node1id, new_bond_id, node0id, node1id;
 	btn.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
@@ -409,17 +406,18 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
 				var focobj = event.target.parentNode.objref;
 				// ToDo: ! Integrate with dispatcher.
-				var kwargs = {bonds_type: [[focobj, focobj.getNextType(rotation_schema)]]};
+				var kwargs = {bonds_type: [[focobj.g.id, focobj.getNextType(rotation_schema)]]};
 				editStructure(kwargs);
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				[pt0, node0] = pickNodePoint(event);
-				node0_id = ChemNode.prototype.getNewId();
-				node1_id = ChemNode.prototype.getNewId();
-				bond_id = ChemBond.prototype.getNewId();
-				var node_selectors = [node0_id, node1_id].map(id => '#' + id).join();
+				new_node0id = ChemNode.prototype.getNewId();
+				new_node1id = ChemNode.prototype.getNewId();
+				new_bond_id = ChemBond.prototype.getNewId();
+				node0id = node0 ? node0.g.id : new_node0id;
+				var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
 				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover .anode`;
-				document.styleSheets[0].cssRules[1].selectorText = `${'#' + bond_id}:hover .brect`;
+				document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover .brect`;
 				window.addEventListener('mousemove', movBond);
 				window.addEventListener('mouseup', enBond);
 			}
@@ -432,35 +430,23 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 
 	function delNewBond() {
 		var kwargs = {del_atoms: [], del_bonds: []};
-		var bond_g = document.getElementById(bond_id);
-		if (bond_g !== null) kwargs.del_bonds.push(bond_g.objref);
-		if (typeof node0 === 'string') {
-			kwargs.del_atoms.push(document.getElementById(node0_id).objref);
-			node0 = null;
-		}
-		if (typeof node1 === 'string') {
-			kwargs.del_atoms.push(document.getElementById(node1_id).objref);
-			node1 = null;
-		}
+		if (document.getElementById(new_bond_id) !== null) kwargs.del_bonds.push(new_bond_id);
+		if (document.getElementById(new_node0id) !== null) kwargs.del_atoms.push(new_node0id);
+		if (document.getElementById(new_node1id) !== null) kwargs.del_atoms.push(new_node1id);
 		editStructure(kwargs);
 	}
 
 	function movBond(event) { // Move second end of the drawn bond
 		delNewBond();
 		[pt1, node1] = getBondEnd(event, pt0);
+		node1id = node1 ? node1.g.id : new_node1id;
 		if (pt1 !== null) {
 			var new_atoms_data = [];
-			if (!node0) {
-				node0 = node0_id;
-				new_atoms_data.push([node0, ...pt0, '']);
-			}
-			if (!node1) {
-				node1 = node1_id;
-				new_atoms_data.push([node1, ...pt1, '']);
-			}
+			if (node0id == new_node0id) new_atoms_data.push([node0id, ...pt0, '']);
+			if (node1id == new_node1id) new_atoms_data.push([node1id, ...pt1, '']);
 			var kwargs = {
 				new_atoms_data: new_atoms_data,
-				new_bonds_data: [[bond_id, node0, node1, init_type]]
+				new_bonds_data: [[new_bond_id, node0id, node1id, init_type]]
 			};
 			// ToDo: ! Integrate with dispatcher.
 			editStructure(kwargs);
@@ -468,7 +454,6 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	}
 
 	function enBond(event) { // Finish drawing bond
-		[node0, node1] = [null, null];
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
 		window.removeEventListener('mouseup', enBond);
@@ -498,10 +483,10 @@ function deleteHandler(delbtn) {
 		if (atomsall.contains(event.target) || bondsall.contains(event.target)) {
 			var focobj = event.target.parentNode.objref;
 			if (focobj.constructor == ChemNode) {
-				var kwargs = {del_atoms: [focobj], del_bonds: focobj.connections.slice()};
+				var kwargs = {del_atoms: [focobj.g.id], del_bonds: focobj.connections.map(bond => bond.g.id)};
 			}
 			else if (focobj.constructor == ChemBond) {
-				var kwargs = {del_bonds: [focobj]};
+				var kwargs = {del_bonds: [focobj.g.id]};
 			}
 			// ToDo: ! Integrate with dispatcher.
 			editStructure(kwargs);
@@ -526,7 +511,7 @@ function moveHandler(movebtn) {
 	var selectrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 	selectrect.setAttribute('fill', 'none');
 	selectrect.setAttribute('stroke', 'blue');
-	selectrect.setAttribute('stroke-dasharray', 4);
+	selectrect.setAttribute('stroke-dasharray', 2);
 	selectrect.setAttribute('stroke-width', 1);
 	movebtn.addEventListener('click', moveInit);
 
@@ -539,11 +524,11 @@ function moveHandler(movebtn) {
 		var is_atom = atomsall.contains(event.target.parentNode);
 		var is_bond = bondsall.contains(event.target.parentNode);
 		if (is_atom || is_bond) { // If atom or bond was clicked
-			poiobj = event.target.parentNode.objref;
-			if (!atoms_slctd.has(poiobj) && !bonds_slctd.has(poiobj)) { // Clicked element was not previously selected
-				deselectAll()
-				if (is_atom) atoms_slctd.add(poiobj);
-				else if (is_bond) poiobj.nodes.forEach(node => atoms_slctd.add(node));
+			var poiobj = event.target.parentNode.objref;
+			if (!atoms_slctd.has(poiobj.g.id) && !bonds_slctd.has(poiobj.g.id)) { // Clicked element was not previously selected
+				deselectAll();
+				if (is_atom) atoms_slctd.add(poiobj.g.id);
+				else if (is_bond) poiobj.nodes.forEach(node => atoms_slctd.add(node.g.id));
 			}
 			mo_st = getSvgPoint(event);
 			window.addEventListener('mousemove', moving);
@@ -586,8 +571,8 @@ function moveHandler(movebtn) {
 	}
 
 	function deselectAll() {
-		atoms_slctd.forEach(atom => atom.deselect());
-		bonds_slctd.forEach(bond => bond.deselect());
+		atoms_slctd.forEach(atom_id => document.getElementById(atom_id).objref.deselect());
+		bonds_slctd.forEach(bond_id => document.getElementById(bond_id).objref.deselect());
 		clearSlct();
 	}
 
@@ -618,8 +603,8 @@ function moveHandler(movebtn) {
 			obj = el.objref;
 			var [x, y] = obj.xy;
 			if (rect_x < x && x < rect_x1 && rect_y < y && y < rect_y1) {
-				if (obj instanceof ChemNode) atoms_slctd.add(obj);
-				else bonds_slctd.add(obj);
+				if (obj instanceof ChemNode) atoms_slctd.add(el.id);
+				else bonds_slctd.add(el.id);
 				obj.select();
 			}
 		}
