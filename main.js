@@ -221,82 +221,35 @@ function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.ptr = 0;
 }
 
-Dispatcher.prototype.do = function(cmd_pair) {
+Dispatcher.prototype.addCmd(func_dir, args_dir, func_rev, args_rev) {
 	this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
-	this.commands.push(cmd_pair); // Add new command to the history
-	this.redo(); // Move forvard along the history
-};
+	this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); // Add new command to the history
+}
 
-Dispatcher.prototype.redo = function(command) {
+Dispatcher.prototype.redo = function() {
+	console.log('redo');
 	if (this.ptr >= this.commands.length) return;
-	command = this.commands[this.ptr++][0]; // Fetch command
-	command[0](...command.slice(1)); // Execute the given function with args
+	var command = this.commands[this.ptr++][0]; // Fetch command
+	command.func(command.args); // Execute the given function with args
 };
 
 Dispatcher.prototype.undo = function() {
+	console.log('undo');
 	if (this.ptr <= 0) return;
-	command = this.commands[--this.ptr][1]; // Fetch command
-	command[0](...command.slice(1)); // Execute the given function with args
+	var command = this.commands[--this.ptr][1]; // Fetch command
+	command.func(command.args); // Execute the given function with args
 };
 
-Dispatcher.prototype.createSingleR = function(this_id, x, y, cursortext) {
-	new ChemNode(x, y, cursortext, this_id).renderAtom();
-};
-
-Dispatcher.prototype.createSingleU = function(this_id, text) {
-	document.getElementById(this_id).objref.g.remove();
-};
-
-Dispatcher.prototype.setAtomUR = function(this_id, text) {
-	document.getElementById(this_id).objref.changeAtom(text);
-};
-
-Dispatcher.prototype.rotateMultUR = function(this_id, multiplicity) {
-	bond = document.getElementById(this_id).objref;
-	bond.multiplicity = multiplicity;
-	bond.renderBond();
-};
-
-Dispatcher.prototype.deleteChemNodeR = function(this_id) {
-	document.getElementById(this_id).objref.deleteWithBonds(); // Delete the atom [this] with bonds
-};
-
-Dispatcher.prototype.deleteChemNodeU = function(this_data, adjbonds_data, nextadjbonds_id, adjnodes_id) {
-	node = new ChemNode(...this_data);  // Create atom [this]
-	for (const data of adjbonds_data) { // Create bonds [...adjbonds]
-		node0 = document.getElementById(data[0]).objref;
-		node1 = document.getElementById(data[1]).objref;
-		new ChemBond(node0, node1, data[2], data[3]);
-	}
-	node.restoreWithBonds();
-};
-
-Dispatcher.prototype.deleteChemBondR = function(this_id) {
-	document.getElementById(this_id).objref.deleteBond(); // Delete bond
-};
-
-Dispatcher.prototype.deleteChemBondU = function(this_data) {
-	var bond = new ChemBond(...this_data); // Create bond
-	bond.renderBond();
-	bond.restoreBond();
-};
-
-
-var dispatcher = new Dispatcher();
-
-function keydownHandler(event) {
-	if (event.ctrlKey && !event.repeat) {
-		func = keydownHandler.keyfuncs[event.key];
-		if (func !== undefined) dispatcher[func]();
+Dispatcher.prototype.keyHandler = function(event) {
+	if ((event.ctrlKey || event.metaKey) && !event.repeat) {
+		if (event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey == true)) this.redo();
+		else if (event.key == 'z') this.undo();
 	}
 }
 
-keydownHandler.keyfuncs = {
-	'z': 'undo',
-	'y': 'redo'
-};
+var dispatcher = new Dispatcher();
 
-document.addEventListener('keydown', keydownHandler);
+document.addEventListener('keydown', event => dispatcher.keyHandler(event));
 
 
 function getSvgPoint(event) {
