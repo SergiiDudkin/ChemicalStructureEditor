@@ -1,6 +1,6 @@
 function editStructure({
 	new_atoms_data={}, new_bonds_data={}, del_atoms=new Set([]), del_bonds=new Set([]), 
-	atoms_text={}, bonds_type=[], moving_atoms=new Set(), moving_vec=[0, 0]
+	atoms_text={}, bonds_type={}, moving_atoms=new Set(), moving_vec=[0, 0]
 }) {
 	var atoms_change_symb = new Set(), 
 		atoms_recalc_hydr = new Set(), 
