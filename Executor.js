@@ -1,6 +1,8 @@
-function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_bonds=[], atoms_text={}, bonds_type=[], moving_data=[[], []]}) {
-	var [moving_vec, moving_atoms] = moving_data,
-		atoms_change_symb = new Set(), 
+function editStructure({
+	new_atoms_data={}, new_bonds_data={}, del_atoms=new Set([]), del_bonds=new Set([]), 
+	atoms_text={}, bonds_type=[], moving_atoms=new Set(), moving_vec=[0, 0]
+}) {
+	var atoms_change_symb = new Set(), 
 		atoms_recalc_hydr = new Set(), 
 		atoms_reloc_hydr = new Set(), 
 		atoms_auto_d_bond = new Set(), 
@@ -19,7 +21,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		var bond_nodes = bond.nodes;
 		bond.delete();
 		for (const node of bond_nodes) {
-			if (!del_atoms.includes(node.g.id)) {
+			if (!del_atoms.has(node.g.id)) {
 				atoms_recalc_hydr.add(node);
 				if (node.isMethane()) atoms_text_me[node.g.id] = node.text;
 				atoms_auto_d_bond.add(node);
@@ -34,13 +36,13 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	}
 
 	// Create atoms
-	for (const data of new_atoms_data) {
-		atoms_change_symb.add(new ChemNode(...data)) // data: [id, x, y, text]	
+	for (const [id, data] of Object.entries(new_atoms_data)) {
+		atoms_change_symb.add(new ChemNode(id, ...data)) // data: [x, y, text]	
 	}
 
 	// Create bonds
-	for (const data of new_bonds_data) {
-		bond = new ChemBond(...data); // data: [id, node0, node1, type]
+	for (const [id, data] of Object.entries(new_bonds_data)) {
+		bond = new ChemBond(id, ...data); // data: [node0, node1, type]
 		bonds_update_recht.add(bond);
 		for (const node of bond.nodes) {
 			atoms_recalc_hydr.add(node);
@@ -66,7 +68,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 	}
 
 	// Edit bonds
-	for (const [bond_id, type] of bonds_type) {
+	for (const [bond_id, type] of Object.entries(bonds_type)) {
 		var bond = document.getElementById(bond_id).objref;
 		bond.setType(type);
 		bonds_d_adjust.add(bond);

@@ -216,6 +216,11 @@ function angleBisector(xy0, xy1) { // Not normalized, no direction control
 }
 
 
+function invertCmd(kwargs_dir) {
+	kwargs_rev = {};
+}
+
+
 function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.commands = [];
 	this.ptr = 0;
@@ -328,8 +333,8 @@ function chemNodeHandler(elbtns) {
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
 				if (node0.connections.length == 0 && (node0.text == atomtext || (node0.text == '' && atomtext == 'C'))) {
-					var kwargs = {del_atoms: [node0.g.id]};
-					var kwargs_rev = {new_atoms_data: [[node0.g.id, ...node0.xy, node0.text]]};
+					var kwargs = {del_atoms: new Set([node0.g.id])};
+					var kwargs_rev = {new_atoms_data: {[node0.g.id]: [...node0.xy, node0.text]}};
 					dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 					editStructure(kwargs);
 					return;
@@ -347,8 +352,8 @@ function chemNodeHandler(elbtns) {
 				new_atomtext = atomtext;
 				node0_is_new = true;
 				node0_id = new_node0id;
-				var kwargs = {new_atoms_data: [[new_node0id, ...pt0, new_atomtext]]};
-				var kwargs_rev = {del_atoms: [node0_id]};
+				var kwargs = {new_atoms_data: {[new_node0id]: [...pt0, new_atomtext]}};
+				var kwargs_rev = {del_atoms: new Set([node0_id])};
 				dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 			}
 			editStructure(kwargs);
@@ -366,7 +371,7 @@ function chemNodeHandler(elbtns) {
 
 	function delNewNode() {
 		if (document.getElementById(new_bond_id) !== null) { // If a new bond was created
-			var kwargs = {del_atoms: [new_node1id], del_bonds: [new_bond_id]};
+			var kwargs = {del_atoms: new Set([new_node1id]), del_bonds: new Set([new_bond_id])};
 			editStructure(kwargs);
 		}
 	}
@@ -377,8 +382,8 @@ function chemNodeHandler(elbtns) {
 		kwargs_nb = {};
 		var difxy = vecDif(pt0, getSvgPoint(event));
 		if (vecLen(difxy) >= 16) {
-			kwargs_nb.new_atoms_data = [[new_node1id, ...discreteAngle(pt0, difxy), atomtext]];
-			kwargs_nb.new_bonds_data = [[new_bond_id, node0_id, new_node1id, 1]];
+			kwargs_nb.new_atoms_data = {[new_node1id]: [...discreteAngle(pt0, difxy), atomtext]};
+			kwargs_nb.new_bonds_data = {[new_bond_id]: [node0_id, new_node1id, 1]};
 			if (!node0_is_new) kwargs_nb.atoms_text = {[node0_id]: old_atomtext};
 		}
 		else {
@@ -392,14 +397,14 @@ function chemNodeHandler(elbtns) {
 		if (document.getElementById(new_bond_id) !== null) {
 			var [kwargs_dir, kwargs_rev] = dispatcher.commands[dispatcher.ptr - 1].map(cmd => cmd.args);
 			if (kwargs_dir.new_atoms_data === undefined) {
-				kwargs_dir.new_atoms_data = [];
-				kwargs_rev.del_atoms = [];
+				kwargs_dir.new_atoms_data = {};
+				kwargs_rev.del_atoms = new Set([]);
 			}
-			kwargs_dir.new_atoms_data.push(kwargs_nb.new_atoms_data[0]);
+			Object.assign(kwargs_dir.new_atoms_data, kwargs_nb.new_atoms_data);
 			kwargs_dir.new_bonds_data = kwargs_nb.new_bonds_data;
 			kwargs_dir.atoms_text = [];
-			kwargs_rev.del_atoms.push(new_node1id);
-			kwargs_rev.del_bonds = [new_bond_id];
+			kwargs_rev.del_atoms.add(new_node1id);
+			kwargs_rev.del_bonds = new Set([new_bond_id]);
 			kwargs_dir.atoms_text = [];
 		}
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
@@ -423,8 +428,8 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
 			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
 				var focobj = event.target.parentNode.objref;
-				var kwargs = {bonds_type: [[focobj.g.id, focobj.getNextType(rotation_schema)]]};
-				var kwargs_rev = {bonds_type: [[focobj.g.id, focobj.type]]};
+				var kwargs = {bonds_type: {[focobj.g.id]: focobj.getNextType(rotation_schema)}};
+				var kwargs_rev = {bonds_type: {[focobj.g.id]: focobj.type}};
 				dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 				editStructure(kwargs);
 			}
@@ -448,10 +453,10 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	}
 
 	function delNewBond() {
-		var kwargs = {del_atoms: [], del_bonds: []};
-		if (document.getElementById(new_bond_id) !== null) kwargs.del_bonds.push(new_bond_id);
-		if (document.getElementById(new_node0id) !== null) kwargs.del_atoms.push(new_node0id);
-		if (document.getElementById(new_node1id) !== null) kwargs.del_atoms.push(new_node1id);
+		var kwargs = {del_atoms: new Set([]), del_bonds: new Set([])};
+		if (document.getElementById(new_bond_id) !== null) kwargs.del_bonds.add(new_bond_id);
+		if (document.getElementById(new_node0id) !== null) kwargs.del_atoms.add(new_node0id);
+		if (document.getElementById(new_node1id) !== null) kwargs.del_atoms.add(new_node1id);
 		editStructure(kwargs);
 	}
 
@@ -460,12 +465,12 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		[pt1, node1] = getBondEnd(event, pt0);
 		node1id = node1 ? node1.g.id : new_node1id;
 		if (pt1 !== null) {
-			var new_atoms_data = [];
-			if (node0id == new_node0id) new_atoms_data.push([node0id, ...pt0, '']);
-			if (node1id == new_node1id) new_atoms_data.push([node1id, ...pt1, '']);
+			var new_atoms_data = {};
+			if (node0id == new_node0id) new_atoms_data[node0id] = [...pt0, ''];
+			if (node1id == new_node1id) new_atoms_data[node1id] = [...pt1, ''];
 			kwargs = {
 				new_atoms_data: new_atoms_data,
-				new_bonds_data: [[new_bond_id, node0id, node1id, init_type]]
+				new_bonds_data: {[new_bond_id]: [node0id, node1id, init_type]}
 			};
 			editStructure(kwargs);
 		}
@@ -474,8 +479,8 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	function enBond(event) { // Finish drawing bond
 		if (document.getElementById(new_bond_id) !== null) {
 			var kwargs_rev = {
-				del_atoms: kwargs.new_atoms_data.map(data => data[0]), 
-				del_bonds: [kwargs.new_bonds_data[0][0]]
+				del_atoms: new Set(Object.keys(kwargs.new_atoms_data)), 
+				del_bonds: new Set(Object.keys(kwargs.new_bonds_data))
 			}
 			dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		}
@@ -509,15 +514,15 @@ function deleteHandler(delbtn) {
 		if (atomsall.contains(event.target) || bondsall.contains(event.target)) {
 			var focobj = event.target.parentNode.objref;
 			if (focobj.constructor == ChemNode) {
-				var kwargs = {del_atoms: [focobj.g.id], del_bonds: focobj.connections.map(bond => bond.g.id)};
+				var kwargs = {del_atoms: new Set([focobj.g.id]), del_bonds: new Set(focobj.connections.map(bond => bond.g.id))};
 				var kwargs_rev = {
-					new_atoms_data: [[focobj.g.id, ...focobj.xy, focobj.text]],
-					new_bonds_data: focobj.connections.map(bond => [bond.g.id, ...bond.nodes.map(node => node.g.id), bond.type])
+					new_atoms_data: {[focobj.g.id]: [...focobj.xy, focobj.text]},
+					new_bonds_data: Object.fromEntries(focobj.connections.map(bond => [bond.g.id, [...bond.nodes.map(node => node.g.id), bond.type]]))
 				}
 			}
 			else if (focobj.constructor == ChemBond) {
-				var kwargs = {del_bonds: [focobj.g.id]};
-				var kwargs_rev = {new_bonds_data: [[focobj.g.id, ...focobj.nodes.map(node => node.g.id), focobj.type]]};
+				var kwargs = {del_bonds: new Set([focobj.g.id])};
+				var kwargs_rev = {new_bonds_data: {[focobj.g.id]: [...focobj.nodes.map(node => node.g.id), focobj.type]}};
 			}
 			dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 			editStructure(kwargs);
@@ -588,14 +593,14 @@ function moveHandler(movebtn) {
 		accum_vec = vecSum(accum_vec, moving_vec);
 		mo_st = pt;
 
-		var kwargs = {moving_data: [moving_vec, atoms_slctd]}
+		var kwargs = {moving_atoms: atoms_slctd, moving_vec: moving_vec}
 		editStructure(kwargs);
 	}
 
 	function finishMoving() {
 		var atoms_slctd_clone = new Set(atoms_slctd);
-		var kwargs = {moving_data: [accum_vec, atoms_slctd_clone]};
-		var kwargs_rev = {moving_data: [vecMul(accum_vec, -1), atoms_slctd_clone]};
+		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec}
+		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		if (!is_selected) clearSlct();
 		window.removeEventListener('mousemove', moving);
