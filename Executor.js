@@ -1,19 +1,17 @@
-function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_bonds=[], atoms_text=[], bonds_type=[], moving_data=[[], []]}) {
+function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_bonds=[], atoms_text={}, bonds_type=[], moving_data=[[], []]}) {
 	var [moving_vec, moving_atoms] = moving_data,
 		atoms_change_symb = new Set(), 
 		atoms_recalc_hydr = new Set(), 
 		atoms_reloc_hydr = new Set(), 
 		atoms_auto_d_bond = new Set(), 
 		atoms_refresh_tips = new Set(), 
-		atoms_me_no_me = new Set(), 
+		atoms_text_me = {},
 		tips_update = new Set(), 
 		bonds_d_adjust = new Set(), 
 		bonds_to_render = new Set(), 
 		bonds_transl = new Set(), 
 		bonds_update_recht = new Set(), 
 		bonds_scewed = new Set();
-		implicit_cand = new Set();
-		methane_cand = new Set();
 
 	// Delete bonds
 	for (const bond_id of del_bonds) {
@@ -23,7 +21,7 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		for (const node of bond_nodes) {
 			if (!del_atoms.includes(node.g.id)) {
 				atoms_recalc_hydr.add(node);
-				if (node.isMethane()) atoms_me_no_me.add(node);
+				if (node.isMethane()) atoms_text_me[node.g.id] = node.text;
 				atoms_auto_d_bond.add(node);
 				if (node.text == '') atoms_refresh_tips.add(node);
 			}
@@ -46,19 +44,19 @@ function editStructure({new_atoms_data=[], new_bonds_data=[], del_atoms=[], del_
 		bonds_update_recht.add(bond);
 		for (const node of bond.nodes) {
 			atoms_recalc_hydr.add(node);
-			if (node.isImplicit()) atoms_me_no_me.add(node);
+			var no_text = atoms_text[node.g.id] == '' || !(atoms_text[node.g.id] || node.text);
+			if (no_text && node.connections.length == 1) atoms_text_me[node.g.id] = node.text;
 			atoms_auto_d_bond.add(node);
-			if (node.text == '') atoms_refresh_tips.add(node);
+			if (no_text) atoms_refresh_tips.add(node);
 			else tips_update.add(`${node.g.id}&${bond.g.id}`);
 		}
 	}
 
 	// Edit atoms
-	var atoms_only = new Set(atoms_text.map(item => item[0]));
-	var atoms_text_extra = [...atoms_me_no_me].filter(node => !atoms_only.has(node.g.id)).map(node => [node.g.id]);
-	for (const [node_id, text] of atoms_text.concat(atoms_text_extra)) {
+	Object.assign(atoms_text_me, atoms_text);
+	for (const [node_id, text] of Object.entries(atoms_text_me)) {
 		var node = document.getElementById(node_id).objref;
-		if (text !== undefined) node.text = text;
+		node.text = text;
 		atoms_change_symb.add(node);
 		if (node.text == '') atoms_refresh_tips.add(node);
 		for (const bond of node.connections) {
