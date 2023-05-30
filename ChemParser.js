@@ -1,25 +1,8 @@
 function ChemText(bracket_tree, sub_num=undefined) {
 	this.content = [];
 	this.index = null;
-	this.brackets = null;
-	// for (var i = 0; i < tokens.length; i++) {
-	// 	token = tokens[i];
-	// }
-	// for (const item of bracket_tree) {
-
-	// }
-
+	this.brackets = [];
 }
-
-// ChemText.prototype.tokenize = function(text, idx) {
-// 	var branch = prefix_tree;
-// 	var key;
-// 	for (var i; i < text.length; i++) {
-// 		key = text[i];
-// 		if (key in branch)
-// 		branch[text[i]]
-// 	}
-// }
 
 atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al']);
 residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph']);
@@ -68,72 +51,153 @@ function tokenize(formula) {
 	return tokens;
 }
 
-// function mergeDigits(tokens) {
-// 	var text_arr = [];
-// 	var digit_accum = '';
-// 	for (const token of tokens) {
-// 		if (digits.has(token)) {
-// 			digit_accum += token;
-// 		}
-// 		else {
-// 			if (digit_accum) {
-// 				text_arr.push(parseInt(digit_accum));
-// 				digit_accum = '';
+// function buildBracketTree(text_arr) {
+// 	var bracket_tree = [];
+// 	var bracket_stack = [];
+// 	var bracket_content = [];
+// 	for (const item of text_arr) {
+// 		if (item == '(') bracket_stack.push(item);
+// 		(bracket_stack.length ? bracket_content : bracket_tree).push(item)
+// 		if (item == ')') {
+// 			bracket_stack.pop();
+// 			if (!bracket_stack.length) {
+// 				bracket_tree.push([bracket_content[0], ...buildBracketTree(bracket_content.slice(1, -1)), ...bracket_content.slice(-1)]);
+// 				bracket_content = [];
 // 			}
-// 			text_arr.push(token);
 // 		}
 // 	}
-// 	if (digit_accum) text_arr.push(parseInt(digit_accum));
-// 	return text_arr;
+// 	return bracket_tree;
 // }
+
+
+
 
 function buildBracketTree(text_arr) {
 	var bracket_tree = [];
 	var bracket_stack = [];
 	var bracket_content = [];
+	var group_obj;
 	for (const item of text_arr) {
-		if (item == '(') bracket_stack.push(item);
-		(bracket_stack.length ? bracket_content : bracket_tree).push(item)
-		if (item == ')') {
-			bracket_stack.pop();
-			if (!bracket_stack.length) {
-				var cl_brack = bracket_content.pop();
-				bracket_tree.push([bracket_content[0], ...buildBracketTree(bracket_content.slice(1)), cl_brack]);
-				bracket_content = [];
+		// if (bracket_stack.length) {
+		// 	if (item == ')') {
+		// 		bracket_stack.pop();
+		// 		if (!bracket_stack.length) {
+		// 			group_obj.brackets.push(item);
+		// 			group_obj.content = buildBracketTree(bracket_content);
+		// 			bracket_tree.push(group_obj);
+		// 			bracket_content = [];
+		// 		}
+		// 		else {
+		// 			bracket_content.push(item);
+		// 		}
+		// 	}
+		// 	else {
+		// 		if (item == '(') {
+		// 			bracket_stack.push(item);
+		// 		}
+		// 		bracket_content.push(item);
+		// 	}
+		// }
+		// else {
+		// 	if (item == '(') {
+		// 		bracket_stack.push(item);
+		// 		group_obj = {brackets: [item], count: null};
+		// 	}
+		// 	else if (/^\d+$/.test(item)) {
+		// 		bracket_tree.slice(-1)[0].count = parseInt(item);
+		// 	}
+		// 	else {
+		// 		bracket_tree.push({content: item, brackets: [], count: null});
+		// 	}
+		// }
+
+
+		// if (bracket_stack.length) {
+		// 	if (item == ')') {
+		// 		bracket_stack.pop();
+		// 		if (!bracket_stack.length) {
+		// 			group_obj.brackets.push(item);
+		// 			group_obj.content = buildBracketTree(bracket_content);
+		// 			bracket_tree.push(group_obj);
+		// 			bracket_content = [];
+		// 			continue
+		// 		}
+		// 	}
+		// 	else if (item == '(') bracket_stack.push(item);
+		// 	bracket_content.push(item);
+		// }
+		// else {
+		// 	if (item == '(') {
+		// 		bracket_stack.push(item);
+		// 		group_obj = {brackets: [item], count: null};
+		// 	}
+		// 	else if (/^\d+$/.test(item)) bracket_tree.slice(-1)[0].count = parseInt(item);
+		// 	else bracket_tree.push({content: item, brackets: [], count: null});
+		// }
+
+
+		if (bracket_stack.length) {
+			if (item == ')') {
+				bracket_stack.pop();
+				if (!bracket_stack.length) {
+					group_obj.brackets.push(item);
+					group_obj.content = buildBracketTree(bracket_content);
+					bracket_tree.push(group_obj);
+					bracket_content = [];
+					continue
+				}
 			}
+			bracket_content.push(item);
 		}
+		else {
+			if (item == '(') group_obj = {brackets: [item], count: null};
+			else if (/^\d+$/.test(item)) bracket_tree.slice(-1)[0].count = parseInt(item);
+			else bracket_tree.push({content: item, brackets: [], count: null});
+		}
+		if (item == '(') bracket_stack.push(item);
+
+
 	}
 	return bracket_tree;
 }
 
-function buildGroupTree(branch) {
-	var group_tree = [];
-	var group_obj = undefined;
-	for (var i = 0; i < branch.length; i++) {
-		var item = branch[i];
-		if (group_obj === undefined) {
-			if (atoms.has(item) || residues.has(item)) {
-				group_obj = {content: item, brackets: null, count: null}
-			}
-			if (Array.isArray(item)) {
-				group_obj = {
-					content: buildGroupTree(item.slice(1, item.length - 1)),
-					brackets: item[0],
-					count: null
-				}
-			}
-		}
-		else {
-			// if (typeof(item) == 'number') group_obj.count = item;
-			if (/^\d+$/.test(item)) group_obj.count = parseInt(item);
-			else i--;
-			group_tree.push(group_obj);
-			group_obj = undefined;
-		}
-	}
-	if (group_obj !== undefined) group_tree.push(group_obj);
-	return group_tree;
-}
+
+
+
+
+
+
+
+
+
+
+// function buildGroupTree(branch) {
+// 	var group_tree = [];
+// 	var group_obj = undefined;
+// 	for (var i = 0; i < branch.length; i++) {
+// 		var item = branch[i];
+// 		if (group_obj === undefined) {
+// 			if (atoms.has(item) || residues.has(item)) {
+// 				group_obj = {content: item, brackets: [], count: null}
+// 			}
+// 			if (Array.isArray(item)) {
+// 				group_obj = {
+// 					content: buildGroupTree(item.slice(1, item.length - 1)),
+// 					brackets: [item[0], ...item.slice(-1)],
+// 					count: null
+// 				}
+// 			}
+// 		}
+// 		else {
+// 			if (/^\d+$/.test(item)) group_obj.count = parseInt(item);
+// 			else i--;
+// 			group_tree.push(group_obj);
+// 			group_obj = undefined;
+// 		}
+// 	}
+// 	if (group_obj !== undefined) group_tree.push(group_obj);
+// 	return group_tree;
+// }
 
 prefix_tree = {};
 buildPrefixTree(prefix_tree, atoms, 1);
@@ -155,13 +219,13 @@ var tokens = tokenize('(Br(Mg26(SO4)3(NO3)2)3N5)');
 // var tokens = tokenize('O124N94C3');
 
 
-console.log(tokens);
+// console.log(tokens);
 
 // var text_arr = mergeDigits(tokens);
 var bracket_tree = buildBracketTree(tokens);
-var group_tree = buildGroupTree(bracket_tree);
+// var group_tree = buildGroupTree(bracket_tree);
 
-console.log(group_tree);
+console.log(bracket_tree);
 
 // for (var i = 0; i < 5; i++) {
 //     if (i == 2) i++;
