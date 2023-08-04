@@ -258,14 +258,12 @@ Dispatcher.prototype.do = function(func_dir, kwargs_dir) {
 }
 
 Dispatcher.prototype.redo = function() {
-	console.log('redo');
 	if (this.ptr >= this.commands.length) return;
 	var command = this.commands[this.ptr++][0]; // Fetch command
 	command.func(command.args); // Execute the given function with args
 };
 
 Dispatcher.prototype.undo = function() {
-	console.log('undo');
 	if (this.ptr <= 0) return;
 	var command = this.commands[--this.ptr][1]; // Fetch command
 	command.func(command.args); // Execute the given function with args
