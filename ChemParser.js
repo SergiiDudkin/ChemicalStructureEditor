@@ -14,9 +14,9 @@ function buildPrefixTree(prefix_tree, words, leaf_type) {
 function tokenize(formula) {
 	var tokens = [];
 	var branch = prefix_tree;
-	var accum = '';
-	var res = null;
-	var res_i;
+	var accum = ''; // Char container to assemble a token
+	var token = null; // Assembled token
+	var saved_i; // i after the last complete token
 	for (var i = 0; i < formula.length; i++) {
 		var char = formula[i];
 		if (char in branch) {
@@ -24,19 +24,19 @@ function tokenize(formula) {
 			var parent = branch[char];
 			branch = parent.children;
 			if (parent.leaf_type) {
-				[res, res_i] = [accum, i];
+				[token, saved_i] = [accum, i];
 				continue;
 			};
 			if (i < formula.length - 1) continue;
 		}
-		if (!res) throw new Error(`Token ${accum ? accum : char} does not exist!`);
-		tokens.push(res);
+		if (!token) throw new Error(`Token ${accum ? accum : char} does not exist!`);
+		tokens.push(token);
 		branch = prefix_tree;
 		accum = '';
-		res = null;
-		i = res_i;
+		token = null;
+		i = saved_i;
 	}
-	tokens.push(res);
+	if (token) tokens.push(token);
 	return tokens;
 }
 
