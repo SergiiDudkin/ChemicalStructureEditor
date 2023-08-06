@@ -40,12 +40,12 @@ function tokenize(formula) {
 	return tokens;
 }
 
-function buildBracketTree(text_arr) {
+function buildBracketTree(tokens) {
 	var bracket_tree = [];
 	var bracket_stack = [];
 	var bracket_content = [];
 	var group_obj;
-	for (const item of text_arr) {
+	for (const item of tokens) {
 		if (bracket_stack.length) {
 			if (item == ')' || item == ']') bracket_stack.pop();
 			if (!bracket_stack.length) {
