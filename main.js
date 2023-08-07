@@ -1,4 +1,5 @@
 var canvas = document.getElementById('canvas');
+var canvas_container = document.getElementById('canvas-container');
 var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
 var bondsall = document.getElementById('bondsall');
@@ -65,6 +66,7 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 }
 
 var filters = document.getElementById('filters');
+var textbtn = insertFancyBtn(filters, 'T', 'fancybtn but brick');
 var movebtn = insertFancyBtn(filters, 'move', 'fancybtn but brick');
 var delbtn = insertFancyBtn(filters, 'erase', 'fancybtn but brick');
 var bondbtn = insertFancyBtn(filters, 'bond', 'fancybtn but brick');
@@ -105,15 +107,11 @@ function svgWidth(event) {
 	canvbckgrnd.setAttribute("width", wmax);
 	canvas.setAttribute("width", wmax + 4);
 	matrixrf = canvas.getScreenCTM().inverse();
-	matrixrf.e = Math.round(matrixrf.e);
-	matrixrf.f = Math.round(matrixrf.f);
 }
 window.addEventListener('resize', svgWidth);
 svgWidth();
 window.addEventListener('scroll', function() {
 	matrixrf = canvas.getScreenCTM().inverse();
-	matrixrf.e = Math.round(matrixrf.e);
-	matrixrf.f = Math.round(matrixrf.f);
 })
 
 
@@ -288,6 +286,12 @@ function getSvgPoint(event) {
 	return [svgP0.x, svgP0.y];
 }
 
+function getScreenPoint([svg_x, svg_y]) {
+	[pt.x, pt.y] = [svg_x, svg_y];
+	var {x, y} = pt.matrixTransform(matrixrf.inverse());
+	return [x, y];
+}
+
 function clampToCnv([x, y]) {
 	return [Math.min(Math.max(x, 0), wmax), Math.min(Math.max(y, 0), 564)];
 }
@@ -337,18 +341,18 @@ function chemNodeHandler(elbtns) {
 	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id, node0_is_new, node0_id;
 	for (const elbtn of elbtns) elbtn.addEventListener('click', crElem);
 
-	function crElem(event) { // Create new atom. Called when a chemical element button is clicked
+	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
 		atomtext = event.target.id.slice(4);
 		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
 	}
 
-	function movElem(event) {
+	function movElem(event) { // Move cursor atom
 		cursoratom.translate(...clampToCnv(getSvgPoint(event)));
 	}
 
-	function setElem(event) {
+	function setElem(event) { // Create a new atom
 		new_node0id = ChemNode.prototype.getNewId();
 		new_node1id = ChemNode.prototype.getNewId();
 		new_bond_id = ChemBond.prototype.getNewId();
@@ -387,7 +391,7 @@ function chemNodeHandler(elbtns) {
 		}
 	}
 
-	function movBoundNode(event) {
+	function movBoundNode(event) { // Create extra bond and atom, if the cursor was moved far from the click point
 		dispatcher.undo();
 		var kwargs = {};
 		var difxy = vecDif(pt0, getSvgPoint(event));
@@ -505,6 +509,7 @@ function deleteHandler(delbtn) {
 		window.removeEventListener('mouseup', delStop);
 	}
 }
+
 
 function moveHandler(movebtn) {
 	var svgP0, svgP1;
@@ -627,6 +632,45 @@ function moveHandler(movebtn) {
 }
 
 
+function textHandler(textbtn) {
+	var pt, node;
+	textbtn.addEventListener('click', crText);
+
+	function crText(event) {
+		window.addEventListener('mousedown', addInput);
+	}
+
+	function addInput(event) {
+		var old_input = document.getElementById('txt-input');
+		if (old_input) {
+			console.log(old_input.value);
+			console.log(node);
+			old_input.remove();
+		};
+		if (canvas.contains(event.target)) { // Click inside the canvas
+			[pt, node] = pickNodePoint(event);
+			if (node) { // If some atom was clicked
+				var [left, top] = getScreenPoint(pt);
+				var input = document.createElement('input');
+				input.setAttribute('id', 'txt-input');
+				input.setAttribute('type', 'text');
+				input.setAttribute('size', '10');
+				input.style.setProperty('top', `${top}px`);
+				input.style.setProperty('left', `${left}px`);
+				input.style.setProperty('color', styledict.fill);
+				input.style.setProperty('font-family', styledict['font-family']);
+				input.style.setProperty('font-size', styledict['font-size']);
+				canvas_container.appendChild(input);
+				window.setTimeout(() => input.focus(), 0);
+			}
+		}
+		else { // Click outside the canvas
+			window.removeEventListener('mousedown', addInput);
+		}
+	}
+}
+
+
 fancyBtnAnimation(fancybtns);
 chemNodeHandler(elbtns);
 deleteHandler(delbtn);
@@ -634,3 +678,4 @@ moveHandler(movebtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
 chemBondHandler(dbondbtn, 8, 2); // Upper bond
+textHandler(textbtn);

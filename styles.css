@@ -121,3 +121,13 @@ body {
 .dropdown-btn:active {
 	box-shadow: 0px 0px 0px 1px #364940 inset;
 }
+#txt-input {
+	border: 0;
+	outline: none;
+	position: absolute;
+	transform: translate(-50%, -50%);
+}
+#txt-input:focus {
+	border: 1px solid blue;
+}
+

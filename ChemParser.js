@@ -213,6 +213,21 @@ digits.forEach(digit => prefix_tree[digit].children = digit_children);
 
 
 
+// var canvas_container = document.getElementById('canvas-container');
+
+// var input = document.createElement('input');
+// input.setAttribute('id', 'txt-input');
+// input.setAttribute('type', 'text');
+// input.setAttribute('size', '10');
+// input.style.setProperty('top', '100px');
+// input.style.setProperty('left', '100px');
+// input.style.setProperty('color', styledict.fill);
+// input.style.setProperty('font-family', styledict['font-family']);
+// input.style.setProperty('font-size', styledict['font-size']);
+// canvas_container.appendChild(input);
+// input.focus();
+
+
 
 // var tokens = tokenize('(Br(Mg26(SO4)3(NO3)2)3N5)');
 // var tokens = tokenize('((N2)5CH3)');
