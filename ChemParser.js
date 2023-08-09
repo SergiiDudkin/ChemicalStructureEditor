@@ -78,6 +78,7 @@ function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 	text.setAttribute('x', x);
 	text.setAttribute('y', y);
 	text.setAttribute('style', styleToString(styledict));
+	text.setAttribute('class', 'chemtxt sympoi');
 	parent.appendChild(text);
 
 	var font_size = parseInt(styledict['font-size']);
@@ -93,7 +94,7 @@ function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 		var tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
 		tspan.appendChild(document.createTextNode(item));
 		if (is_dy) tspan.setAttribute('style', `font-size:${font_size * 0.7}px`);
-		tspan.setAttribute('dy', (is_dy - was_dy) * dy);
+		if (is_dy != was_dy) tspan.setAttribute('dy', (is_dy - was_dy) * dy);
 		text.appendChild(tspan);
 		was_dy = is_dy;
 	}
@@ -158,7 +159,7 @@ function firstElemIdx(bracket_tree) {
 
 function centering(text) {
 	text.setAttribute('x', parseFloat(text.getAttribute('x')) - text.getBBox().width / 2);
-	text.setAttribute('y', parseFloat(text.getAttribute('y')) + parseFloat(text.style.fontSize) * 0.36);
+	text.setAttribute('y', parseFloat(text.getAttribute('y')) + parseFloat(text.style.fontSize) * 0.3);
 }
 
 function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
@@ -191,7 +192,7 @@ function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 
 
 atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'NCFS']);
-residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph']);
+residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Ac', 'Bz', 'Ts']);
 punctuation = new Set(['-', ',']);
 brackets = new Set(['(', ')', '[', ']']);
 digits = new Set([...Array(10).keys()].map(digit => '' + digit));
@@ -199,6 +200,7 @@ digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
+	// 'font-family': 'Courier New',
 	'font-size': '16px'
 }
 
@@ -233,12 +235,13 @@ digits.forEach(digit => prefix_tree[digit].children = digit_children);
 // var tokens = tokenize('((N2)5CH3)');
 // var tokens = tokenize('N(CH2)5COOH');
 // var tokens = tokenize('CHSO3Cl');
-// var tokens = tokenize('(H2(N3))');
+// var tokens = tokenize('NH2');
 // var tokens = tokenize('Al2(SO4)3');
 // var tokens = tokenize('O124N94C3');
 // var tokens = tokenize('NCFI');
 
 // var bracket_tree = buildBracketTree(tokens);
+// console.log(bracket_tree);
 // var [brackets_cnt, subscript_cnt, has_1st_subscript] = firstElemIdx(bracket_tree);
 
 // var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');

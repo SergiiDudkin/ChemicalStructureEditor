@@ -7,7 +7,6 @@ var atomsall = document.getElementById('atomsall');
 var fancybtns = document.getElementsByClassName('fancybtn');
 var ahl = document.getElementById('atomhighlights');
 var pt, matrixrf, wmax; // Variables
-// var hmaxtab = {'H': 1, 'C': 4, 'N': 3, 'O': 2, 'S': 2, '': 0, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
 
 function download() { // Download .svg
@@ -297,8 +296,9 @@ function clampToCnv([x, y]) {
 }
 
 function getCursorAtom(event, atomtext) {
-	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), atomtext);
-	cursoratom.renderSymb();
+	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), '@' + atomtext);
+	cursoratom.parse();
+	cursoratom.renderText();
 	cursoratom.g.firstChild.setAttribute('class', 'cursor-circ');
 	return cursoratom;
 }
@@ -349,7 +349,8 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function movElem(event) { // Move cursor atom
-		cursoratom.translate(...clampToCnv(getSvgPoint(event)));
+		// console.log(clampToCnv(getSvgPoint(event)), cursoratom.xy, vecDif(clampToCnv(getSvgPoint(event)), cursoratom.xy));
+		cursoratom.translate(vecDif(cursoratom.xy, clampToCnv(getSvgPoint(event))));
 	}
 
 	function setElem(event) { // Create a new atom
@@ -643,8 +644,8 @@ function textHandler(textbtn) {
 	function addInput(event) {
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
-			console.log(old_input.value);
-			console.log(node);
+			var kwargs = {atoms_text: {[node.g.id]: (old_input.value ? '@' : '') + old_input.value}};
+			dispatcher.do(editStructure, kwargs);
 			old_input.remove();
 		};
 		if (canvas.contains(event.target)) { // Click inside the canvas
