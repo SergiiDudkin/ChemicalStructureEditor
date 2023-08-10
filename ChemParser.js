@@ -205,7 +205,6 @@ var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
-	// 'font-family': 'Courier New',
 	'font-size': '16px'
 }
 
@@ -217,40 +216,3 @@ buildPrefixTree(prefix_tree, brackets, 4);
 buildPrefixTree(prefix_tree, digits, 5);
 digit_children = Object.fromEntries([...digits].map(digit => [digit, prefix_tree[digit]]));
 digits.forEach(digit => prefix_tree[digit].children = digit_children);
-
-
-
-// var canvas_container = document.getElementById('canvas-container');
-
-// var input = document.createElement('input');
-// input.setAttribute('id', 'txt-input');
-// input.setAttribute('type', 'text');
-// input.setAttribute('size', '10');
-// input.style.setProperty('top', '100px');
-// input.style.setProperty('left', '100px');
-// input.style.setProperty('color', styledict.fill);
-// input.style.setProperty('font-family', styledict['font-family']);
-// input.style.setProperty('font-size', styledict['font-size']);
-// canvas_container.appendChild(input);
-// input.focus();
-
-
-
-// var tokens = tokenize('(Br(Mg26(SO4)3(NO3)2)3N5)');
-// var tokens = tokenize('((N2)5CH3)');
-// var tokens = tokenize('N(CH2)5COOH');
-// var tokens = tokenize('CHSO3Cl');
-// var tokens = tokenize('NH2');
-// var tokens = tokenize('Al2(SO4)3');
-// var tokens = tokenize('O124N94C3');
-// var tokens = tokenize('NCFI');
-
-// var bracket_tree = buildBracketTree(tokens);
-// console.log(bracket_tree);
-// var [brackets_cnt, subscript_cnt, has_1st_subscript] = firstElemIdx(bracket_tree);
-
-// var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-// document.getElementById('utils').appendChild(g);
-
-// textTermBuilder(bracket_tree, g, 2, styledict, [180, 150])
-// drawPoint(180, 150);

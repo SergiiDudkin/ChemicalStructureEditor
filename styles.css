@@ -88,10 +88,6 @@ body {
 .bg:hover {
 	cursor: pointer;
 }
-#selectrect {
-	border: 1px dotted #000;
-	position: absolute;
-}
 .hlcirc {
 	stroke: blue;
 	stroke-width: 1.1;

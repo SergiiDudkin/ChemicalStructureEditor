@@ -643,7 +643,6 @@ function textHandler(textbtn) {
 	}
 
 	function addInput(event) {
-		// console.log(event.target);
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
 			var kwargs = {atoms_text: {[node.g.id]: (old_input.value ? '@' : '') + old_input.value}};
