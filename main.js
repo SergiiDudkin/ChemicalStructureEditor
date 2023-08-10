@@ -639,9 +639,11 @@ function textHandler(textbtn) {
 
 	function crText(event) {
 		window.addEventListener('mousedown', addInput);
+		document.addEventListener('keydown', event => {if (event.key == 'Enter') addInput(event)});
 	}
 
 	function addInput(event) {
+		// console.log(event.target);
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
 			var kwargs = {atoms_text: {[node.g.id]: (old_input.value ? '@' : '') + old_input.value}};
@@ -656,6 +658,7 @@ function textHandler(textbtn) {
 				input.setAttribute('id', 'txt-input');
 				input.setAttribute('type', 'text');
 				input.setAttribute('size', '10');
+				input.setAttribute('value', node.text.replace(/^@/, ''));
 				input.style.setProperty('top', `${top}px`);
 				input.style.setProperty('left', `${left}px`);
 				input.style.setProperty('color', styledict.fill);
@@ -666,7 +669,7 @@ function textHandler(textbtn) {
 			}
 		}
 		else { // Click outside the canvas
-			window.removeEventListener('mousedown', addInput);
+			if (event.target.id != 'txt-input') window.removeEventListener('mousedown', addInput);
 		}
 	}
 }

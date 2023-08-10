@@ -44,10 +44,13 @@ function buildBracketTree(tokens) {
 	var bracket_tree = [];
 	var bracket_stack = [];
 	var bracket_content = [];
-	var group_obj;
+	var group_obj, popped;
 	for (const item of tokens) {
 		if (bracket_stack.length) {
-			if (item == ')' || item == ']') bracket_stack.pop();
+			if (item == ')' || item == ']') {
+				popped = bracket_stack.pop();
+				if (popped != bracket_pairs[item]) throw new Error(`"${popped}" and "${item}" mismatch!`);
+			}
 			if (!bracket_stack.length) {
 				group_obj.brackets.push(item);
 				group_obj.content = buildBracketTree(bracket_content);
@@ -59,6 +62,7 @@ function buildBracketTree(tokens) {
 		}
 		else {
 			if (item == '(' || item == '[') group_obj = {brackets: [item], count: null};
+			else if (item == ')' || item == ']') throw new Error(`Closing bracket before the opening one!`);
 			else if (/^\d+$/.test(item)) bracket_tree.slice(-1)[0].count = parseInt(item);
 			else bracket_tree.push({content: item, brackets: [], count: null});
 		}
@@ -106,7 +110,7 @@ function dockText(anchor, satelite, dir) {
 	// Stack satelite text to the anchor one
 	var x = parseFloat(anchor.getAttribute('x')); 
 	var y = parseFloat(anchor.getAttribute('y'));
-	var dy = parseFloat(anchor.style.fontSize) * 0.9;
+	var dy = parseFloat(anchor.style.fontSize) * 0.8;
 
 	if (dir == 0) x += anchor.getBBox().width; // R
 	else if (dir == 1) x -= satelite.getBBox().width; // L
@@ -190,12 +194,13 @@ function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 	}
 }
 
+var bracket_pairs = {')': '(', ']': '['};
 
-atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'NCFS']);
-residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Ac', 'Bz', 'Ts']);
-punctuation = new Set(['-', ',']);
-brackets = new Set(['(', ')', '[', ']']);
-digits = new Set([...Array(10).keys()].map(digit => '' + digit));
+var atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'NCFS']);
+var residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Ac', 'Bz', 'Ts']);
+var punctuation = new Set(['-', ',']);
+var brackets = new Set(['(', ')', '[', ']']);
+var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 
 styledict = {
 	'fill': 'black',

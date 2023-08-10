@@ -50,15 +50,21 @@ ChemNode.prototype.isMethane = function() {
 }
 
 ChemNode.prototype.parse = function() {
+	var target_text;
 	var used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
 	if (this.text.startsWith('@')) {
-		var tokens = tokenize(this.text.slice(1));
-		this.bracket_tree = buildBracketTree(tokens);
+		target_text = this.text.slice(1);
+		try {
+			this.bracket_tree = buildBracketTree(tokenize(target_text));
+		}
+		catch {
+			this.bracket_tree = [{content: target_text, brackets: [], count: null}]
+		}
 	}
 	else {
 		target_text = this.isMethane() ? 'C' : this.text; // Convert floating C atoms into CH4
 		this.bracket_tree = [{content: target_text, brackets: [], count: null}]
-		h_cnt = target_text in ChemNode.hmaxtab ? Math.max(ChemNode.hmaxtab[target_text] - used_valency, 0) : 0;
+		var h_cnt = target_text in ChemNode.hmaxtab ? Math.max(ChemNode.hmaxtab[target_text] - used_valency, 0) : 0;
 		if (h_cnt) this.bracket_tree.push({content: 'H', brackets: [], count: h_cnt > 1 ? h_cnt : null});
 	}
 };
