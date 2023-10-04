@@ -39,7 +39,7 @@ body {
 	flex-direction: row;
 }
 #mainframe {
-	height: 604px;
+	height: 704px;
 }
 #canvas {
 	-webkit-user-select: none;

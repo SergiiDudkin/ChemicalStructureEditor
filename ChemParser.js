@@ -163,7 +163,7 @@ function firstElemIdx(bracket_tree) {
 
 function centering(text) {
 	text.setAttribute('x', parseFloat(text.getAttribute('x')) - text.getBBox().width / 2);
-	text.setAttribute('y', parseFloat(text.getAttribute('y')) + parseFloat(text.style.fontSize) * 0.3);
+	text.setAttribute('y', parseFloat(text.getAttribute('y')) + parseFloat(text.style.fontSize) * 0.34);
 }
 
 function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {

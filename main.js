@@ -65,6 +65,7 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 }
 
 var filters = document.getElementById('filters');
+var pentagonbtn = insertFancyBtn(filters, '5', 'fancybtn but brick');
 var textbtn = insertFancyBtn(filters, 'T', 'fancybtn but brick');
 var movebtn = insertFancyBtn(filters, 'move', 'fancybtn but brick');
 var delbtn = insertFancyBtn(filters, 'erase', 'fancybtn but brick');
@@ -212,6 +213,18 @@ function angleBisector(xy0, xy1) { // Not normalized, no direction control
 	return vecSum(unitVec(xy0), unitVec(xy1));
 }
 
+function polygonAngle(num) {
+	return Math.PI * (1 - 2 / num);
+}
+
+function polygonEdgeCtrDist(angle, side_len) {
+	return side_len * Math.tan(angle / 2) / 2;
+}
+
+function polygonVertexCtrDist(angle, side_len) {
+	return side_len / Math.cos(angle / 2) / 2;
+}
+
 
 function invertCmd(kwargs_dir) {
 	var kwargs_rev = {new_atoms_data: {}, new_bonds_data: {}};
@@ -349,7 +362,6 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function movElem(event) { // Move cursor atom
-		// console.log(clampToCnv(getSvgPoint(event)), cursoratom.xy, vecDif(clampToCnv(getSvgPoint(event)), cursoratom.xy));
 		cursoratom.translate(vecDif(cursoratom.xy, clampToCnv(getSvgPoint(event))));
 	}
 
@@ -637,18 +649,26 @@ function textHandler(textbtn) {
 	var pt, node;
 	textbtn.addEventListener('click', crText);
 
-	function crText(event) {
-		window.addEventListener('mousedown', addInput);
-		document.addEventListener('keydown', event => {if (event.key == 'Enter') addInput(event)});
+	function pressEnter(event) {
+		if (event.key == 'Enter') setNodeText(event);
 	}
 
-	function addInput(event) {
+	function crText(event) {
+		window.addEventListener('mousedown', addInput);
+		document.addEventListener('keydown', pressEnter);
+	}
+
+	function setNodeText() {
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
 			var kwargs = {atoms_text: {[node.g.id]: (old_input.value ? '@' : '') + old_input.value}};
 			dispatcher.do(editStructure, kwargs);
 			old_input.remove();
-		};
+		}
+	}
+
+	function addInput(event) {
+		setNodeText();
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			[pt, node] = pickNodePoint(event);
 			if (node) { // If some atom was clicked
@@ -668,10 +688,59 @@ function textHandler(textbtn) {
 			}
 		}
 		else { // Click outside the canvas
-			if (event.target.id != 'txt-input') window.removeEventListener('mousedown', addInput);
+			if (event.target.id != 'txt-input') {
+				window.removeEventListener('mousedown', addInput);
+				document.removeEventListener('keydown', pressEnter);
+			}
 		}
 	}
 }
+
+
+function polygonHandler(pentagonbtn) {
+	var pt, node, mo_st, node_ids, bond_ids;
+	var num = 5;
+	pentagonbtn.addEventListener('click', crPolygon);
+
+	function crPolygon(event) {
+		// Generate polygon
+		[mo_st, node] = pickNodePoint(event);
+		var y0 = polygonVertexCtrDist(polygonAngle(num), standard_bondlength);
+		var rot_angle = Math.PI * 2 / num;
+		node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
+		var new_atoms_data = node_ids.reduce(
+			(a, v, i) => ({...a, [v]: [...vecSum(mo_st, rotateVec([0, y0], rot_angle * i)), '']}), {}
+		);
+		bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
+		var new_bonds_data = bond_ids.reduce(
+			(a, v, i) => ({...a, [v]: [node_ids[i], node_ids[(i + 1) % num], 1]}), {}
+		);
+		editStructure({new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data});
+
+		window.addEventListener('mousemove', movPolygon);
+		window.addEventListener('mousedown', setPolygon);
+	}
+
+	function movPolygon(event) { // Move cursor polygon
+		var pt = getSvgPoint(event);
+		var moving_vec = vecDif(mo_st, pt);
+		mo_st = pt;
+		editStructure({moving_atoms: node_ids, moving_vec: moving_vec});
+	}
+
+	function setPolygon(event) { // Move cursor atom
+		if (canvas.contains(event.target)) { // Click inside the canvas
+
+		}
+		else { // Click outside the canvas
+			window.removeEventListener('mousedown', setPolygon);
+			window.removeEventListener('mousemove', movPolygon);
+			editStructure({del_atoms: new Set(node_ids), del_bonds: new Set(bond_ids)});
+		}
+	}
+}
+
+
 
 
 fancyBtnAnimation(fancybtns);
@@ -682,3 +751,4 @@ chemBondHandler(bondbtn, 1, 0); // Normal bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
 chemBondHandler(dbondbtn, 8, 2); // Upper bond
 textHandler(textbtn);
+polygonHandler(pentagonbtn);

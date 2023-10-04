@@ -220,7 +220,7 @@ ChemBond.prototype.renderLines = function() {
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		// polygon.setAttribute('fill', getColor());
+		polygon.setAttribute('fill', 'black');//getColor());
 		this.g.appendChild(polygon);
 	}
 }
