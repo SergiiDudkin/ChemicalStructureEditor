@@ -65,6 +65,7 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 }
 
 var filters = document.getElementById('filters');
+var benzenebtn = insertFancyBtn(filters, 'Ph', 'fancybtn but brick');
 var heptagonbtn = insertFancyBtn(filters, '7', 'fancybtn but brick');
 var hexagonbtn = insertFancyBtn(filters, '6', 'fancybtn but brick');
 var pentagonbtn = insertFancyBtn(filters, '5', 'fancybtn but brick');
@@ -324,11 +325,11 @@ var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
 var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
 var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
 
-function discreteAngle(pt0, [x, y]) {
+function discreteAngle(pt0, [x, y], length=standard_bondlength) {
 	// Returns pt1 with discrete angle and fixed length
 	tan = Math.abs(y / x);
 	for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
-	return [x, y].map((dim, i) => pt0[i] + Math.sign(dim) * dxytab[j][i] * standard_bondlength);
+	return [x, y].map((dim, i) => pt0[i] + Math.sign(dim) * dxytab[j][i] * length);
 }
 
 function pickNodePoint(event) {
@@ -337,16 +338,21 @@ function pickNodePoint(event) {
 	return [pt, node];
 }
 
+function pickNode([x, y]) {
+	[pt.x, pt.y] = [x, y];
+	var svgP2 = pt.matrixTransform(matrixrf.inverse());
+	var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
+	return (pt_elem != null && atomsall.contains(pt_elem)) ? pt_elem.parentNode.objref : null;
+}
+
 function getBondEnd(event, pt0) {
 	var [pt1, node1] = pickNodePoint(event);
 	var difxy = vecDif(pt0, pt1);
 	if (vecLen(difxy) < 16) return [null, null];
 	if (!node1) {
-		[pt.x, pt.y] = discreteAngle(pt0, difxy);
-		var svgP2 = pt.matrixTransform(matrixrf.inverse());
-		var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
-		if (pt_elem != null && atomsall.contains(pt_elem)) node1 = pt_elem.parentNode.objref;
-		pt1 = node1 ? node1.xy : [pt.x, pt.y];
+		pt1 = discreteAngle(pt0, difxy);
+		node1 = pickNode(pt1);
+		pt1 = node1 ? node1.xy : pt1;
 	}
 	return [pt1, node1];
 }
@@ -699,27 +705,27 @@ function textHandler(textbtn) {
 }
 
 
-function polygonHandler(pentagonbtn, num) {
-	var node, mo_st, node_ids, bond_ids, common_bond;
+function polygonHandler(pentagonbtn, num, alternate=false) {
+	function generateIds() {
+		var node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
+		var bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
+		return [node_ids, bond_ids]
+	}
+
+	var [cur_node_ids, cur_bond_ids] = generateIds();
+	var [new_node_ids, new_bond_ids] = generateIds();
+	var node, mo_st, node_ids, bond_ids, common_bond, common_node;
 	var vertex_angle = polygonAngle(num);
 	var rot_angle = Math.PI * 2 / num;
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
 	var pecd = polygonEdgeCtrDist(vertex_angle, standard_bondlength);
+
 	pentagonbtn.addEventListener('click', crPolygon);
 
 	function crPolygon(event) {
-		// Generate polygon
 		mo_st = getSvgPoint(event);
-		node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
-		var new_atoms_data = node_ids.reduce(
-			(a, v, i) => ({...a, [v]: [...vecSum(mo_st, rotateVec([0, pvcd], rot_angle * i)), '']}), {}
-		);
-		bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
-		var new_bonds_data = bond_ids.reduce(
-			(a, v, i) => ({...a, [v]: [node_ids[i], node_ids[(i + 1) % num], 1]}), {}
-		);
-		editStructure({new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data});
-
+		var [cur_atoms_data, cur_bonds_data] = generatePolygon(mo_st, [0, pvcd], cur_node_ids, cur_bond_ids);
+		editStructure({new_atoms_data: cur_atoms_data, new_bonds_data: cur_bonds_data});
 		window.addEventListener('mousemove', movPolygon);
 		window.addEventListener('mousedown', setPolygon);
 	}
@@ -728,87 +734,171 @@ function polygonHandler(pentagonbtn, num) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
-		editStructure({moving_atoms: node_ids, moving_vec: moving_vec});
+		editStructure({moving_atoms: cur_node_ids, moving_vec: moving_vec});
 	}
 
 	function setPolygon(event) { // Move cursor atom
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			var [pt, node] = pickNodePoint(event);
 			if (node) {
-				console.log('node');
+				stopCursor()
+				common_node = node;
+				dispatcher.do(editStructure, {});
+				rotatePolygon(event);
+				window.addEventListener('mousemove', rotatePolygon);
+				window.addEventListener('mouseup', appendPolygon);
 			}
 			else if (bondsall.contains(event.target)) { // Some bond was clicked
-				console.log('bond');
-				window.removeEventListener('mousedown', setPolygon);
-				window.removeEventListener('mousemove', movPolygon);
-				editStructure({del_atoms: new Set(node_ids), del_bonds: new Set(bond_ids)});
-
+				stopCursor()
 				common_bond = event.target.parentNode.objref;
 				dispatcher.do(editStructure, {});
 				flipPolygon(event);
 				window.addEventListener('mousemove', flipPolygon);
-				window.addEventListener('mouseup', stackPolygon);
+				window.addEventListener('mouseup', appendPolygon);
 			}
 			else { // Neither node nor bond was clicked
-				console.log('blank space');
-				var new_node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
-				var new_atoms_data = new_node_ids.reduce(
-					(a, v, i) => ({...a, [v]: [...document.getElementById(node_ids[i]).objref.xy, '']}), {}
-				);
-				new_bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
-				var new_bonds_data = new_bond_ids.reduce(
-					(a, v, i) => ({...a, [v]: [new_node_ids[i], new_node_ids[(i + 1) % num], 1]}), {}
-				);
+				vec0 = vecDif(pt, document.getElementById(cur_node_ids[0]).objref.xy);
+				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
+				[new_node_ids, new_bond_ids] = generateIds();
 			}
 		}
 		else { // Click outside the canvas
-			window.removeEventListener('mousedown', setPolygon);
-			window.removeEventListener('mousemove', movPolygon);
-			editStructure({del_atoms: new Set(node_ids), del_bonds: new Set(bond_ids)});
+			stopCursor()
 		}
 	}
 
 	function flipPolygon(event) {
 		dispatcher.undo();
+
 		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, getSvgPoint(event)))
 		var dir = Math.sign(ortho_proj);
 		dir = dir ? dir : 1;
-		var polygon_ctr = vecSum(common_bond.xy, vecMul(common_bond.ouva, pecd * dir));
-		var vec0 = rotateVec(vecMul(common_bond.ouva, -pvcd * dir), -rot_angle / 2);
 
-		var new_node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
-		var new_atoms_data = new_node_ids.reduce(
-			(a, v, i) => ({...a, [v]: [...vecSum(polygon_ctr, rotateVec(vec0, rot_angle * i)), '']}), {}
-		);
+		var ctr = vecSum(common_bond.xy, vecMul(common_bond.ouva, pecd * dir));
+		var vec0 = rotateVec(vecMul(common_bond.ouva, -pvcd * dir), -rot_angle / 2);
+		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
 		delete new_atoms_data[new_node_ids[0]];
 		delete new_atoms_data[new_node_ids[1]];
+		// new_bonds_data[new_bond_ids[1]][0] = common_bond.nodes[Math.floor((1 + dir) / 2)].g.id;
+		// new_bonds_data[new_bond_ids[num-1]][1] = common_bond.nodes[Math.floor((1 - dir) / 2)].g.id;
+		// delete new_bonds_data[new_bond_ids[0]];
 
-		new_node_ids[0] = common_bond.nodes[Math.floor((1 - dir) / 2)];
-		new_node_ids[1] = common_bond.nodes[Math.floor((1 + dir) / 2)];
+		var node0_id = common_bond.nodes[Math.floor((1 - dir) / 2)].g.id;
+		var node1_id = common_bond.nodes[Math.floor((1 + dir) / 2)].g.id;
+		new_bonds_data[new_bond_ids[1]][0] = node1_id;
+		new_bonds_data[new_bond_ids[num-1]][1] = node0_id;
+		new_bonds_data[new_bond_ids[0]][0] = node0_id;
+		new_bonds_data[new_bond_ids[0]][1] = node1_id;
 
-		var new_bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
-		var new_bonds_data = new_bond_ids.reduce(
-			(a, v, i) => ({...a, [v]: [new_node_ids[i], new_node_ids[(i + 1) % num], 1]}), {}
-		);
 
-		delete new_bonds_data[new_bond_ids[0]];
+		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
 
-		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
+		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
 		dispatcher.do(editStructure, kwargs);
 	}
 
-	function stackPolygon(event) {
-		console.log('stackPolygon');
+	function rotatePolygon(event) {
+		dispatcher.undo();
+
+		var difxy = vecDif(common_node.xy, getSvgPoint(event));
+
+		var ctr = discreteAngle(common_node.xy, difxy, length=pvcd);
+		var vec0 = vecDif(ctr, common_node.xy);
+		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
+
+		delete new_atoms_data[new_node_ids[0]];
+		new_bonds_data[new_bond_ids[0]][0] = common_node.g.id;
+		new_bonds_data[new_bond_ids[num-1]][1] = common_node.g.id;
+		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
+
+		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
+		dispatcher.do(editStructure, kwargs);
+	}
+
+	function appendPolygon(event) {
 		window.removeEventListener('mousemove', flipPolygon);
-		window.removeEventListener('mouseup', stackPolygon);
+		window.removeEventListener('mousemove', rotatePolygon);
+		window.removeEventListener('mouseup', appendPolygon);
+		[new_node_ids, new_bond_ids] = generateIds();
 		crPolygon(event);
 	}
+
+	function stopCursor() {
+		window.removeEventListener('mousedown', setPolygon);
+		window.removeEventListener('mousemove', movPolygon);
+		editStructure({del_atoms: new Set(cur_node_ids), del_bonds: new Set(cur_bond_ids)});
+	}
+
+	function generatePolygon(ctr, vec0, node_ids, bond_ids) {
+		var new_atoms_data = node_ids.reduce(
+			(a, v, i) => ({...a, [v]: [...vecSum(ctr, rotateVec(vec0, rot_angle * i)), '']}), {}
+		);
+		var new_bonds_data = bond_ids.reduce(
+			(a, v, i) => ({...a, [v]: [node_ids[i], node_ids[(i + 1) % num], 1 + 9 * alternate * (1 - i % 2)]}), {}
+		);
+		// console.log(new_bonds_data);
+		return [new_atoms_data, new_bonds_data];
+	}
+
+	function excludeRedundant(new_atoms_data, new_bonds_data, bonds_type) {
+		node_pairs = {};
+		for (const [id, data] of Object.entries(new_atoms_data)) {
+			node = pickNode(data.slice(0, 2));
+			if (node) {
+				node_pairs[id] = node.g.id;
+				delete new_atoms_data[id];
+			}
+		}
+		for (const [id, data] of Object.entries(new_bonds_data)) {
+			for (var i = 0; i < 2; i++) {
+				if (data[i] in node_pairs) data[i] = node_pairs[data[i]];
+			}
+			node0_el = document.getElementById(data[0]);
+			node1_el = document.getElementById(data[1]);
+			// if (node0_el !== null && node1_el !== null) {
+			// 	bonds0 = node0_el.objref.connections.map(bond => bond.g.id);
+			// 	bonds1 = node1_el.objref.connections.map(bond => bond.g.id);
+			// 	bonds1set = new Set(bonds1);
+			// 	var old_bonds = bonds0.filter(item => bonds1set.has(item));
+			// 	if (old_bonds.length > 0) {
+			// 		console.log(old_bonds);
+			// 		delete new_bonds_data[id];
+			// 		var old_bond = document.getElementById(old_bonds[0]).objref;
+			// 		console.log(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
+			// 		console.log(bonds0.concat(bonds1).map(bond => bond.multiplicity));
+			// 		var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
+			// 		if (ChemBond.mult[data[2]] > 1 && old_bond.type != data[2] && is_sp3) {
+			// 			// console.log('!!!');
+			// 			bonds_type[old_bond.g.id] = data[2];
+			// 		}
+			// 	}
+			// }
+			if (node0_el !== null && node1_el !== null) {
+				var bonds0 = node0_el.objref.connections;
+				var bonds1 = node1_el.objref.connections;
+				// bonds1set = new Set(bonds1);
+				var old_bonds = bonds0.filter(bond => bonds1.includes(bond));
+				if (old_bonds.length > 0) {
+					// console.log(old_bonds);
+					delete new_bonds_data[id];
+					var old_bond = old_bonds[0];
+					// console.log(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
+					// console.log(bonds0.concat(bonds1).map(bond => bond.multiplicity));
+					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
+					// console.log(is_sp3);
+					if (ChemBond.mult[data[2]] > 1 && old_bond.type != data[2] && is_sp3) {
+						// console.log('!!!');
+						bonds_type[old_bond.g.id] = data[2];
+					}
+				}
+			}
+		}
+		return [new_atoms_data, new_bonds_data, bonds_type];
+	}
 }
-
-
 
 
 fancyBtnAnimation(fancybtns);
@@ -822,3 +912,4 @@ textHandler(textbtn);
 polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
+polygonHandler(benzenebtn, 6, true);

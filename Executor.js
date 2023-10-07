@@ -36,7 +36,7 @@ function editStructure({
 
 	// Create atoms
 	for (const [id, data] of Object.entries(new_atoms_data)) {
-		atoms_parse.add(new ChemNode(id, ...data)) // data: [x, y, text]	
+		atoms_parse.add(new ChemNode(id, ...data)); // data: [x, y, text]	
 	}
 
 	// Create bonds
