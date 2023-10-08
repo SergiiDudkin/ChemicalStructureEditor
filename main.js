@@ -782,22 +782,18 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 
 		delete new_atoms_data[new_node_ids[0]];
 		delete new_atoms_data[new_node_ids[1]];
-		// new_bonds_data[new_bond_ids[1]][0] = common_bond.nodes[Math.floor((1 + dir) / 2)].g.id;
-		// new_bonds_data[new_bond_ids[num-1]][1] = common_bond.nodes[Math.floor((1 - dir) / 2)].g.id;
-		// delete new_bonds_data[new_bond_ids[0]];
 
-		var node0_id = common_bond.nodes[Math.floor((1 - dir) / 2)].g.id;
-		var node1_id = common_bond.nodes[Math.floor((1 + dir) / 2)].g.id;
+		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].g.id)
 		new_bonds_data[new_bond_ids[1]][0] = node1_id;
 		new_bonds_data[new_bond_ids[num-1]][1] = node0_id;
 		new_bonds_data[new_bond_ids[0]][0] = node0_id;
 		new_bonds_data[new_bond_ids[0]][1] = node1_id;
 
-
 		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
 		dispatcher.do(editStructure, kwargs);
+		// ToDo: Instead of dispatcher.do, memorize dir (or its absence), and then conditionally undo. It will also supress the cursor blinking when over new node.
 	}
 
 	function rotatePolygon(event) {
@@ -839,15 +835,17 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 		var new_bonds_data = bond_ids.reduce(
 			(a, v, i) => ({...a, [v]: [node_ids[i], node_ids[(i + 1) % num], 1 + 9 * alternate * (1 - i % 2)]}), {}
 		);
-		// console.log(new_bonds_data);
 		return [new_atoms_data, new_bonds_data];
 	}
 
+	// ToDo: Create check-up of empty (no effect) kwargs. Do not save it in the stack.
+
 	function excludeRedundant(new_atoms_data, new_bonds_data, bonds_type) {
+		// ToDo: Place it in the global scope.
 		node_pairs = {};
 		for (const [id, data] of Object.entries(new_atoms_data)) {
 			node = pickNode(data.slice(0, 2));
-			if (node) {
+			if (node) { // ToDo: Consider extra condition in case of new heteroatom.
 				node_pairs[id] = node.g.id;
 				delete new_atoms_data[id];
 			}
@@ -858,39 +856,15 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 			}
 			node0_el = document.getElementById(data[0]);
 			node1_el = document.getElementById(data[1]);
-			// if (node0_el !== null && node1_el !== null) {
-			// 	bonds0 = node0_el.objref.connections.map(bond => bond.g.id);
-			// 	bonds1 = node1_el.objref.connections.map(bond => bond.g.id);
-			// 	bonds1set = new Set(bonds1);
-			// 	var old_bonds = bonds0.filter(item => bonds1set.has(item));
-			// 	if (old_bonds.length > 0) {
-			// 		console.log(old_bonds);
-			// 		delete new_bonds_data[id];
-			// 		var old_bond = document.getElementById(old_bonds[0]).objref;
-			// 		console.log(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
-			// 		console.log(bonds0.concat(bonds1).map(bond => bond.multiplicity));
-			// 		var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
-			// 		if (ChemBond.mult[data[2]] > 1 && old_bond.type != data[2] && is_sp3) {
-			// 			// console.log('!!!');
-			// 			bonds_type[old_bond.g.id] = data[2];
-			// 		}
-			// 	}
-			// }
 			if (node0_el !== null && node1_el !== null) {
 				var bonds0 = node0_el.objref.connections;
 				var bonds1 = node1_el.objref.connections;
-				// bonds1set = new Set(bonds1);
 				var old_bonds = bonds0.filter(bond => bonds1.includes(bond));
 				if (old_bonds.length > 0) {
-					// console.log(old_bonds);
 					delete new_bonds_data[id];
 					var old_bond = old_bonds[0];
-					// console.log(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
-					// console.log(bonds0.concat(bonds1).map(bond => bond.multiplicity));
 					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
-					// console.log(is_sp3);
 					if (ChemBond.mult[data[2]] > 1 && old_bond.type != data[2] && is_sp3) {
-						// console.log('!!!');
 						bonds_type[old_bond.g.id] = data[2];
 					}
 				}
