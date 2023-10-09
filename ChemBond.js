@@ -57,7 +57,8 @@ ChemBond.linecnt = 				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2, 
 ChemBond.ctrline = 				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
 ChemBond.next_type = 		   [[ 1, 14,  1,  1,  1, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15,  1],
 								[ 2,  2,  4,  2,  3,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2],
-								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8]];
+								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8],
+								[ 5,  5,  5,  5,  5,  7,  5,  6,  5,  5,  5,  5,  5,  5,  5,  5]];
 ChemBond.tip_type =			   [[ 0,  0,  1,  2,  3,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
 								[ 0,  0,  2,  1,  3,  2,  1,  3,  0,  0,  0,  0,  0,  0,  0,  0]];
 ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];							
@@ -74,6 +75,7 @@ ChemBond.prototype.recalcDims = function() {
 	this.len = vecLen(this.difxy); // Distance between nodes
 	this.uv = vecDiv(this.difxy, this.len); // Unit vector
 	this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
+	this.rotang = Math.atan2(...this.uv.toReversed()) * 180 / Math.PI; // Rotation angle of the bond
 };
 
 ChemBond.prototype.getNodeVec = function(node) {
@@ -106,6 +108,8 @@ ChemBond.prototype.setType = function(type) {
 ChemBond.prototype.delete = function() {
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
+	var pattern = document.getElementById('p' + this.g.id);
+	if (pattern !== null) pattern.remove();
 	delete this.nodes;
 };
 
@@ -215,12 +219,45 @@ ChemBond.prototype.setSideTip = function(node) {
 	}
 }
 
+ChemBond.prototype.createPattern = function() {
+	var pattern_id = 'p' + this.g.id;
+	var old_pattern = document.getElementById(pattern_id);
+	if (old_pattern !== null) {
+		old_pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+	}
+	else {
+		var pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+		pattern.setAttribute('id', pattern_id);
+		pattern.setAttribute('x', 0);
+		pattern.setAttribute('y', 0);
+		pattern.setAttribute('width', 4);
+		pattern.setAttribute('height', 1);
+		pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+		pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+
+		var fill_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		fill_rect.setAttribute('x', 0);
+		fill_rect.setAttribute('y', 0);
+		fill_rect.setAttribute('width', 2);
+		fill_rect.setAttribute('height', 1);
+		fill_rect.setAttribute('fill', 'black');
+		pattern.appendChild(fill_rect);
+
+		var svg_defs = document.getElementById('svg_defs');
+		svg_defs.appendChild(pattern);
+	}
+}
+
 ChemBond.prototype.renderLines = function() {
 	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		polygon.setAttribute('fill', 'black');//getColor());
+		if ([5, 6, 7].includes(this.type)) {
+			this.createPattern();
+		}
+		var fill = [5, 6, 7].includes(this.type) ? `url(#p${this.g.id})` : 'black';
+		polygon.setAttribute('fill', fill);//getColor());
 		this.g.appendChild(polygon);
 	}
 }

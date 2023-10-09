@@ -73,6 +73,7 @@ var textbtn = insertFancyBtn(filters, 'T', 'fancybtn but brick');
 var movebtn = insertFancyBtn(filters, 'move', 'fancybtn but brick');
 var delbtn = insertFancyBtn(filters, 'erase', 'fancybtn but brick');
 var bondbtn = insertFancyBtn(filters, 'bond', 'fancybtn but brick');
+var lowerbtn = insertFancyBtn(filters, 'dw', 'fancybtn but brick');
 var upperbtn = insertFancyBtn(filters, 'up', 'fancybtn but brick');
 var dbondbtn = insertFancyBtn(filters, 'db', 'fancybtn but brick');
 var elbtnseq = ['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H'];
@@ -881,6 +882,7 @@ deleteHandler(delbtn);
 moveHandler(movebtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
+chemBondHandler(lowerbtn, 5, 3); // Upper bond
 chemBondHandler(dbondbtn, 8, 2); // Upper bond
 textHandler(textbtn);
 polygonHandler(pentagonbtn, 5);
