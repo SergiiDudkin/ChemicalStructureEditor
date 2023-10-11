@@ -1,14 +1,4 @@
 function ChemBond(id, node0, node1, type) {
-	Object.assign(this, ChemBond.default_style);
-	this.setType(type);
-
-	if (typeof node0 === "string") node0 = document.getElementById(node0).objref;
-	if (typeof node1 === "string") node1 = document.getElementById(node1).objref;
-	this.nodes = [node0, node1];
-	node0.connections.push(this);
-	node1.connections.push(this);
-	this.recalcDims();
-	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
 	this.g.id = id;
 	this.g.objref = this;
@@ -20,6 +10,16 @@ function ChemBond(id, node0, node1, type) {
 	backrect.setAttribute('height', 10);
 	backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
 	this.g.appendChild(backrect);
+
+	Object.assign(this, ChemBond.default_style);
+	this.setType(type);
+
+	if (typeof node0 === "string") node0 = document.getElementById(node0).objref;
+	if (typeof node1 === "string") node1 = document.getElementById(node1).objref;
+	this.nodes = [node0, node1];
+	node0.connections.push(this);
+	node1.connections.push(this);
+	this.recalcDims();
 }
 
 ChemBond.counter = 0;
@@ -103,14 +103,18 @@ ChemBond.prototype.setType = function(type) {
 	this.juncs = [new Array(2), new Array(2)];
 	this.lines = new Array(this.linecnt).fill().map(() => [[], []]);
 	// this.lines[line][tip(start | end)][corner(prev | cntr | next)][axis(x | y)]
+
+	if ([5, 6, 7].includes(this.type)) {
+		if (!this.pattern) this.createPattern();
+	}
+	else this.deletePattern();
 };
 
 ChemBond.prototype.delete = function() {
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
-	var pattern = document.getElementById('p' + this.g.id);
-	if (pattern !== null) pattern.remove();
 	delete this.nodes;
+	this.deletePattern();
 };
 
 ChemBond.prototype.translate = function(moving_vec) {
@@ -220,55 +224,52 @@ ChemBond.prototype.setSideTip = function(node) {
 }
 
 ChemBond.prototype.createPattern = function() {
-	var pattern_id = 'p' + this.g.id;
-	var old_pattern = document.getElementById(pattern_id);
-	if (old_pattern !== null) {
-		old_pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
-	}
-	else {
-		var pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-		pattern.setAttribute('id', pattern_id);
-		pattern.setAttribute('x', 0);
-		pattern.setAttribute('y', 0);
-		pattern.setAttribute('width', 4);
-		pattern.setAttribute('height', 1);
-		pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-		pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+	this.pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+	this.pattern.setAttribute('id', 'p' + this.g.id);
+	this.pattern.setAttribute('x', 0);
+	this.pattern.setAttribute('y', 0);
+	this.pattern.setAttribute('width', 4);
+	this.pattern.setAttribute('height', 1);
+	this.pattern.setAttribute('patternUnits', 'userSpaceOnUse');
 
-		var fill_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		fill_rect.setAttribute('x', 0);
-		fill_rect.setAttribute('y', 0);
-		fill_rect.setAttribute('width', 2);
-		fill_rect.setAttribute('height', 1);
-		fill_rect.setAttribute('fill', 'black');
-		pattern.appendChild(fill_rect);
+	var fill_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+	fill_rect.setAttribute('x', 0);
+	fill_rect.setAttribute('y', 0);
+	fill_rect.setAttribute('width', 2);
+	fill_rect.setAttribute('height', 1);
+	this.pattern.appendChild(fill_rect);
 
-		var svg_defs = document.getElementById('svg_defs');
-		svg_defs.appendChild(pattern);
-	}
+	var svg_defs = document.getElementById('svg_defs');
+	svg_defs.appendChild(this.pattern);
 }
+
+ChemBond.prototype.deletePattern = function() {
+	if (this.pattern) {
+		this.pattern.remove();
+		delete this.pattern;
+	}
+};
 
 ChemBond.prototype.renderLines = function() {
 	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		if ([5, 6, 7].includes(this.type)) {
-			this.createPattern();
+		if (this.pattern) {
+			this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+			this.pattern.firstChild.setAttribute('fill', this.color);
 		}
-		var fill = [5, 6, 7].includes(this.type) ? `url(#p${this.g.id})` : 'black';
-		polygon.setAttribute('fill', fill);//getColor());
+		polygon.setAttribute('fill', this.pattern ? `url(#p${this.g.id})` : this.color);//getColor());
 		this.g.appendChild(polygon);
 	}
 }
 
 ChemBond.prototype.updateRect = function() {
-	var rotang = Math.atan2(...this.difxy.slice().reverse()) * 180 / Math.PI; // Rotation angle of backrect
 	var backrect = this.g.firstChild;
 	backrect.setAttribute('x', this.xy[0] - this.len / 2);
 	backrect.setAttribute('y', this.xy[1] - 5);
 	backrect.setAttribute('width', this.len);
-	backrect.transform.baseVal[0].setRotate(rotang, ...this.xy);
+	backrect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
 }
 
 ChemBond.prototype.getNodeCenters = function() {
