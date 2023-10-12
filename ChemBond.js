@@ -250,16 +250,43 @@ ChemBond.prototype.deletePattern = function() {
 	}
 };
 
-ChemBond.prototype.renderLines = function() {
-	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
+ChemBond.prototype.createMask = function() {
+	this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+	this.mask.setAttribute('id', 'm' + this.g.id);
+
+	var maskcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	maskcircle.setAttribute('r', this.len * 2); // ToDo: Get circle params of another bond!!!
+	maskcircle.setAttribute('cx', this.xy[0]);
+	maskcircle.setAttribute('cy', this.xy[1]);
+	maskcircle.setAttribute('fill', 'white');
+	this.mask.appendChild(maskcircle);
+
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		if (this.pattern) {
-			this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
-			this.pattern.firstChild.setAttribute('fill', this.color);
-		}
+		polygon.setAttribute('fill', 'black');
+		polygon.setAttribute('stroke', 'black');
+		polygon.setAttribute('stroke-width', 4);
+		this.mask.appendChild(polygon);
+	}
+
+	var svg_defs = document.getElementById('svg_defs');
+	svg_defs.appendChild(this.mask);
+
+	return 'm' + this.g.id;
+}
+
+ChemBond.prototype.renderLines = function(mask_id=null) {
+	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
+	if (this.pattern) {
+		this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+		this.pattern.firstChild.setAttribute('fill', this.color);
+	}
+	for (const line of this.lines) {
+		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
 		polygon.setAttribute('fill', this.pattern ? `url(#p${this.g.id})` : this.color);//getColor());
+		if (mask_id !== null) polygon.setAttribute('mask', `url(#${mask_id})`);
 		this.g.appendChild(polygon);
 	}
 }
@@ -340,7 +367,7 @@ ChemBond.prototype.adjustLength = function(node) {
 };
 
 ChemBond.prototype.select = function() {
-	// ToDo: !
+	// ToDo: Get circle params of another bond!!!: !
 };
 
 ChemBond.prototype.deselect = function() {

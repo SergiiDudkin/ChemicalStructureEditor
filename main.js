@@ -229,6 +229,25 @@ function polygonVertexCtrDist(angle, side_len) {
 	return side_len / Math.cos(angle / 2) / 2;
 }
 
+function getAngleSigns(a_xy0, a_xy1, b_xy0, b_xy1) {
+	var vec_a = vecDif(a_xy0, a_xy1);
+	var vec_b = vecDif(b_xy0, b_xy1);
+	var sign_a1_a0_b0 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy0)));
+	var sign_a1_a0_b1 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy1)));
+	var sign_b1_b0_a0 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy0)));
+	var sign_b1_b0_a1 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy1)));
+	return [sign_a1_a0_b0, sign_a1_a0_b1, sign_b1_b0_a0, sign_b1_b0_a1];
+}
+
+function checkIntersec(a_xy0, a_xy1, b_xy0, b_xy1) {
+	var angle_signs = getAngleSigns(a_xy0, a_xy1, b_xy0, b_xy1);
+	var no_zero_angle = !angle_signs.some(sign => sign == 0);
+	var no_common_terminals = !angle_signs.some(sign => Number.isNaN(sign));
+	var [sign_a1_a0_b0, sign_a1_a0_b1, sign_b1_b0_a0, sign_b1_b0_a1] = angle_signs;
+	var has_common_point = (sign_a1_a0_b0 != sign_a1_a0_b1) && (sign_b1_b0_a0 != sign_b1_b0_a1);
+	return has_common_point && no_zero_angle && no_common_terminals;
+}
+
 
 function invertCmd(kwargs_dir) {
 	var kwargs_rev = {new_atoms_data: {}, new_bonds_data: {}};
@@ -357,6 +376,50 @@ function getBondEnd(event, pt0) {
 	}
 	return [pt1, node1];
 }
+
+
+
+
+function iterBonds() {
+	for (const bond of bondsall.children) {
+		console.log(bond.objref.g.id);
+	}
+}
+
+// function checkBondIntersec(bond0, bond1) {
+
+// }
+
+function detectIntersec(bond_group) {
+	// var bond_cnt = bondsall.children.length;
+	overlaps = [];
+	for (const [i, element] of Object.entries(bond_group)) {
+		// console.log(key, value.objref.g.id);
+		var bond0 = element.objref;
+
+		for (var j = parseInt(i) + 1; j < bond_group.length; j++) {
+			var bond1 = bond_group[j].objref;
+			var is_overlap = checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy));
+			// console.log(bond0.g.id, bond1.g.id, res);
+			if (is_overlap) overlaps.push([bond0, bond1].sort((a, b) => a < b ? -1 : 1));
+		}
+	}
+	// console.log(overlaps)
+	return overlaps;
+}
+
+function cutOverlaps(overlaps) {
+	for (const [bond_d, bond_u] of overlaps) {
+		var mask_id = bond_u.createMask();
+		console.log(mask_id);
+		bond_d.renderLines(mask_id);
+	}
+}
+
+function overlap() {
+	cutOverlaps(detectIntersec(bondsall.children));
+}
+
 
 
 function chemNodeHandler(elbtns) {
