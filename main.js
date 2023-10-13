@@ -380,45 +380,38 @@ function getBondEnd(event, pt0) {
 
 
 
-function iterBonds() {
-	for (const bond of bondsall.children) {
-		console.log(bond.objref.g.id);
-	}
-}
 
-// function checkBondIntersec(bond0, bond1) {
-
-// }
 
 function detectIntersec(bond_group) {
-	// var bond_cnt = bondsall.children.length;
 	overlaps = [];
-	for (const [i, element] of Object.entries(bond_group)) {
-		// console.log(key, value.objref.g.id);
-		var bond0 = element.objref;
+	for (const [i, bond0] of Object.entries(bond_group)) {
+		// var bond0 = element.objref;
 
 		for (var j = parseInt(i) + 1; j < bond_group.length; j++) {
-			var bond1 = bond_group[j].objref;
+			var bond1 = bond_group[j];
 			var is_overlap = checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy));
-			// console.log(bond0.g.id, bond1.g.id, res);
 			if (is_overlap) overlaps.push([bond0, bond1].sort((a, b) => a < b ? -1 : 1));
 		}
 	}
-	// console.log(overlaps)
 	return overlaps;
 }
 
 function cutOverlaps(overlaps) {
-	for (const [bond_d, bond_u] of overlaps) {
-		var mask_id = bond_u.createMask();
-		console.log(mask_id);
-		bond_d.renderLines(mask_id);
+	overlaps_grouped = {};
+	overlaps.forEach(bonds => (overlaps_grouped[bonds[0].g.id] ??= []).push(bonds[1]));
+	for (const [lower_bond_id, upper_bonds] of Object.entries(overlaps_grouped)) {
+		var lower_bond = document.getElementById(lower_bond_id).objref;
+		lower_bond.createMask(upper_bonds);
+		lower_bond.renderLines();
 	}
 }
 
-function overlap() {
-	cutOverlaps(detectIntersec(bondsall.children));
+function overlap(exclude=[]) {
+	var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
+	bond_group.forEach(bond => bond.deleteMask());
+	cutOverlaps(detectIntersec(bond_group));
 }
+
 
 
 
@@ -490,11 +483,12 @@ function chemNodeHandler(elbtns) {
 	}
 
 	function finNode(event) { // Finish to set node
+		window.removeEventListener('mouseup', finNode);
+		window.removeEventListener('mousemove', movBoundNode);
 		if (document.getElementById(new_bond_id) === null && node0_is_new) dispatcher.undo();
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
-		window.removeEventListener('mouseup', finNode);
-		window.removeEventListener('mousemove', movBoundNode);
+		overlap();
 		window.addEventListener('mousemove', movElem);
 	}
 }
@@ -514,6 +508,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				var focobj = event.target.parentNode.objref;
 				var kwargs = {bonds_type: {[focobj.g.id]: focobj.getNextType(rotation_schema)}};
 				dispatcher.do(editStructure, kwargs);
+				overlap();
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				[pt0, node0] = pickNodePoint(event);
@@ -551,10 +546,11 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	}
 
 	function enBond(event) { // Finish drawing bond
-		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
-		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
 		window.removeEventListener('mouseup', enBond);
 		window.removeEventListener('mousemove', movBond);
+		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
+		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
+		overlap();
 	}
 }
 
@@ -586,6 +582,7 @@ function deleteHandler(delbtn) {
 			};
 			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.g.id])};
 			dispatcher.do(editStructure, kwargs);
+			overlap();
 		}
 	}
 
@@ -659,13 +656,14 @@ function moveHandler(movebtn) {
 	}
 
 	function finishMoving() {
+		window.removeEventListener('mousemove', moving);
+		window.removeEventListener('mouseup', finishMoving);
 		var atoms_slctd_clone = new Set(atoms_slctd);
 		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec}
 		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		if (!is_selected) clearSlct();
-		window.removeEventListener('mousemove', moving);
-		window.removeEventListener('mouseup', finishMoving);
+		overlap();
 	}
 
 	function clearSlct() {
@@ -825,6 +823,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
+				overlap(exclude=cur_bond_ids);
 				[new_node_ids, new_bond_ids] = generateIds();
 			}
 		}
@@ -882,6 +881,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 		window.removeEventListener('mousemove', flipPolygon);
 		window.removeEventListener('mousemove', rotatePolygon);
 		window.removeEventListener('mouseup', appendPolygon);
+		overlap();
 		[new_node_ids, new_bond_ids] = generateIds();
 		crPolygon(event);
 	}

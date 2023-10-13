@@ -55,10 +55,10 @@ ChemBond.default_style = {
 ChemBond.mult = 				[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.linecnt = 				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.ctrline = 				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
-ChemBond.next_type = 		   [[ 1, 14,  1,  1,  1, 14, 14, 14, 15, 15, 15, 15, 15, 15, 15,  1],
-								[ 2,  2,  4,  2,  3,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2],
-								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8],
-								[ 5,  5,  5,  5,  5,  7,  5,  6,  5,  5,  5,  5,  5,  5,  5,  5]];
+ChemBond.next_type = 		   [[ 1, 14,  1,  1,  1,  1,  1,  1, 15, 15, 15, 15, 15, 15, 15,  1],  // Simpe
+								[ 2,  2,  4,  2,  3,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2],  // Up
+								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8],  // Double
+								[ 5,  5,  5,  5,  5,  7,  5,  6,  5,  5,  5,  5,  5,  5,  5,  5]]; // Up
 ChemBond.tip_type =			   [[ 0,  0,  1,  2,  3,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
 								[ 0,  0,  2,  1,  3,  2,  1,  3,  0,  0,  0,  0,  0,  0,  0,  0]];
 ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];							
@@ -250,33 +250,41 @@ ChemBond.prototype.deletePattern = function() {
 	}
 };
 
-ChemBond.prototype.createMask = function() {
+ChemBond.prototype.createMask = function(upper_bonds) {
 	this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
 	this.mask.setAttribute('id', 'm' + this.g.id);
-
-	var maskcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	maskcircle.setAttribute('r', this.len * 2); // ToDo: Get circle params of another bond!!!
-	maskcircle.setAttribute('cx', this.xy[0]);
-	maskcircle.setAttribute('cy', this.xy[1]);
-	maskcircle.setAttribute('fill', 'white');
-	this.mask.appendChild(maskcircle);
 
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		polygon.setAttribute('fill', 'black');
-		polygon.setAttribute('stroke', 'black');
+		polygon.setAttribute('fill', 'white');
+		polygon.setAttribute('stroke', 'white');
 		polygon.setAttribute('stroke-width', 4);
 		this.mask.appendChild(polygon);
 	}
 
-	var svg_defs = document.getElementById('svg_defs');
-	svg_defs.appendChild(this.mask);
+	for (const upper_bond of upper_bonds) {
+		for (const line of upper_bond.lines) {
+			var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+			polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
+			polygon.setAttribute('fill', 'black');
+			polygon.setAttribute('stroke', 'black');
+			polygon.setAttribute('stroke-width', 4);
+			this.mask.appendChild(polygon);
+		}
+	}
 
-	return 'm' + this.g.id;
+	document.getElementById('svg_defs').appendChild(this.mask);
 }
 
-ChemBond.prototype.renderLines = function(mask_id=null) {
+ChemBond.prototype.deleteMask = function() {
+	if (this.mask) {
+		this.mask.remove();
+		delete this.mask;
+	}
+};
+
+ChemBond.prototype.renderLines = function() {
 	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
 	if (this.pattern) {
 		this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
@@ -286,7 +294,7 @@ ChemBond.prototype.renderLines = function(mask_id=null) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
 		polygon.setAttribute('fill', this.pattern ? `url(#p${this.g.id})` : this.color);//getColor());
-		if (mask_id !== null) polygon.setAttribute('mask', `url(#${mask_id})`);
+		if (this.mask) polygon.setAttribute('mask', `url(#m${this.g.id})`);
 		this.g.appendChild(polygon);
 	}
 }
