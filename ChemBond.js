@@ -253,11 +253,11 @@ ChemBond.prototype.deletePattern = function() {
 ChemBond.prototype.createMask = function(upper_bonds) {
 	this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
 	this.mask.setAttribute('id', 'm' + this.g.id);
-	this.drawLines(this.mask, {'fill': 'white', 'stroke': 'white', 'stroke-width': 4});
 	upper_bonds.forEach(
-		upper_bond => upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `url(#l${upper_bond.g.id})`})
+		upper_bond => upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${upper_bond.g.id}`})
 	);
 	document.getElementById('svg_defs').appendChild(this.mask);
+	this.renderBond();
 }
 
 ChemBond.prototype.deleteMask = function() {
@@ -267,12 +267,12 @@ ChemBond.prototype.deleteMask = function() {
 	}
 };
 
-ChemBond.prototype.drawLines = function(parent, attrs={}) {
+ChemBond.prototype.drawLines = function(parent, attrs={}, prepend=false) {
 	for (const line of this.lines) {
 		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
 		Object.entries(attrs).forEach(([key, val]) => polygon.setAttribute(key, val));
-		parent.appendChild(polygon);
+		prepend ? parent.prepend(polygon) : parent.appendChild(polygon);
 	}
 };
 
@@ -286,6 +286,18 @@ ChemBond.prototype.renderBond = function() {
 		'fill': (this.pattern ? `url(#p${this.g.id})` : this.color), 
 		'mask': (this.mask ? `url(#m${this.g.id})`: null)
 	});
+
+	if (this.mask) {
+		for (m_line of this.mask.getElementsByClassName(`l${this.g.id}`)) m_line.remove();
+		this.drawLines(this.mask, {'fill': 'white', 'stroke': 'white', 'stroke-width': 4, 'class': `l${this.g.id}`}, prepend=true);
+	}
+
+	var u_mask_lines = Array.from(document.getElementsByClassName(`u${this.g.id}`));
+	var u_masks = new Set(u_mask_lines.map(m_line => m_line.parentNode));
+	u_mask_lines.forEach(m_line => m_line.remove());
+	u_masks.forEach(mask => 
+		this.drawLines(mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${this.g.id}`})
+	);
 }
 
 ChemBond.prototype.updateRect = function() {

@@ -385,8 +385,6 @@ function getBondEnd(event, pt0) {
 function detectIntersec(bond_group) {
 	overlaps = [];
 	for (const [i, bond0] of Object.entries(bond_group)) {
-		// var bond0 = element.objref;
-
 		for (var j = parseInt(i) + 1; j < bond_group.length; j++) {
 			var bond1 = bond_group[j];
 			var is_overlap = checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy));
@@ -402,14 +400,15 @@ function cutOverlaps(overlaps) {
 	for (const [lower_bond_id, upper_bonds] of Object.entries(overlaps_grouped)) {
 		var lower_bond = document.getElementById(lower_bond_id).objref;
 		lower_bond.createMask(upper_bonds);
-		lower_bond.renderBond();
 	}
 }
 
 function overlap(exclude=[]) {
+	console.time('overlap');
 	var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
 	bond_group.forEach(bond => bond.deleteMask());
 	cutOverlaps(detectIntersec(bond_group));
+	console.timeEnd('overlap');
 }
 
 
