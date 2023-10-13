@@ -402,7 +402,7 @@ function cutOverlaps(overlaps) {
 	for (const [lower_bond_id, upper_bonds] of Object.entries(overlaps_grouped)) {
 		var lower_bond = document.getElementById(lower_bond_id).objref;
 		lower_bond.createMask(upper_bonds);
-		lower_bond.renderLines();
+		lower_bond.renderBond();
 	}
 }
 

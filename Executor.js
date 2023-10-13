@@ -159,7 +159,7 @@ function editStructure({
 
 	// Render bond lines
 	for (const bond of bonds_to_render) {
-		bond.renderLines();
+		bond.renderBond();
 	}
 
 	// Update back rechtangle
