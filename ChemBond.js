@@ -20,6 +20,7 @@ function ChemBond(id, node0, node1, type) {
 	node0.connections.push(this);
 	node1.connections.push(this);
 	this.recalcDims();
+	this.recalcLims();
 }
 
 ChemBond.counter = 0;
@@ -70,12 +71,20 @@ ChemBond.prototype.getNewId = function() {
 };
 
 ChemBond.prototype.recalcDims = function() {
-	this.xy = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
 	this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 	this.len = vecLen(this.difxy); // Distance between nodes
 	this.uv = vecDiv(this.difxy, this.len); // Unit vector
 	this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
 	this.rotang = Math.atan2(...this.uv.toReversed()) * 180 / Math.PI; // Rotation angle of the bond
+};
+
+ChemBond.prototype.recalcLims = function() {
+	var [node0ctr, node1ctr] = this.getNodeCenters();
+	this.min_x = Math.min(node0ctr[0], node1ctr[0]);
+	this.max_x = Math.max(node0ctr[0], node1ctr[0]);
+	this.min_y = Math.min(node0ctr[1], node1ctr[1]);
+	this.max_y = Math.max(node0ctr[1], node1ctr[1]);
+	this.xy = vecDiv(vecSum(node0ctr, node1ctr), 2); // Center of bond
 };
 
 ChemBond.prototype.getNodeVec = function(node) {
@@ -123,7 +132,7 @@ ChemBond.prototype.translate = function(moving_vec) {
 			tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec)); // Move poligon corners
 		}
 	}
-	this.xy = vecDiv(vecSum(...this.getNodeCenters()), 2); // Center of bond
+	this.recalcLims();
 };
 
 ChemBond.prototype.posDouble = function() {

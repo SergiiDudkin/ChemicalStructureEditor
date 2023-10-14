@@ -377,18 +377,17 @@ function getBondEnd(event, pt0) {
 	return [pt1, node1];
 }
 
-
-
-
-
-
 function detectIntersec(bond_group) {
 	overlaps = [];
+	bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
 	for (const [i, bond0] of Object.entries(bond_group)) {
-		for (var j = parseInt(i) + 1; j < bond_group.length; j++) {
-			var bond1 = bond_group[j];
-			var is_overlap = checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy));
-			if (is_overlap) overlaps.push([bond0, bond1].sort((a, b) => a < b ? -1 : 1));
+		var j = parseInt(i);
+		var bond1 = bond_group[++j];
+		while (j < bond_group.length && bond1.min_x < bond0.max_x) {
+			if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
+				checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
+			) overlaps.push([bond0, bond1].sort((a, b) => a.g.id < b.g.id ? -1 : 1));
+			bond1 = bond_group[++j];
 		}
 	}
 	return overlaps;
@@ -404,14 +403,10 @@ function cutOverlaps(overlaps) {
 }
 
 function overlap(exclude=[]) {
-	console.time('overlap');
 	var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
 	bond_group.forEach(bond => bond.deleteMask());
 	cutOverlaps(detectIntersec(bond_group));
-	console.timeEnd('overlap');
 }
-
-
 
 
 function chemNodeHandler(elbtns) {
