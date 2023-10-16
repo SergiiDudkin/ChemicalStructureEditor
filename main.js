@@ -294,12 +294,14 @@ Dispatcher.prototype.redo = function() {
 	if (this.ptr >= this.commands.length) return;
 	var command = this.commands[this.ptr++][0]; // Fetch command
 	command.func(command.args); // Execute the given function with args
+	overlap.refresh();
 };
 
 Dispatcher.prototype.undo = function() {
 	if (this.ptr <= 0) return;
 	var command = this.commands[--this.ptr][1]; // Fetch command
 	command.func(command.args); // Execute the given function with args
+	overlap.refresh();
 };
 
 Dispatcher.prototype.keyHandler = function(event) {
@@ -377,36 +379,59 @@ function getBondEnd(event, pt0) {
 	return [pt1, node1];
 }
 
-function detectIntersec(bond_group) {
-	overlaps = [];
-	bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
-	for (const [i, bond0] of Object.entries(bond_group)) {
-		var j = parseInt(i);
-		var bond1 = bond_group[++j];
-		while (j < bond_group.length && bond1.min_x < bond0.max_x) {
-			if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
-				checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
-			) overlaps.push([bond0, bond1].sort((a, b) => a.g.id < b.g.id ? -1 : 1));
-			bond1 = bond_group[++j];
+
+class Overlap {
+	constructor() {
+		this.old_masks = [];
+	}
+
+	detectIntersec(bond_group) {
+		this.new_masks = [];
+		bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
+		for (const [i, bond0] of Object.entries(bond_group)) {
+			var j = parseInt(i);
+			var bond1 = bond_group[++j];
+			while (j < bond_group.length && bond1.min_x < bond0.max_x) {
+				if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
+					checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
+				) this.new_masks.push([bond0.g.id, bond1.g.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
+				bond1 = bond_group[++j];
+			}
 		}
 	}
-	return overlaps;
-}
 
-function cutOverlaps(overlaps) {
-	overlaps_grouped = {};
-	overlaps.forEach(bonds => (overlaps_grouped[bonds[0].g.id] ??= []).push(bonds[1]));
-	for (const [lower_bond_id, upper_bonds] of Object.entries(overlaps_grouped)) {
-		var lower_bond = document.getElementById(lower_bond_id).objref;
-		lower_bond.createMask(upper_bonds);
+	refresh(exclude=[]) {
+		var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
+		this.detectIntersec(bond_group);
+
+		// Add masks
+		var set_old = new Set(this.old_masks);
+		var masks_to_add = this.new_masks.filter(new_mask => !set_old.has(new_mask));
+		for (const mask of masks_to_add) {
+			var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+			lower_bond.createSubmask(upper_bond);
+		}
+
+		// Remove masks
+		var set_new = new Set(this.new_masks);
+		var masks_to_remove = this.old_masks.filter(old_mask => !set_new.has(old_mask));
+		for (const mask of masks_to_remove) {
+			try {
+				var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+			}
+			catch (error) { // Case of deleted bond
+				if (error instanceof TypeError) continue;
+				else throw error;
+			}
+			lower_bond.deleteSubmask(upper_bond);
+		}
+
+		this.old_masks = this.new_masks;
 	}
 }
 
-function overlap(exclude=[]) {
-	var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
-	bond_group.forEach(bond => bond.deleteMask());
-	cutOverlaps(detectIntersec(bond_group));
-}
+var overlap = new Overlap();
+
 
 
 function chemNodeHandler(elbtns) {
@@ -482,7 +507,7 @@ function chemNodeHandler(elbtns) {
 		if (document.getElementById(new_bond_id) === null && node0_is_new) dispatcher.undo();
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
-		overlap();
+		overlap.refresh();
 		window.addEventListener('mousemove', movElem);
 	}
 }
@@ -502,7 +527,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				var focobj = event.target.parentNode.objref;
 				var kwargs = {bonds_type: {[focobj.g.id]: focobj.getNextType(rotation_schema)}};
 				dispatcher.do(editStructure, kwargs);
-				overlap();
+				overlap.refresh();
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				[pt0, node0] = pickNodePoint(event);
@@ -544,7 +569,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		window.removeEventListener('mousemove', movBond);
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
-		overlap();
+		overlap.refresh();
 	}
 }
 
@@ -576,7 +601,7 @@ function deleteHandler(delbtn) {
 			};
 			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.g.id])};
 			dispatcher.do(editStructure, kwargs);
-			overlap();
+			overlap.refresh();
 		}
 	}
 
@@ -657,7 +682,7 @@ function moveHandler(movebtn) {
 		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		if (!is_selected) clearSlct();
-		overlap();
+		overlap.refresh();
 	}
 
 	function clearSlct() {
@@ -817,7 +842,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
-				overlap(exclude=cur_bond_ids);
+				overlap.refresh(exclude=cur_bond_ids);
 				[new_node_ids, new_bond_ids] = generateIds();
 			}
 		}
@@ -875,7 +900,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 		window.removeEventListener('mousemove', flipPolygon);
 		window.removeEventListener('mousemove', rotatePolygon);
 		window.removeEventListener('mouseup', appendPolygon);
-		overlap();
+		overlap.refresh();
 		[new_node_ids, new_bond_ids] = generateIds();
 		crPolygon(event);
 	}

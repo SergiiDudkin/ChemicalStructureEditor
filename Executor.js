@@ -97,7 +97,6 @@ function editStructure({
 	// Recalculate dimensions of skewed bonds and find affected elements
 	for (const bond of bonds_scewed) {
 		bond.recalcDims();
-		bond.recalcLims();
 		bonds_update_recht.add(bond);
 		for (const node of bond.nodes) {
 			atoms_auto_d_bond.add(node);
