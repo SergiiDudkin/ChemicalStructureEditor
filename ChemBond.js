@@ -1,6 +1,5 @@
 function ChemBond(id, node0, node1, type) {
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
-	// this.g.id = id;
 	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'bg');
 	this.g.objref = this;
@@ -52,17 +51,18 @@ ChemBond.default_style = {
 14 - double auto undef
 15 - triple 
 */
-//                                0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
-ChemBond.mult = 				[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
-ChemBond.linecnt = 				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
-ChemBond.ctrline = 				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
-ChemBond.next_type = 		   [[ 1, 14,  1,  1,  1,  1,  1,  1, 15, 15, 15, 15, 15, 15, 15,  1],  // Simpe
+//								  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+ChemBond.mult =					[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
+ChemBond.linecnt =				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
+ChemBond.ctrline =				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
+ChemBond.next_type =		   [[ 1, 14,  1,  1,  1,  1,  1,  1, 15, 15, 15, 15, 15, 15, 15,  1],  // Simpe
 								[ 2,  2,  4,  2,  3,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2],  // Up
 								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8],  // Double
 								[ 5,  5,  5,  5,  5,  7,  5,  6,  5,  5,  5,  5,  5,  5,  5,  5]]; // Up
 ChemBond.tip_type =			   [[ 0,  0,  1,  2,  3,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
 								[ 0,  0,  2,  1,  3,  2,  1,  3,  0,  0,  0,  0,  0,  0,  0,  0]];
-ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];							
+ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];
+ChemBond.rev_type =				[ 0,  1,  3,  2,  4,  6,  5,  7, 10,  9,  8, 13, 12, 11, 14, 15];
 ChemBond.pdshift1p_to_type = 	[11, 12, 13];
 ChemBond.auto_d_bonds = 		[11, 12, 13, 14];
 

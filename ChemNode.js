@@ -6,8 +6,9 @@ function ChemNode(id, x, y, text) {
 	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 	this.g.id = id;
-	this.g.objref = this;
+	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'ag');
+	this.g.objref = this;
 	document.getElementById('atomsall').appendChild(this.g);
 
 	var backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');

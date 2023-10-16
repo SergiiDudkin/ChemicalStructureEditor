@@ -196,8 +196,8 @@ function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 
 var bracket_pairs = {')': '(', ']': '['};
 
-var atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'NCFS']);
-var residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Ac', 'Bz', 'Ts']);
+var atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'Na']);
+var residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Bn', 'Ac', 'Bz', 'Ts']);
 var punctuation = new Set(['-', ',']);
 var brackets = new Set(['(', ')', '[', ']']);
 var digits = new Set([...Array(10).keys()].map(digit => '' + digit));

@@ -794,8 +794,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 	}
 
 	var [cur_node_ids, cur_bond_ids] = generateIds();
-	var [new_node_ids, new_bond_ids] = generateIds();
-	var node, mo_st, node_ids, bond_ids, common_bond, common_node;
+	var node, mo_st, node_ids, bond_ids, common_bond, common_node, new_node_ids, new_bond_ids;
 	var vertex_angle = polygonAngle(num);
 	var rot_angle = Math.PI * 2 / num;
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
@@ -819,6 +818,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 	}
 
 	function setPolygon(event) { // Move cursor atom
+		[new_node_ids, new_bond_ids] = generateIds();
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			var [pt, node] = pickNodePoint(event);
 			if (node) {
@@ -843,7 +843,6 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
 				overlap.refresh(exclude=cur_bond_ids);
-				[new_node_ids, new_bond_ids] = generateIds();
 			}
 		}
 		else { // Click outside the canvas
@@ -901,7 +900,6 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 		window.removeEventListener('mousemove', rotatePolygon);
 		window.removeEventListener('mouseup', appendPolygon);
 		overlap.refresh();
-		[new_node_ids, new_bond_ids] = generateIds();
 		crPolygon(event);
 	}
 
@@ -935,20 +933,21 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 		}
 		for (const [id, data] of Object.entries(new_bonds_data)) {
 			for (var i = 0; i < 2; i++) {
-				if (data[i] in node_pairs) data[i] = node_pairs[data[i]];
+				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
 			node0_el = document.getElementById(data[0]);
 			node1_el = document.getElementById(data[1]);
 			if (node0_el !== null && node1_el !== null) {
 				var bonds0 = node0_el.objref.connections;
 				var bonds1 = node1_el.objref.connections;
-				var old_bonds = bonds0.filter(bond => bonds1.includes(bond));
+				var old_bonds = bonds0.filter(bond => bonds1.includes(bond)); // Find common bonds
 				if (old_bonds.length > 0) {
 					delete new_bonds_data[id];
 					var old_bond = old_bonds[0];
 					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
-					if (ChemBond.mult[data[2]] > 1 && old_bond.type != data[2] && is_sp3) {
-						bonds_type[old_bond.g.id] = data[2];
+					var new_type_casted = data[0] != old_bond.nodes[0].g.id ? ChemBond.rev_type[data[2]] : data[2];
+					if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
+						bonds_type[old_bond.g.id] = new_type_casted;
 					}
 				}
 			}
