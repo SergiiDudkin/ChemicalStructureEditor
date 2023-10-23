@@ -127,3 +127,20 @@ body {
 	border: 1px solid blue;
 }
 
+
+.dropflex {
+	display: none;
+	flex-direction: row;
+/*	width: 500px;*/
+	height: 36px;
+	position: absolute;
+/*	top: 40px;*/
+	left: 44px;
+/*	z-index: 1;*/
+}
+.dropcont {
+	height: 36px;
+}
+.dropcont:hover .dropflex {
+	display: flex;
+}

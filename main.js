@@ -51,7 +51,7 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 
 	var id = `btn_${txt}`;
 	var htmltemplate = `
-	<svg width='36' height='36' display='block'>
+	<svg width='36' height='36'>
 		<mask class='elmsk' id='mask_${txt}'>
 			<rect x='0' y='0' width='30' height='30' fill='white' />
 			${svgsnippet}
@@ -63,6 +63,132 @@ function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
 	domelem.insertAdjacentHTML('afterend', htmltemplate);
 	return document.getElementById(id);
 }
+
+
+
+function insertDropBtn(parent) {
+	var drop_container = document.createElement('div');
+	drop_container.classList.add('dropcont');
+	parent.appendChild(drop_container);
+
+	var htmltemplate0 = `
+	<svg width='36' height='36'>
+		<mask class='elmsk' id='mask_blue0'>
+			<rect x='0' y='0' width='30' height='30' fill='white' />
+		</mask>
+		<g filter='url(#shadow)'>
+			<rect class='fancybtn but brick' id='bluebtn0' x='0' y='0' width='32' height='32' fill='blue' mask='url(#mask_blue0)' />
+		</g>
+	</svg>`;
+	drop_container.insertAdjacentHTML('afterbegin', htmltemplate0);
+
+	var hflex = document.createElement('div');
+	hflex.classList.add('dropflex');
+	hflex.style.top = drop_container.offsetTop + 'px';
+	hflex.style.width = '72px';
+	drop_container.appendChild(hflex);
+
+	var htmltemplate1 = `
+	<svg width='36' height='36'>
+		<mask class='elmsk' id='mask_blue1'>
+			<rect x='0' y='0' width='30' height='30' fill='white' />
+		</mask>
+		<g filter='url(#shadow)'>
+			<rect class='fancybtn but' id='bluebtn1' x='0' y='0' width='32' height='32' fill='blue' mask='url(#mask_blue1)' />
+		</g>
+	</svg>`;
+	hflex.insertAdjacentHTML('beforeend', htmltemplate1);
+
+	var htmltemplate2 = `
+	<svg width='36' height='36'>
+		<mask class='elmsk' id='mask_blue2'>
+			<rect x='0' y='0' width='30' height='30' fill='white' />
+		</mask>
+		<g filter='url(#shadow)'>
+			<rect class='fancybtn but' id='bluebtn2' x='0' y='0' width='32' height='32' fill='red' mask='url(#mask_blue2)' />
+		</g>
+	</svg>`;
+	hflex.insertAdjacentHTML('beforeend', htmltemplate2);
+}
+
+var flex_container = document.getElementsByClassName('flex-container')[0];
+
+
+class FancyButton {
+	constructor() {
+		this.el = this.createSvg();
+		this.animateBtnDown = this.animateBtnDown.bind(this);
+		this.animateBtnUp = this.animateBtnUp.bind(this);
+		this.rect.addEventListener('mousedown', this.animateBtnDown);
+	}
+
+	static btn_num = 0;
+
+	static getBtnNum() {
+		return this.btn_num++;
+	}
+
+	createSvg() {
+		var btn_num = this.constructor.getBtnNum()
+
+		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		this.svg.setAttribute('width', '36');
+		this.svg.setAttribute('height', '36');
+
+		this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+		this.mask.setAttribute('id', 'btnmsk' + btn_num);
+		this.svg.appendChild(this.mask);
+
+		this.white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		this.white_bg.setAttribute('x', '0');
+		this.white_bg.setAttribute('y', '0');
+		this.white_bg.setAttribute('width', '30');
+		this.white_bg.setAttribute('height', '30');
+		this.white_bg.setAttribute('fill', 'white');
+		this.mask.appendChild(this.white_bg);
+
+		this.img = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		this.mask.appendChild(this.img);
+
+		this.filter_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		this.filter_g.setAttribute('filter', 'url(#shadow)')
+		this.svg.appendChild(this.filter_g);
+
+		this.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		this.rect.setAttribute('class', 'fancybtn but brick');
+		this.rect.setAttribute('x', '0');
+		this.rect.setAttribute('y', '0');
+		this.rect.setAttribute('width', '32');
+		this.rect.setAttribute('height', '32');
+		this.rect.setAttribute('mask', `url(#btnmsk${btn_num})`);
+		this.rect.objref = this;
+		this.filter_g.appendChild(this.rect);
+
+		return this.svg;
+	}
+
+	appendToParent(parent) {
+		parent.appendChild(this.el);
+	}
+
+	setImage(thml_text) {
+		img.insertAdjacentHTML('beforeend', thml_text);
+	}
+
+	animateBtnDown(event) { // Change appearance of fancy buttons
+		this.filter_g.setAttribute('filter', 'url(#okshadow)');
+		this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
+		window.addEventListener('mouseup', this.animateBtnUp);
+	}
+
+	animateBtnUp(event) { // Reset appearance of fancy buttons
+		this.filter_g.setAttribute('filter', 'url(#shadow)');
+		this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
+		window.removeEventListener('mouseup', this.animateBtnUp);
+	}
+}
+
+
 
 var filters = document.getElementById('filters');
 var benzenebtn = insertFancyBtn(filters, 'Ph', 'fancybtn but brick');
@@ -77,7 +203,19 @@ var lowerbtn = insertFancyBtn(filters, 'dw', 'fancybtn but brick');
 var upperbtn = insertFancyBtn(filters, 'up', 'fancybtn but brick');
 var dbondbtn = insertFancyBtn(filters, 'db', 'fancybtn but brick');
 var elbtnseq = ['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H'];
-var elbtns = elbtnseq.map(el => insertFancyBtn(filters, el, 'elbut fancybtn but brick'));
+// var elbtns = elbtnseq.map(el => insertFancyBtn(filters, el, 'elbut fancybtn but brick'));
+insertDropBtn(flex_container);
+
+
+var test_btn0 = new FancyButton();
+flex_container.appendChild(test_btn0.el);
+
+var test_btn1 = new FancyButton();
+flex_container.appendChild(test_btn1.el);
+
+
+// insertDropBtn(flex_container);
+
 
 
 function fancyBtnAnimation(btns) { // Button click animation
@@ -957,8 +1095,8 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 }
 
 
-fancyBtnAnimation(fancybtns);
-chemNodeHandler(elbtns);
+// fancyBtnAnimation(fancybtns);
+// chemNodeHandler(elbtns);
 deleteHandler(delbtn);
 moveHandler(movebtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
