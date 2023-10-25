@@ -32,38 +32,6 @@ function download() { // Download .svg
 
 document.getElementById('download-svg').addEventListener('click', download);
 
-var svgsnippets = {
-	'bond': '<text class="but" x="9" y="22" fill="black">&#9585;</text>',
-	'erase': `<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
-			<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>`,
-	'move': `<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
-			<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
-			<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
-			<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
-			<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
-			<polygon points="15,3 19.5,7.5 10.5,7.5 "/>`
-}
-
-function insertFancyBtn(domelem, txt, classes, snippets=svgsnippets) {
-	var svgsnippet;
-	if (txt in snippets) svgsnippet = snippets[txt];
-	else svgsnippet = `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' text-anchor='middle'>${txt}</text>`;
-
-	var id = `btn_${txt}`;
-	var htmltemplate = `
-	<svg width='36' height='36'>
-		<mask class='elmsk' id='mask_${txt}'>
-			<rect x='0' y='0' width='30' height='30' fill='white' />
-			${svgsnippet}
-		</mask>
-		<g filter='url(#shadow)'>
-			<rect class='${classes}' id='${id}' x='0' y='0' width='32' height='32' mask='url(#mask_${txt})' />
-		</g>
-	</svg>`;
-	domelem.insertAdjacentHTML('afterend', htmltemplate);
-	return document.getElementById(id);
-}
-
 
 
 function insertDropBtn(parent) {
@@ -111,12 +79,12 @@ function insertDropBtn(parent) {
 	hflex.insertAdjacentHTML('beforeend', htmltemplate2);
 }
 
-var flex_container = document.getElementsByClassName('flex-container')[0];
 
 
 class FancyButton {
-	constructor() {
+	constructor(thml_text) {
 		this.el = this.createSvg();
+		this.setImage(thml_text);
 		this.animateBtnDown = this.animateBtnDown.bind(this);
 		this.animateBtnUp = this.animateBtnUp.bind(this);
 		this.rect.addEventListener('mousedown', this.animateBtnDown);
@@ -137,6 +105,7 @@ class FancyButton {
 
 		this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
 		this.mask.setAttribute('id', 'btnmsk' + btn_num);
+		this.mask.setAttribute('class', 'elmsk');
 		this.svg.appendChild(this.mask);
 
 		this.white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -167,12 +136,12 @@ class FancyButton {
 		return this.svg;
 	}
 
-	appendToParent(parent) {
-		parent.appendChild(this.el);
-	}
+	// appendToParent(parent) {
+	// 	parent.appendChild(this.el);
+	// }
 
 	setImage(thml_text) {
-		img.insertAdjacentHTML('beforeend', thml_text);
+		this.img.insertAdjacentHTML('beforeend', thml_text);
 	}
 
 	animateBtnDown(event) { // Change appearance of fancy buttons
@@ -189,57 +158,60 @@ class FancyButton {
 }
 
 
-
-var filters = document.getElementById('filters');
-var benzenebtn = insertFancyBtn(filters, 'Ph', 'fancybtn but brick');
-var heptagonbtn = insertFancyBtn(filters, '7', 'fancybtn but brick');
-var hexagonbtn = insertFancyBtn(filters, '6', 'fancybtn but brick');
-var pentagonbtn = insertFancyBtn(filters, '5', 'fancybtn but brick');
-var textbtn = insertFancyBtn(filters, 'T', 'fancybtn but brick');
-var movebtn = insertFancyBtn(filters, 'move', 'fancybtn but brick');
-var delbtn = insertFancyBtn(filters, 'erase', 'fancybtn but brick');
-var bondbtn = insertFancyBtn(filters, 'bond', 'fancybtn but brick');
-var lowerbtn = insertFancyBtn(filters, 'dw', 'fancybtn but brick');
-var upperbtn = insertFancyBtn(filters, 'up', 'fancybtn but brick');
-var dbondbtn = insertFancyBtn(filters, 'db', 'fancybtn but brick');
-var elbtnseq = ['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H'];
-// var elbtns = elbtnseq.map(el => insertFancyBtn(filters, el, 'elbut fancybtn but brick'));
-insertDropBtn(flex_container);
-
-
-var test_btn0 = new FancyButton();
-flex_container.appendChild(test_btn0.el);
-
-var test_btn1 = new FancyButton();
-flex_container.appendChild(test_btn1.el);
-
-
-// insertDropBtn(flex_container);
-
-
-
-function fancyBtnAnimation(btns) { // Button click animation
-
-	var curbtnid;
-	for (const btn of btns) btn.addEventListener('mousedown', btnDown);
-
-	function btnDown(event) { // Change appearance of fancy buttons. Called when a chemical element button is clicked
-		var target = event.target;
-		var btng = target.parentNode;
-		btng.setAttribute('filter', 'url(#okshadow)'); // Filter for pressed button
-		btng.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
-		curbtnid = target.id
-		window.addEventListener('mouseup', btnUp);
-	}
-
-	function btnUp() {
-		var target = document.getElementById(curbtnid);
-		var btng = target.parentNode;
-		btng.setAttribute('filter', 'url(#shadow)');
-		btng.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
-		window.removeEventListener('mouseup', btnUp);
-	}
+function toBtnText(text) {
+	return `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' text-anchor='middle'>${text}</text>`;
 }
+
+var flex_container = document.getElementsByClassName('flex-container')[0];
+
+var elbtnseq = ['H', 'C', 'O', 'N', 'S', 'F', 'Cl', 'Br', 'I', 'Mg'];
+
+var elbtns = elbtnseq.map(atom => new FancyButton(toBtnText(atom)));
+elbtns.forEach(elbtn => flex_container.appendChild(elbtn.el))
+
+var bondbtn = new FancyButton('<text class="but" x="9" y="22" fill="black">&#9585;</text>');
+flex_container.appendChild(bondbtn.el);
+
+var dbondbtn = new FancyButton(toBtnText('db'));
+flex_container.appendChild(dbondbtn.el);
+
+var upperbtn = new FancyButton(toBtnText('up'));
+flex_container.appendChild(upperbtn.el);
+
+var lowerbtn = new FancyButton(toBtnText('dw'));
+flex_container.appendChild(lowerbtn.el);
+
+var delbtn = new FancyButton(`
+	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
+	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
+`);
+flex_container.appendChild(delbtn.el);
+
+var movebtn = new FancyButton(`
+	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
+	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
+	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
+	<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
+	<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
+	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
+`);
+flex_container.appendChild(movebtn.el);
+
+var textbtn = new FancyButton(toBtnText('T'));
+flex_container.appendChild(textbtn.el);
+
+var pentagonbtn = new FancyButton(toBtnText('5'));
+flex_container.appendChild(pentagonbtn.el);
+
+var hexagonbtn = new FancyButton(toBtnText('6'));
+flex_container.appendChild(hexagonbtn.el);
+
+var heptagonbtn = new FancyButton(toBtnText('7'));
+flex_container.appendChild(heptagonbtn.el);
+
+var benzenebtn = new FancyButton(toBtnText('Ph'));
+flex_container.appendChild(benzenebtn.el);
+
 
 // Resize the canvas
 pt = canvas.createSVGPoint();       
@@ -574,10 +546,11 @@ var overlap = new Overlap();
 
 function chemNodeHandler(elbtns) {
 	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id, node0_is_new, node0_id;
-	for (const elbtn of elbtns) elbtn.addEventListener('click', crElem);
+	for (const elbtn of elbtns) elbtn.rect.addEventListener('click', crElem);
 
 	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
-		atomtext = event.target.id.slice(4);
+		// atomtext = event.target.id.slice(4);
+		atomtext = event.target.objref.img.firstChild.textContent;
 		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
@@ -653,7 +626,7 @@ function chemNodeHandler(elbtns) {
 
 function chemBondHandler(btn, init_type, rotation_schema) {
 	var node0, pt0, new_node0id, new_node1id, new_bond_id, node0id;
-	btn.addEventListener('click', crBond);
+	btn.rect.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
 		window.addEventListener('mousedown', stBond);
@@ -713,7 +686,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 
 
 function deleteHandler(delbtn) {
-	delbtn.addEventListener('click', delNodeOrBond);
+	delbtn.rect.addEventListener('click', delNodeOrBond);
 
 	function delNodeOrBond(event) { // Delete atom or bond. Called when del button is pressed.
 		window.addEventListener('mousedown', delAct);
@@ -765,7 +738,7 @@ function moveHandler(movebtn) {
 	selectrect.setAttribute('stroke', 'blue');
 	selectrect.setAttribute('stroke-dasharray', 2);
 	selectrect.setAttribute('stroke-width', 1);
-	movebtn.addEventListener('click', moveInit);
+	movebtn.rect.addEventListener('click', moveInit);
 
 	function moveInit(event) {
 		window.addEventListener('mousedown', moveAct);
@@ -874,7 +847,7 @@ function moveHandler(movebtn) {
 
 function textHandler(textbtn) {
 	var pt, node;
-	textbtn.addEventListener('click', crText);
+	textbtn.rect.addEventListener('click', crText);
 
 	function pressEnter(event) {
 		if (event.key == 'Enter') setNodeText(event);
@@ -924,7 +897,7 @@ function textHandler(textbtn) {
 }
 
 
-function polygonHandler(pentagonbtn, num, alternate=false) {
+function polygonHandler(polygonbtn, num, alternate=false) {
 	function generateIds() {
 		var node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
 		var bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
@@ -938,7 +911,7 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
 	var pecd = polygonEdgeCtrDist(vertex_angle, standard_bondlength);
 
-	pentagonbtn.addEventListener('click', crPolygon);
+	polygonbtn.rect.addEventListener('click', crPolygon);
 
 	function crPolygon(event) {
 		mo_st = getSvgPoint(event);
@@ -1096,13 +1069,13 @@ function polygonHandler(pentagonbtn, num, alternate=false) {
 
 
 // fancyBtnAnimation(fancybtns);
-// chemNodeHandler(elbtns);
-deleteHandler(delbtn);
-moveHandler(movebtn);
+chemNodeHandler(elbtns);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
+chemBondHandler(dbondbtn, 8, 2); // Upper bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
 chemBondHandler(lowerbtn, 5, 3); // Upper bond
-chemBondHandler(dbondbtn, 8, 2); // Upper bond
+deleteHandler(delbtn);
+moveHandler(movebtn);
 textHandler(textbtn);
 polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
