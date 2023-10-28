@@ -1,5 +1,6 @@
 body {
 	height: auto;
+	margin: 6px 4px 4px 6px;
 	background-image: linear-gradient(90deg, #8ca698, #776581);
 }
 .brick {
@@ -133,11 +134,15 @@ body {
 	flex-direction: row;
 	height: 36px;
 	position: absolute;
-	left: 44px;
+	left: 42px;
 }
 .dropcont {
 	height: 36px;
 }
 .dropcont:hover .dropflex {
 	display: flex;
+}
+
+#canvbckgrnd {
+	clip-path: url(#cnvclip);
 }

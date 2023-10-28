@@ -115,7 +115,7 @@ class DropButton extends FancyButton {
 	static id_prefix = 'db';
 
 	appendToParent(parent) {
-		// ToDo: Consider detouching "this." from drop_container (ese var instead)
+		// ToDo: Consider detouching "this." from drop_container (use var instead)
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcont');
 		this.drop_container.appendChild(this.svg);
@@ -125,6 +125,13 @@ class DropButton extends FancyButton {
 		this.hflex.classList.add('dropflex');
 		this.hflex.style.top = this.drop_container.offsetTop + 'px';
 		this.drop_container.appendChild(this.hflex);
+
+		this.drop_container.addEventListener("pointerenter", event => {
+			var top = this.drop_container.offsetTop - 48;
+			var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 6);
+			clipCnv(`M 0 ${top} H ${right} V ${top + 42} H 0 Z`);
+		});
+		this.drop_container.addEventListener("pointerleave", event => clipCnv());
 	}
 
 	appendChild(child) {
@@ -142,6 +149,14 @@ var flex_container = document.getElementsByClassName('flex-container')[0];
 
 var elbtnseq = ['H', 'C', 'O', 'N', 'S', 'F', 'Cl', 'Br', 'I', 'Mg'];
 
+var movebtn = new FancyButton(flex_container, `
+	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
+	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
+	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
+	<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
+	<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
+	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
+`);
 var dropelbtn = new DropButton(flex_container, toBtnText('A'))
 var elbtns = elbtnseq.map(atom => new FancyButton(dropelbtn, toBtnText(atom)));
 var dropbondbtn = new DropButton(flex_container, toBtnText('B'))
@@ -153,14 +168,6 @@ var delbtn = new FancyButton(flex_container, `
 	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
 	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
 `);
-var movebtn = new FancyButton(flex_container, `
-	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
-	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
-	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
-	<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
-	<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
-	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
-`);
 var textbtn = new FancyButton(flex_container, toBtnText('T'));
 var dropcycbtn = new DropButton(flex_container, toBtnText('Cy'))
 var pentagonbtn = new FancyButton(dropcycbtn, toBtnText('5'));
@@ -169,12 +176,18 @@ var heptagonbtn = new FancyButton(dropcycbtn, toBtnText('7'));
 var benzenebtn = new FancyButton(dropcycbtn, toBtnText('Ph'));
 
 
+var cnvclip = document.getElementById('cnvclip')
+function clipCnv(extra='') {
+	cnvclip.firstElementChild.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
+}
+
 // Resize the canvas
 pt = canvas.createSVGPoint();       
 function svgWidth(event) {
-	wmax = mainframe.offsetWidth - 40;
+	wmax = mainframe.offsetWidth - 36;
 	canvbckgrnd.setAttribute("width", wmax);
 	canvas.setAttribute("width", wmax + 4);
+	clipCnv();
 	matrixrf = canvas.getScreenCTM().inverse();
 }
 svgWidth();
