@@ -44,7 +44,6 @@ class FancyButton {
 	}
 
 	static btn_num = 0;
-
 	static id_prefix = 'fb';
 
 	static getBtnNum() {
@@ -113,6 +112,14 @@ class FancyButton {
 
 class DropButton extends FancyButton {
 	static id_prefix = 'db';
+	static hflex_term = 0;
+
+	static setHflexMargin(margin) {
+		this.hflex_term = 6 - margin;
+		document.getElementById('btnclip').firstElementChild.setAttribute('height', 36 - this.hflex_term);
+		document.getElementById('btnclipterm').firstElementChild.setAttribute('height', 36 - this.hflex_term);
+		document.getElementById('btnclipterm').firstElementChild.setAttribute('width', 36 - this.hflex_term);
+	}
 
 	appendToParent(parent) {
 		// ToDo: Consider detouching "this." from drop_container (use var instead)
@@ -126,19 +133,25 @@ class DropButton extends FancyButton {
 		this.hflex.style.top = this.drop_container.offsetTop + 'px';
 		this.drop_container.appendChild(this.hflex);
 
-		this.drop_container.addEventListener("pointerenter", event => {
+		this.drop_container.addEventListener('pointerenter', event => {
+			var term = this.constructor.hflex_term;
 			var top = this.drop_container.offsetTop - 48;
-			var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 6);
-			clipCnv(`M 0 ${top} H ${right} V ${top + 42} H 0 Z`);
+			var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 2 + term);
+			clipCnv(`M 0 ${top + term} H ${right - term} V ${top + 42 - term} H 0 Z`);
 		});
-		this.drop_container.addEventListener("pointerleave", event => clipCnv());
+		this.drop_container.addEventListener('pointerleave', event => clipCnv());
 	}
 
 	appendChild(child) {
+		child.lastChild.setAttribute('clip-path', 'url(#btnclipterm)');
+		if (this.hflex.hasChildNodes()) this.hflex.lastChild.lastChild.setAttribute('clip-path', 'url(#btnclip)');
 		this.hflex.appendChild(child);
 		this.hflex.style.width = (parseInt(this.hflex.style.width) + 36) + 'px';
 	}
 }
+
+DropButton.setHflexMargin(2);
+
 
 
 function toBtnText(text) {

@@ -142,7 +142,3 @@ body {
 .dropcont:hover .dropflex {
 	display: flex;
 }
-
-#canvbckgrnd {
-	clip-path: url(#cnvclip);
-}
