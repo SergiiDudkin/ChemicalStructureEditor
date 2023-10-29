@@ -116,9 +116,6 @@ class DropButton extends FancyButton {
 
 	static setHflexMargin(margin) {
 		this.hflex_term = 6 - margin;
-		document.getElementById('btnclip').firstElementChild.setAttribute('height', 36 - this.hflex_term);
-		document.getElementById('btnclipterm').firstElementChild.setAttribute('height', 36 - this.hflex_term);
-		document.getElementById('btnclipterm').firstElementChild.setAttribute('width', 36 - this.hflex_term);
 	}
 
 	appendToParent(parent) {
@@ -143,8 +140,9 @@ class DropButton extends FancyButton {
 	}
 
 	appendChild(child) {
-		child.lastChild.setAttribute('clip-path', 'url(#btnclipterm)');
-		if (this.hflex.hasChildNodes()) this.hflex.lastChild.lastChild.setAttribute('clip-path', 'url(#btnclip)');
+		child.setAttribute('height', 36 - this.constructor.hflex_term);
+		child.setAttribute('width', 36 - this.constructor.hflex_term);
+		if (this.hflex.hasChildNodes()) this.hflex.lastChild.setAttribute('width', 36);
 		this.hflex.appendChild(child);
 		this.hflex.style.width = (parseInt(this.hflex.style.width) + 36) + 'px';
 	}
