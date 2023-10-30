@@ -4,7 +4,6 @@ var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
 var bondsall = document.getElementById('bondsall');
 var atomsall = document.getElementById('atomsall');
-// var fancybtns = document.getElementsByClassName('fancybtn');
 var ahl = document.getElementById('atomhighlights');
 var pt, matrixrf, wmax; // Variables
 
@@ -76,9 +75,6 @@ class FancyButton {
 
 		this.filter_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		// this.filter_g.setAttribute('class', 'fg')
-		// this.filter_g.setAttribute('stroke', 'blue');
-		// this.filter_g.setAttribute('stroke-width', 2);
 		this.svg.appendChild(this.filter_g);
 
 		this.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -92,13 +88,17 @@ class FancyButton {
 		this.filter_g.appendChild(this.rect);
 
 		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		this.selrecht.setAttribute('class', 'invisible');
 		this.selrecht.setAttribute('fill', 'none');
-		this.selrecht.setAttribute('x', '0.5');
-		this.selrecht.setAttribute('y', '0.5');
-		this.selrecht.setAttribute('width', '29.5');
-		this.selrecht.setAttribute('height', '29.5');
-		this.selrecht.setAttribute('stroke', 'blue');
+		this.selrecht.setAttribute('x', '0');
+		this.selrecht.setAttribute('y', '0');
+		this.selrecht.setAttribute('width', '30');
+		this.selrecht.setAttribute('height', '30');
+		this.selrecht.setAttribute('stroke', 'rgb(127, 127, 255)');
 		this.selrecht.setAttribute('stroke-width', 1);
+		this.selrecht.setAttribute('filter', 'url(#blueshadow)');
+		this.selrecht.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
+		this.filter_g.appendChild(this.selrecht);
 	}
 
 	appendToParent(parent) {
@@ -110,36 +110,28 @@ class FancyButton {
 	}
 
 	animateBtnDown(event) { // Change appearance of fancy buttons
-		// console.log(event.target.objref.active);
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
-		// this.filter_g.setAttribute('filter', this.active ? 'url(#selectokshadow)' : 'url(#okshadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
 		window.addEventListener('mouseup', this.animateBtnUp);
 	}
 
 	animateBtnUp(event) { // Reset appearance of fancy buttons
-		// console.log(event.target.objref);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		// this.filter_g.setAttribute('filter', this.active ? 'url(#selectshadow)' : 'url(#shadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
 		this.deselect(event);
 		window.removeEventListener('mouseup', this.animateBtnUp);
 	}
 
 	select() {
-		if (!this.active) this.filter_g.appendChild(this.selrecht);
+		if (!this.active) this.selrecht.setAttribute('class', 'visible');
 		this.active = true;
 	}
 
 	deselect(event) {
-		// console.log(event.target.objref === this);
 		if (event.target.objref !== this && this.active) {
 			this.active = false;
-			this.selrecht.remove();
+			this.selrecht.setAttribute('class', 'invisible');
 		}
-
-		// this.rect.setAttribute('class', 'but brick');
-		// this.filter_g.setAttribute('filter', 'url(#shadow)')
 	}
 }
 

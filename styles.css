@@ -148,9 +148,13 @@ body {
 .dropcont:hover .dropflex {
 	display: flex;
 }
-
-
-/*.fg {
-	border: 1px solid blue;
+.invisible {
+	visibility: hidden;
+	opacity: 0;
 }
-*/
+.visible {
+	visibility: visible;
+	opacity: 1;
+	transition: opacity 0.1s 0.05s ease-in;
+}
+
