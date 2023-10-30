@@ -4,7 +4,7 @@ var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
 var bondsall = document.getElementById('bondsall');
 var atomsall = document.getElementById('atomsall');
-var fancybtns = document.getElementsByClassName('fancybtn');
+// var fancybtns = document.getElementsByClassName('fancybtn');
 var ahl = document.getElementById('atomhighlights');
 var pt, matrixrf, wmax; // Variables
 
@@ -37,6 +37,7 @@ class FancyButton {
 	constructor(parent, thml_text) {
 		this.createSvg();
 		this.setImage(thml_text);
+		this.active = false;
 		this.animateBtnDown = this.animateBtnDown.bind(this);
 		this.animateBtnUp = this.animateBtnUp.bind(this);
 		this.rect.addEventListener('mousedown', this.animateBtnDown);
@@ -74,11 +75,14 @@ class FancyButton {
 		this.mask.appendChild(this.img);
 
 		this.filter_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-		this.filter_g.setAttribute('filter', 'url(#shadow)')
+		this.filter_g.setAttribute('filter', 'url(#shadow)');
+		// this.filter_g.setAttribute('class', 'fg')
+		// this.filter_g.setAttribute('stroke', 'blue');
+		// this.filter_g.setAttribute('stroke-width', 2);
 		this.svg.appendChild(this.filter_g);
 
 		this.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		this.rect.setAttribute('class', 'fancybtn but brick');
+		this.rect.setAttribute('class', 'but brick');
 		this.rect.setAttribute('x', '0');
 		this.rect.setAttribute('y', '0');
 		this.rect.setAttribute('width', '32');
@@ -86,6 +90,15 @@ class FancyButton {
 		this.rect.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
 		this.rect.objref = this;
 		this.filter_g.appendChild(this.rect);
+
+		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		this.selrecht.setAttribute('fill', 'none');
+		this.selrecht.setAttribute('x', '0.5');
+		this.selrecht.setAttribute('y', '0.5');
+		this.selrecht.setAttribute('width', '29.5');
+		this.selrecht.setAttribute('height', '29.5');
+		this.selrecht.setAttribute('stroke', 'blue');
+		this.selrecht.setAttribute('stroke-width', 1);
 	}
 
 	appendToParent(parent) {
@@ -97,15 +110,36 @@ class FancyButton {
 	}
 
 	animateBtnDown(event) { // Change appearance of fancy buttons
+		// console.log(event.target.objref.active);
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
+		// this.filter_g.setAttribute('filter', this.active ? 'url(#selectokshadow)' : 'url(#okshadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
 		window.addEventListener('mouseup', this.animateBtnUp);
 	}
 
 	animateBtnUp(event) { // Reset appearance of fancy buttons
+		// console.log(event.target.objref);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
+		// this.filter_g.setAttribute('filter', this.active ? 'url(#selectshadow)' : 'url(#shadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
+		this.deselect(event);
 		window.removeEventListener('mouseup', this.animateBtnUp);
+	}
+
+	select() {
+		if (!this.active) this.filter_g.appendChild(this.selrecht);
+		this.active = true;
+	}
+
+	deselect(event) {
+		// console.log(event.target.objref === this);
+		if (event.target.objref !== this && this.active) {
+			this.active = false;
+			this.selrecht.remove();
+		}
+
+		// this.rect.setAttribute('class', 'but brick');
+		// this.filter_g.setAttribute('filter', 'url(#shadow)')
 	}
 }
 
@@ -120,6 +154,11 @@ class DropButton extends FancyButton {
 
 	appendToParent(parent) {
 		// ToDo: Consider detouching "this." from drop_container (use var instead)
+		this.corner = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		this.corner.setAttribute('points', '31,24 31,31 24,31');
+		this.corner.setAttribute('fill', 'black');
+		this.mask.appendChild(this.corner);
+
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcont');
 		this.drop_container.appendChild(this.svg);
@@ -526,6 +565,7 @@ function chemNodeHandler(elbtn) {
 	elbtn.rect.addEventListener('click', crElem);
 
 	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
+		elbtn.select();
 		atomtext = event.target.objref.img.firstChild.textContent;
 		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
@@ -572,6 +612,7 @@ function chemNodeHandler(elbtn) {
 			window.removeEventListener('mousedown', setElem);
 			window.removeEventListener('mousemove', movElem);
 			cursoratom.delete();
+			elbtn.deselect(event);
 		}
 	}
 
@@ -605,6 +646,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	btn.rect.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
+		btn.select();
 		window.addEventListener('mousedown', stBond);
 	}
 
@@ -632,6 +674,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		else { // Bond starts outside of canvas. Exit drawing.
 			window.removeEventListener('mousemove', movBond);
 			window.removeEventListener('mousedown', stBond);
+			btn.deselect(event);
 		}
 	}
 
@@ -665,6 +708,7 @@ function deleteHandler(delbtn) {
 	delbtn.rect.addEventListener('click', delNodeOrBond);
 
 	function delNodeOrBond(event) { // Delete atom or bond. Called when del button is pressed.
+		delbtn.select();
 		window.addEventListener('mousedown', delAct);
 	}
 
@@ -676,6 +720,7 @@ function deleteHandler(delbtn) {
 		}
 		else { // If click out of canvas,
 			window.removeEventListener('mousedown', delAct); // exit deleting routine.
+			delbtn.deselect(event);
 		}
 	}
 
@@ -717,6 +762,7 @@ function moveHandler(movebtn) {
 	movebtn.rect.addEventListener('click', moveInit);
 
 	function moveInit(event) {
+		movebtn.select();
 		window.addEventListener('mousedown', moveAct);
 	}
 
@@ -747,7 +793,10 @@ function moveHandler(movebtn) {
 				window.addEventListener('mousemove', recalc);
 				window.addEventListener('mouseup', selectStop);
 			}
-			else window.removeEventListener('mousedown', moveAct); // If clicked out of canvas, exit moving routine.
+			else {
+				window.removeEventListener('mousedown', moveAct); // If clicked out of canvas, exit moving routine.
+				movebtn.deselect(event);
+			}
 		}
 	}
 
@@ -830,6 +879,7 @@ function textHandler(textbtn) {
 	}
 
 	function crText(event) {
+		textbtn.select();
 		window.addEventListener('mousedown', addInput);
 		document.addEventListener('keydown', pressEnter);
 	}
@@ -867,6 +917,7 @@ function textHandler(textbtn) {
 			if (event.target.id != 'txt-input') {
 				window.removeEventListener('mousedown', addInput);
 				document.removeEventListener('keydown', pressEnter);
+				textbtn.deselect(event);
 			}
 		}
 	}
@@ -890,6 +941,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	polygonbtn.rect.addEventListener('click', crPolygon);
 
 	function crPolygon(event) {
+		polygonbtn.select();
 		mo_st = getSvgPoint(event);
 		var [cur_atoms_data, cur_bonds_data] = generatePolygon(mo_st, [0, pvcd], cur_node_ids, cur_bond_ids);
 		editStructure({new_atoms_data: cur_atoms_data, new_bonds_data: cur_bonds_data});
@@ -933,7 +985,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			}
 		}
 		else { // Click outside the canvas
-			stopCursor()
+			stopCursor();
+			polygonbtn.deselect(event);
 		}
 	}
 
