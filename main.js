@@ -39,7 +39,7 @@ class FancyButton {
 		this.active = false;
 		this.animateBtnDown = this.animateBtnDown.bind(this);
 		this.animateBtnUp = this.animateBtnUp.bind(this);
-		this.rect.addEventListener('mousedown', this.animateBtnDown);
+		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
 		this.appendToParent(parent)
 	}
 
@@ -77,16 +77,25 @@ class FancyButton {
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
 		this.svg.appendChild(this.filter_g);
 
+		this.mask_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+		this.mask_g.setAttribute('class', 'but');
+		this.mask_g.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
+		this.mask_g.objref = this;
+		this.filter_g.appendChild(this.mask_g);
+
 		this.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		this.rect.setAttribute('class', 'but brick');
+		this.rect.setAttribute('class', 'brick');
 		this.rect.setAttribute('x', '0');
 		this.rect.setAttribute('y', '0');
 		this.rect.setAttribute('width', '32');
 		this.rect.setAttribute('height', '32');
-		this.rect.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
 		this.rect.objref = this;
-		this.filter_g.appendChild(this.rect);
+		this.mask_g.appendChild(this.rect);
 
+		this.createHighlight();
+	}
+
+	createHighlight() {
 		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 		this.selrecht.setAttribute('class', 'invisible');
 		this.selrecht.setAttribute('fill', 'none');
@@ -97,8 +106,7 @@ class FancyButton {
 		this.selrecht.setAttribute('stroke', 'rgb(127, 127, 255)');
 		this.selrecht.setAttribute('stroke-width', 1);
 		this.selrecht.setAttribute('filter', 'url(#blueshadow)');
-		this.selrecht.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
-		this.filter_g.appendChild(this.selrecht);
+		this.mask_g.appendChild(this.selrecht);
 	}
 
 	appendToParent(parent) {
@@ -554,7 +562,7 @@ var overlap = new Overlap();
 
 function chemNodeHandler(elbtn) {
 	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id, node0_is_new, node0_id;
-	elbtn.rect.addEventListener('click', crElem);
+	elbtn.mask_g.addEventListener('click', crElem);
 
 	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
 		elbtn.select();
@@ -635,7 +643,7 @@ function chemNodeHandler(elbtn) {
 
 function chemBondHandler(btn, init_type, rotation_schema) {
 	var node0, pt0, new_node0id, new_node1id, new_bond_id, node0id;
-	btn.rect.addEventListener('click', crBond);
+	btn.mask_g.addEventListener('click', crBond);
 
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
 		btn.select();
@@ -697,7 +705,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 
 
 function deleteHandler(delbtn) {
-	delbtn.rect.addEventListener('click', delNodeOrBond);
+	delbtn.mask_g.addEventListener('click', delNodeOrBond);
 
 	function delNodeOrBond(event) { // Delete atom or bond. Called when del button is pressed.
 		delbtn.select();
@@ -751,7 +759,7 @@ function moveHandler(movebtn) {
 	selectrect.setAttribute('stroke', 'blue');
 	selectrect.setAttribute('stroke-dasharray', 2);
 	selectrect.setAttribute('stroke-width', 1);
-	movebtn.rect.addEventListener('click', moveInit);
+	movebtn.mask_g.addEventListener('click', moveInit);
 
 	function moveInit(event) {
 		movebtn.select();
@@ -864,7 +872,7 @@ function moveHandler(movebtn) {
 
 function textHandler(textbtn) {
 	var pt, node;
-	textbtn.rect.addEventListener('click', crText);
+	textbtn.mask_g.addEventListener('click', crText);
 
 	function pressEnter(event) {
 		if (event.key == 'Enter') setNodeText(event);
@@ -930,7 +938,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
 	var pecd = polygonEdgeCtrDist(vertex_angle, standard_bondlength);
 
-	polygonbtn.rect.addEventListener('click', crPolygon);
+	polygonbtn.mask_g.addEventListener('click', crPolygon);
 
 	function crPolygon(event) {
 		polygonbtn.select();
