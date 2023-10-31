@@ -185,6 +185,17 @@ class DropButton extends FancyButton {
 		this.hflex.appendChild(child);
 		this.hflex.style.width = (parseInt(this.hflex.style.width) + 36) + 'px';
 	}
+
+	createHighlight() {
+		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		this.selrecht.setAttribute('class', 'invisible');
+		this.selrecht.setAttribute('points', '0,0 30,0 30,25 25,30 0,30');
+		this.selrecht.setAttribute('fill', 'none');
+		this.selrecht.setAttribute('stroke', 'rgb(127, 127, 255)');
+		this.selrecht.setAttribute('stroke-width', 1);
+		this.selrecht.setAttribute('filter', 'url(#blueshadow)');
+		this.mask_g.appendChild(this.selrecht);
+	}
 }
 
 DropButton.setHflexMargin(2);
