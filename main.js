@@ -89,7 +89,6 @@ class FancyButton {
 		this.rect.setAttribute('y', '0');
 		this.rect.setAttribute('width', '32');
 		this.rect.setAttribute('height', '32');
-		this.rect.objref = this;
 		this.mask_g.appendChild(this.rect);
 
 		this.createHighlight();
@@ -103,9 +102,8 @@ class FancyButton {
 		this.selrecht.setAttribute('y', '0');
 		this.selrecht.setAttribute('width', '30');
 		this.selrecht.setAttribute('height', '30');
-		this.selrecht.setAttribute('stroke', 'rgb(127, 127, 255)');
-		this.selrecht.setAttribute('stroke-width', 1);
-		this.selrecht.setAttribute('filter', 'url(#blueshadow)');
+		this.selrecht.setAttribute('stroke', 'rgb(0, 0, 255)');
+		this.selrecht.setAttribute('stroke-width', 2);
 		this.mask_g.appendChild(this.selrecht);
 	}
 
@@ -136,7 +134,7 @@ class FancyButton {
 	}
 
 	deselect(event) {
-		if (event.target.objref !== this && this.active) {
+		if (event.target.parentNode.objref !== this && this.active) {
 			this.active = false;
 			this.selrecht.setAttribute('class', 'invisible');
 		}
@@ -191,9 +189,9 @@ class DropButton extends FancyButton {
 		this.selrecht.setAttribute('class', 'invisible');
 		this.selrecht.setAttribute('points', '0,0 30,0 30,25 25,30 0,30');
 		this.selrecht.setAttribute('fill', 'none');
-		this.selrecht.setAttribute('stroke', 'rgb(127, 127, 255)');
-		this.selrecht.setAttribute('stroke-width', 1);
-		this.selrecht.setAttribute('filter', 'url(#blueshadow)');
+		this.selrecht.setAttribute('stroke', 'rgb(0, 0, 255)');
+		this.selrecht.setAttribute('stroke-width', 2);
+		// this.selrecht.setAttribute('filter', 'url(#blueshadow)');
 		this.mask_g.appendChild(this.selrecht);
 	}
 }
@@ -577,7 +575,7 @@ function chemNodeHandler(elbtn) {
 
 	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
 		elbtn.select();
-		atomtext = event.target.objref.img.firstChild.textContent;
+		atomtext = event.target.parentNode.objref.img.firstChild.textContent;
 		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
