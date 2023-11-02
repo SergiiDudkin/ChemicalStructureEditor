@@ -155,6 +155,10 @@ body {
 .visible {
 	visibility: visible;
 	opacity: 1;
+/*	transition: opacity 0.1s 0.05s ease-in;*/
+}
+.visible-anim {
+	visibility: visible;
+	opacity: 1;
 	transition: opacity 0.1s 0.05s ease-in;
 }
-

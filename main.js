@@ -34,6 +34,7 @@ document.getElementById('download-svg').addEventListener('click', download);
 
 class FancyButton {
 	constructor(parent, thml_text) {
+		this.parent = parent;
 		this.thml_text = thml_text;
 		this.active = false;
 		this.createSvg();
@@ -53,7 +54,7 @@ class FancyButton {
 	}
 
 	createSvg() {
-		var btn_num = this.constructor.getBtnNum()
+		var btn_num = this.constructor.getBtnNum();
 
 		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 		this.svg.setAttribute('width', '36');
@@ -132,13 +133,28 @@ class FancyButton {
 	}
 
 	select() {
-		this.selrecht.setAttribute('class', 'visible');
+		this.selrecht.setAttribute('class', 'visible-anim');
 		this.active = true;
 	}
 
-	deselect(event) {
+	deselect() {
 		this.active = false;
 		this.selrecht.setAttribute('class', 'invisible');
+	}
+}
+
+
+class SubButton extends FancyButton {
+	static id_prefix = 'sb';
+
+	select() {
+		super.select();
+		this.parent.selectCond(this);
+	}
+
+	deselect() {
+		super.deselect();
+		this.parent.deselectCond();
 	}
 }
 
@@ -169,13 +185,26 @@ class DropButton extends FancyButton {
 		this.hflex.style.top = this.drop_container.offsetTop + 'px';
 		this.drop_container.appendChild(this.hflex);
 
-		this.drop_container.addEventListener('pointerenter', event => {
-			var term = this.constructor.hflex_term;
-			var top = this.drop_container.offsetTop - 48;
-			var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 2 + term);
-			clipCnv(`M 0 ${top + term} H ${right - term} V ${top + 42 - term} H 0 Z`);
-		});
-		this.drop_container.addEventListener('pointerleave', event => clipCnv());
+		this.collapsed = true;
+		this.expand = this.expand.bind(this);
+		this.collapse = this.collapse.bind(this);
+		this.drop_container.addEventListener('pointerenter', this.expand);
+		this.drop_container.addEventListener('pointerleave', this.collapse);
+	}
+
+	expand(event) {
+		var term = this.constructor.hflex_term;
+		var top = this.drop_container.offsetTop - 48;
+		var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 2 + term);
+		clipCnv(`M 0 ${top + term} H ${right - term} V ${top + 42 - term} H 0 Z`);
+		this.collapsed = false;
+		if (this.active) this.deselect();
+	}
+
+	collapse(event) {
+		clipCnv();
+		this.collapsed = true;
+		if (this.active) this.select();
 	}
 
 	appendChild(child) {
@@ -184,6 +213,27 @@ class DropButton extends FancyButton {
 		if (this.hflex.hasChildNodes()) this.hflex.lastChild.setAttribute('width', 36);
 		this.hflex.appendChild(child);
 		this.hflex.style.width = (parseInt(this.hflex.style.width) + 36) + 'px';
+	}
+
+	selectCond(focused_subbtn) {
+		this.active = true;
+		this.focused_subbtn = focused_subbtn;
+		if (this.collapsed) this.select();
+	}
+
+	deselectCond() {
+		this.active = false;
+		if (this.collapsed) this.deselect();
+	}
+
+	select() {
+		this.img.innerHTML = this.focused_subbtn.thml_text;
+		this.selrecht.setAttribute('class', 'visible');
+	}
+
+	deselect() {
+		this.img.innerHTML = this.thml_text;
+		this.selrecht.setAttribute('class', 'invisible');
 	}
 }
 
@@ -208,22 +258,22 @@ var movebtn = new FancyButton(flex_container, `
 	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
 `);
 var dropelbtn = new DropButton(flex_container, toBtnText('A'))
-var elbtns = elbtnseq.map(atom => new FancyButton(dropelbtn, toBtnText(atom)));
+var elbtns = elbtnseq.map(atom => new SubButton(dropelbtn, toBtnText(atom)));
 var dropbondbtn = new DropButton(flex_container, toBtnText('B'))
-var bondbtn = new FancyButton(dropbondbtn, '<text class="but" x="9" y="22" fill="black">&#9585;</text>');
-var dbondbtn = new FancyButton(dropbondbtn, toBtnText('db'));
-var upperbtn = new FancyButton(dropbondbtn, toBtnText('up'));
-var lowerbtn = new FancyButton(dropbondbtn, toBtnText('dw'));
+var bondbtn = new SubButton(dropbondbtn, '<text class="but" x="9" y="22" fill="black">&#9585;</text>');
+var dbondbtn = new SubButton(dropbondbtn, toBtnText('db'));
+var upperbtn = new SubButton(dropbondbtn, toBtnText('up'));
+var lowerbtn = new SubButton(dropbondbtn, toBtnText('dw'));
 var delbtn = new FancyButton(flex_container, `
 	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
 	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
 `);
 var textbtn = new FancyButton(flex_container, toBtnText('T'));
 var dropcycbtn = new DropButton(flex_container, toBtnText('Cy'))
-var pentagonbtn = new FancyButton(dropcycbtn, toBtnText('5'));
-var hexagonbtn = new FancyButton(dropcycbtn, toBtnText('6'));
-var heptagonbtn = new FancyButton(dropcycbtn, toBtnText('7'));
-var benzenebtn = new FancyButton(dropcycbtn, toBtnText('Ph'));
+var pentagonbtn = new SubButton(dropcycbtn, toBtnText('5'));
+var hexagonbtn = new SubButton(dropcycbtn, toBtnText('6'));
+var heptagonbtn = new SubButton(dropcycbtn, toBtnText('7'));
+var benzenebtn = new SubButton(dropcycbtn, toBtnText('Ph'));
 
 
 var cnvclip = document.getElementById('cnvclip')
