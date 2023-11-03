@@ -32,7 +32,7 @@ function download() { // Download .svg
 document.getElementById('download-svg').addEventListener('click', download);
 
 
-class FancyButton {
+class BaseButton {
 	constructor(parent, thml_text) {
 		this.parent = parent;
 		this.thml_text = thml_text;
@@ -42,13 +42,12 @@ class FancyButton {
 		this.animateBtnDown = this.animateBtnDown.bind(this);
 		this.animateBtnUp = this.animateBtnUp.bind(this);
 		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
-		this.appendToParent(parent);
+		this.createHtml();
 	}
 
 	static btn_num = 0;
 	static id_prefix = 'fb';
-	static highlight_pts = '0,0 30,0 30,30 0,30';
-	static deselect_on_click = true;
+	static btn_corners = '0,0 30,0 30,30 0,30';
 
 	static getBtnNum() {
 		return this.btn_num++;
@@ -66,11 +65,9 @@ class FancyButton {
 		this.mask.setAttribute('class', 'elmsk');
 		this.svg.appendChild(this.mask);
 
-		this.white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		this.white_bg.setAttribute('x', '0');
-		this.white_bg.setAttribute('y', '0');
-		this.white_bg.setAttribute('width', '30');
-		this.white_bg.setAttribute('height', '30');
+
+		this.white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+		this.white_bg.setAttribute('points', this.constructor.btn_corners);
 		this.white_bg.setAttribute('fill', 'white');
 		this.mask.appendChild(this.white_bg);
 
@@ -97,15 +94,15 @@ class FancyButton {
 
 		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 		this.selrecht.setAttribute('class', 'invisible');
-		this.selrecht.setAttribute('points', this.constructor.highlight_pts);
+		this.selrecht.setAttribute('points', this.constructor.btn_corners);
 		this.selrecht.setAttribute('fill', 'none');
 		this.selrecht.setAttribute('stroke', 'rgb(0, 0, 255)');
 		this.selrecht.setAttribute('stroke-width', 2);
 		this.mask_g.appendChild(this.selrecht);
 	}
 
-	appendToParent(parent) {
-		parent.appendChild(this.svg);
+	createHtml() {
+		this.parent.appendChild(this.svg);
 	}
 
 	setImage(thml_text) {
@@ -122,7 +119,6 @@ class FancyButton {
 		window.removeEventListener('mouseup', this.animateBtnUp);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
-		if (this.constructor.deselect_on_click) this.deselectCond(event);
 	}
 
 	selectCond() {
@@ -145,7 +141,15 @@ class FancyButton {
 }
 
 
-class SubButton extends FancyButton {
+class RegularButton extends BaseButton {
+	animateBtnUp(event) {
+		super.animateBtnUp(event);
+		this.deselectCond(event);
+	}
+}
+
+
+class SubButton extends RegularButton {
 	static id_prefix = 'sb';
 
 	select() {
@@ -159,10 +163,11 @@ class SubButton extends FancyButton {
 	}
 
 	deselectCond(event) {
-		if (![this, this.parent].includes(event.target.parentNode.objref) && this.active) this.deselect();
+		if (event.target.parentNode.objref !== this.parent) super.deselectCond(event);
 	}
 
-	appendToParent(parent) {
+	createSvg() {
+		super.createSvg();
 		this.focline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 		this.focline.setAttribute('class', 'invisible');
 		this.focline.setAttribute('x1', 2);
@@ -172,37 +177,18 @@ class SubButton extends FancyButton {
 		this.focline.setAttribute('stroke', 'rgb(0, 0, 255)');
 		this.focline.setAttribute('stroke-width', 2);
 		this.mask_g.appendChild(this.focline);
-		super.appendToParent(parent);
 	}
 }
 
 
-class DropButton extends FancyButton {
-	static id_prefix = 'db';
-	static hflex_term = 0;
-	static highlight_pts = '0,0 30,0 30,25 25,30 0,30';
-	static deselect_on_click = false;
+class DropButton extends BaseButton {
+	constructor(parent, thml_text) {
+		super(parent, thml_text);
 
-	static setHflexMargin(margin) {
-		this.hflex_term = 6 - margin;
-	}
-
-	appendToParent(parent) {
-		// ToDo: Consider detouching "this." from drop_container (use var instead)
-		this.corner = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-		this.corner.setAttribute('points', '31,24 31,31 24,31');
-		this.corner.setAttribute('fill', 'black');
-		this.mask.appendChild(this.corner);
-
-		this.drop_container = document.createElement('div');
-		this.drop_container.classList.add('dropcont');
-		this.drop_container.appendChild(this.svg);
-		parent.appendChild(this.drop_container);
-
-		this.hflex = document.createElement('div');
-		this.hflex.classList.add('dropflex');
-		this.hflex.style.top = this.drop_container.offsetTop + 'px';
-		this.drop_container.appendChild(this.hflex);
+		this.children_cnt = 0;
+		this.cut_right = 0;
+		this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
+		this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
 
 		this.collapsed = true;
 		this.expand = this.expand.bind(this);
@@ -214,11 +200,25 @@ class DropButton extends FancyButton {
 		this.mask_g.addEventListener('click', this.pressSubButton);
 	}
 
+	static id_prefix = 'db';
+	static margin = 2;
+	static hflex_term = 6 - this.margin;
+	static btn_corners = '0,0 30,0 30,25 25,30 0,30';
+
+	createHtml() {
+		this.drop_container = document.createElement('div');
+		this.drop_container.classList.add('dropcont');
+		this.drop_container.appendChild(this.svg);
+		this.parent.appendChild(this.drop_container);
+
+		this.hflex = document.createElement('div');
+		this.hflex.classList.add('dropflex');
+		this.hflex.style.top = this.drop_container.offsetTop + 'px';
+		this.drop_container.appendChild(this.hflex);
+	}
+
 	expand(event) {
-		var term = this.constructor.hflex_term;
-		var top = this.drop_container.offsetTop - 48;
-		var right = Math.min(event.target.lastChild.childElementCount * 36, wmax - 2 + term);
-		clipCnv(`M 0 ${top + term} H ${right - term} V ${top + 42 - term} H 0 Z`);
+		clipCnv(`M 0 ${this.cut_top} H ${Math.min(this.cut_right, wmax - 2)} V ${this.cut_bottom} H 0 Z`);
 		this.collapsed = false;
 		if (this.active) this.deselect();
 	}
@@ -239,9 +239,10 @@ class DropButton extends FancyButton {
 	appendChild(child) {
 		child.setAttribute('height', 36 - this.constructor.hflex_term);
 		child.setAttribute('width', 36 - this.constructor.hflex_term);
-		if (this.hflex.hasChildNodes()) this.hflex.lastChild.setAttribute('width', 36);
+		if (this.children_cnt) this.hflex.lastChild.setAttribute('width', 36);
+		this.cut_right = ++this.children_cnt * 36 - this.constructor.hflex_term;
+		this.hflex.style.width = this.children_cnt * 36 + 'px';
 		this.hflex.appendChild(child);
-		this.hflex.style.width = (parseInt(this.hflex.style.width) + 36) + 'px';
 	}
 
 	selectCond(subbtn) {
@@ -274,9 +275,6 @@ class DropButton extends FancyButton {
 	}
 }
 
-DropButton.setHflexMargin(2);
-
-
 
 function toBtnText(text) {
 	return `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' text-anchor='middle'>${text}</text>`;
@@ -286,7 +284,7 @@ var flex_container = document.getElementsByClassName('flex-container')[0];
 
 var elbtnseq = ['H', 'C', 'O', 'N', 'S', 'F', 'Cl', 'Br', 'I', 'Mg'];
 
-var movebtn = new FancyButton(flex_container, `
+var movebtn = new RegularButton(flex_container, `
 	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
 	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
 	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
@@ -303,11 +301,11 @@ dropbondbtn.focusSubbtn(bondbtn);
 var dbondbtn = new SubButton(dropbondbtn, toBtnText('db'));
 var upperbtn = new SubButton(dropbondbtn, toBtnText('up'));
 var lowerbtn = new SubButton(dropbondbtn, toBtnText('dw'));
-var delbtn = new FancyButton(flex_container, `
+var delbtn = new RegularButton(flex_container, `
 	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
 	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
 `);
-var textbtn = new FancyButton(flex_container, toBtnText('T'));
+var textbtn = new RegularButton(flex_container, toBtnText('T'));
 var dropcycbtn = new DropButton(flex_container, toBtnText('Cy'))
 var benzenebtn = new SubButton(dropcycbtn, toBtnText('Ph'));
 dropcycbtn.focusSubbtn(benzenebtn);

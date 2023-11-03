@@ -6,13 +6,7 @@ body {
 .brick {
 	fill: white;
 	opacity: 0.90;
-/*	outline: 1px solid blue;*/
 }
-/*.blue-brick {
-	fill: blue;
-	opacity: 0.90;
-	transition: fill 0.2s 0.2s;
-}*/
 .but {
 	cursor: pointer;
 	-webkit-user-select: none;
@@ -46,7 +40,7 @@ body {
 	flex-direction: row;
 }
 #mainframe {
-	height: 904px;
+	height: 606px;
 }
 #canvas {
 	-webkit-user-select: none;
@@ -133,7 +127,6 @@ body {
 #txt-input:focus {
 	border: 1px solid blue;
 }
-
 
 .dropflex {
 	display: none;
