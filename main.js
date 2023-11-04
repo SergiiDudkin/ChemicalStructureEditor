@@ -56,51 +56,18 @@ class BaseButton {
 	}
 
 	createSvg() {
-		var btn_num = this.constructor.getBtnNum();
-
-		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-		this.svg.setAttribute('width', '36');
-		this.svg.setAttribute('height', '36');
-
-		this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
-		this.mask.setAttribute('id', this.constructor.id_prefix + btn_num + 'mask');
-		this.mask.setAttribute('class', 'elmsk');
-		this.svg.appendChild(this.mask);
-
-
-		this.white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-		this.white_bg.setAttribute('points', this.constructor.btn_corners);
-		this.white_bg.setAttribute('fill', 'white');
-		this.mask.appendChild(this.white_bg);
-
-		this.img = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-		this.mask.appendChild(this.img);
-
-		this.filter_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		this.svg.appendChild(this.filter_g);
-
-		this.mask_g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-		this.mask_g.setAttribute('class', 'but');
-		this.mask_g.setAttribute('mask', `url(#${this.constructor.id_prefix}${btn_num}mask)`);
+		var mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
+		this.svg = makeSvg('svg', {width: 36, height: 36});
+		var mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
+		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
+		this.img = attachSvg(mask, 'g');
+		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
+		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
 		this.mask_g.objref = this;
-		this.filter_g.appendChild(this.mask_g);
-
-		this.rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-		this.rect.setAttribute('class', 'but brick');
-		this.rect.setAttribute('x', '0');
-		this.rect.setAttribute('y', '0');
-		this.rect.setAttribute('width', '32');
-		this.rect.setAttribute('height', '32');
-		this.mask_g.appendChild(this.rect);
-
-		this.selrecht = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-		this.selrecht.setAttribute('class', 'invisible');
-		this.selrecht.setAttribute('points', this.constructor.btn_corners);
-		this.selrecht.setAttribute('fill', 'none');
-		this.selrecht.setAttribute('stroke', 'rgb(0, 0, 255)');
-		this.selrecht.setAttribute('stroke-width', 2);
-		this.mask_g.appendChild(this.selrecht);
+		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: 32, height: 32}); // Button tissue
+		this.selrecht = attachSvg(this.mask_g, 'polygon',
+			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
+		);
 	}
 
 	createHtml() {
@@ -170,15 +137,9 @@ class SubButton extends RegularButton {
 
 	createSvg() {
 		super.createSvg();
-		this.focline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-		this.focline.setAttribute('class', 'invisible');
-		this.focline.setAttribute('x1', 2);
-		this.focline.setAttribute('y1', 30);
-		this.focline.setAttribute('x2', 28);
-		this.focline.setAttribute('y2', 30);
-		this.focline.setAttribute('stroke', 'rgb(0, 0, 255)');
-		this.focline.setAttribute('stroke-width', 2);
-		this.mask_g.appendChild(this.focline);
+		this.focline = attachSvg(this.mask_g, 'line', 
+			{class: 'invisible', x1: 2, y1: 30, x2: 28, y2: 30, stroke: 'blue', 'stroke-width': 2}
+		);
 	}
 }
 
@@ -712,11 +673,7 @@ function moveHandler(movebtn) {
 	var accum_vec;
 	var utils = document.getElementById('utils');
 	
-	var selectrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-	selectrect.setAttribute('fill', 'none');
-	selectrect.setAttribute('stroke', 'blue');
-	selectrect.setAttribute('stroke-dasharray', 2);
-	selectrect.setAttribute('stroke-width', 1);
+	var selectrect = makeSvg('rect', {fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
 	movebtn.mask_g.addEventListener('click', moveInit);
 
 	function moveInit(event) {
@@ -801,10 +758,7 @@ function moveHandler(movebtn) {
 		rect_w = Math.abs(svgP1.x - svgP0.x);
 		rect_h = Math.abs(svgP1.y - svgP0.y);
 
-		selectrect.setAttribute('x', rect_x);
-		selectrect.setAttribute('y', rect_y);
-		selectrect.setAttribute('width', rect_w);
-		selectrect.setAttribute('height', rect_h);
+		setAttrsSvg(selectrect, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
 	}
 
 	function selectStop() {

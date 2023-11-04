@@ -78,12 +78,7 @@ function styleToString(styledict, extras={}) {
 
 function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 	// Render text_arr
-	var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-	text.setAttribute('x', x);
-	text.setAttribute('y', y);
-	text.setAttribute('style', styleToString(styledict));
-	text.setAttribute('class', 'chemtxt sympoi');
-	parent.appendChild(text);
+	var text = attachSvg(parent, 'text', {x: x, y: y, style: styleToString(styledict), class: 'chemtxt sympoi'});
 
 	var font_size = parseInt(styledict['font-size']);
 	var dy = font_size / 5;

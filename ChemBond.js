@@ -236,23 +236,11 @@ ChemBond.prototype.setSideTip = function(node) {
 }
 
 ChemBond.prototype.createPattern = function() {
-	this.pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-	this.pattern.setAttribute('id', 'p' + this.g.id);
-	this.pattern.setAttribute('x', 0);
-	this.pattern.setAttribute('y', 0);
-	this.pattern.setAttribute('width', 4);
-	this.pattern.setAttribute('height', 1);
-	this.pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-
-	var fill_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-	fill_rect.setAttribute('x', 0);
-	fill_rect.setAttribute('y', 0);
-	fill_rect.setAttribute('width', 2);
-	fill_rect.setAttribute('height', 1);
-	this.pattern.appendChild(fill_rect);
-
 	var svg_defs = document.getElementById('svg_defs');
-	svg_defs.appendChild(this.pattern);
+	this.pattern = attachSvg(svg_defs, 'pattern', 
+		{id: 'p' + this.g.id, x: 0, y: 0, width: 4, height: 1, patternUnits: 'userSpaceOnUse'}
+	);
+	attachSvg(this.pattern, 'rect', {x: 0, y: 0, width: 2, height: 1});
 }
 
 ChemBond.prototype.deletePattern = function() {
@@ -267,11 +255,7 @@ ChemBond.prototype.createMask = function() {
 	this.mask.setAttribute('id', 'm' + this.g.id);
 	this.mask.objref = this;
 
-	var white_bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-	white_bg.setAttribute('width', '100%');
-	white_bg.setAttribute('height', '100%');
-	white_bg.setAttribute('fill', 'white');
-	this.mask.appendChild(white_bg);
+	attachSvg(this.mask, 'rect', {width: '100%', height: '100%', fill: 'white'}); // White bg
 
 	document.getElementById('svg_defs').appendChild(this.mask);
 	this.renderBond(); // ToDo: Do not render bond! Set the mask for <g> instead.
@@ -307,10 +291,7 @@ ChemBond.prototype.deleteMaskLines = function(upper_bond, root, del_mask=false) 
 
 ChemBond.prototype.drawLines = function(parent, attrs={}) {
 	for (const line of this.lines) {
-		var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-		polygon.setAttribute('points', line.flat().map(item => item.join()).join(' '));
-		Object.entries(attrs).forEach(([key, val]) => polygon.setAttribute(key, val));
-		parent.appendChild(polygon);
+		attachSvg(parent, 'polygon', {points: line.flat().map(item => item.join()).join(' '), ...attrs});
 	}
 };
 
