@@ -7,13 +7,12 @@ function ChemNode(id, x, y, text) {
 	this.select_circ = null;
 	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-	this.id = id;
-	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'ag');
 	this.g.objref = this;
 	document.getElementById('atomsall').appendChild(this.g);
 
 	this.backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	this.backcircle.setAttribute('id', id);
 	this.backcircle.setAttribute('class', 'anode');
 	this.backcircle.setAttribute('r', 8);
 	this.backcircle.setAttribute('cx', x);

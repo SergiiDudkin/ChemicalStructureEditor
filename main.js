@@ -562,8 +562,8 @@ function chemNodeHandler(elbtn) {
 			}
 			dispatcher.do(editStructure, {});
 			movBoundNode(event);
-			document.styleSheets[0].cssRules[0].selectorText = `${'#' + new_node1id}:hover .anode`;
-			document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover .brect`;
+			document.styleSheets[0].cssRules[0].selectorText = `${'#' + new_node1id}:hover`;
+			document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover`;
 			window.addEventListener('mousemove', movBoundNode);
 			window.addEventListener('mouseup', finNode);
 		}
@@ -624,8 +624,8 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				new_bond_id = ChemBond.prototype.getNewId();
 				node0id = node0 ? node0.id : new_node0id;
 				var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
-				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover .anode`;
-				document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover .brect`;
+				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover`;
+				document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover`;
 				window.addEventListener('mousemove', movBond);
 				window.addEventListener('mouseup', enBond);
 			}

@@ -2,12 +2,12 @@ function ChemBond(id, node0, node1, type) {
 	this.id = id
 
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
-	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'bg');
 	this.g.objref = this;
 	document.getElementById('bondsall').appendChild(this.g)
 	
 	this.backrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); // Background rectangle
+	this.backrect.setAttribute('id', id);
 	this.backrect.setAttribute('class', 'brect');
 	this.backrect.setAttribute('height', 10);
 	this.backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
