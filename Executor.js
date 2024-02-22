@@ -20,9 +20,9 @@ function editStructure({
 		var bond_nodes = bond.nodes;
 		bond.delete();
 		for (const node of bond_nodes) {
-			if (!del_atoms.has(node.g.id)) {
+			if (!del_atoms.has(node.id)) {
 				atoms_parse.add(node);
-				if (node.isMethane()) atoms_text_me[node.g.id] = node.text;
+				if (node.isMethane()) atoms_text_me[node.id] = node.text;
 				atoms_auto_d_bond.add(node);
 				if (node.text == '') atoms_refresh_tips.add(node);
 			}
@@ -45,11 +45,11 @@ function editStructure({
 		bonds_update_recht.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
-			var no_text = atoms_text[node.g.id] == '' || !(atoms_text[node.g.id] || node.text);
-			if (no_text && node.connections.length == 1) atoms_text_me[node.g.id] = node.text;
+			var no_text = atoms_text[node.id] == '' || !(atoms_text[node.id] || node.text);
+			if (no_text && node.connections.length == 1) atoms_text_me[node.id] = node.text;
 			atoms_auto_d_bond.add(node);
 			if (no_text) atoms_refresh_tips.add(node);
-			else tips_update.add(`${node.g.id}&${bond.g.id}`);
+			else tips_update.add(`${node.id}&${bond.id}`);
 		}
 	}
 
@@ -62,7 +62,7 @@ function editStructure({
 		if (node.text == '') atoms_refresh_tips.add(node);
 		for (const bond of node.connections) {
 			bonds_update_recht.add(bond);
-			if (node.text != '') tips_update.add(`${node.g.id}&${bond.g.id}`);
+			if (node.text != '') tips_update.add(`${node.id}&${bond.id}`);
 		}
 	}
 
@@ -74,7 +74,7 @@ function editStructure({
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
 			if (node.text == '') atoms_refresh_tips.add(node);
-			else tips_update.add(`${node.g.id}&${bond.g.id}`);
+			else tips_update.add(`${node.id}&${bond.id}`);
 		}
 	}
 
@@ -102,7 +102,7 @@ function editStructure({
 			atoms_auto_d_bond.add(node);
 			atoms_render.add(node);
 			if (node.text == '') atoms_refresh_tips.add(node);
-			else tips_update.add(`${node.g.id}&${bond.g.id}`);
+			else tips_update.add(`${node.id}&${bond.id}`);
 		}
 	}
 
@@ -137,7 +137,7 @@ function editStructure({
 			bond.posDouble();
 			for (const node of bond.nodes) {
 				if (node.text == '') atoms_refresh_tips.add(node);
-				else tips_update.add(`${node.g.id}&${bond.g.id}`);
+				else tips_update.add(`${node.id}&${bond.id}`);
 			}
 		}
 	}

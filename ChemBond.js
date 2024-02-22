@@ -1,15 +1,19 @@
 function ChemBond(id, node0, node1, type) {
+	this.id = id
+
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); // Container for the bond elements
 	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'bg');
 	this.g.objref = this;
 	document.getElementById('bondsall').appendChild(this.g)
 	
-	var backrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); // Background rectangle
-	backrect.setAttribute('class', 'brect');
-	backrect.setAttribute('height', 10);
-	backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
-	this.g.appendChild(backrect);
+	this.backrect = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); // Background rectangle
+	this.backrect.setAttribute('class', 'brect');
+	this.backrect.setAttribute('height', 10);
+	this.backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
+	this.backrect.is_bond = true;
+	this.backrect.objref = this;
+	document.getElementById('sensors_b').appendChild(this.backrect);
 
 	Object.assign(this, ChemBond.default_style);
 	this.setType(type);
@@ -124,6 +128,7 @@ ChemBond.prototype.delete = function() {
 	ChemBond.prototype.deleteMaskLines(this, document, del_mask=true);
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
+	this.backrect.remove();
 	delete this.nodes;
 	this.deletePattern();
 	this.deleteMask();
@@ -238,7 +243,7 @@ ChemBond.prototype.setSideTip = function(node) {
 ChemBond.prototype.createPattern = function() {
 	var svg_defs = document.getElementById('svg_defs');
 	this.pattern = attachSvg(svg_defs, 'pattern', 
-		{id: 'p' + this.g.id, x: 0, y: 0, width: 4, height: 1, patternUnits: 'userSpaceOnUse'}
+		{id: 'p' + this.id, x: 0, y: 0, width: 4, height: 1, patternUnits: 'userSpaceOnUse'}
 	);
 	attachSvg(this.pattern, 'rect', {x: 0, y: 0, width: 2, height: 1});
 }
@@ -252,7 +257,7 @@ ChemBond.prototype.deletePattern = function() {
 
 ChemBond.prototype.createMask = function() {
 	this.mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
-	this.mask.setAttribute('id', 'm' + this.g.id);
+	this.mask.setAttribute('id', 'm' + this.id);
 	this.mask.objref = this;
 
 	attachSvg(this.mask, 'rect', {width: '100%', height: '100%', fill: 'white'}); // White bg
@@ -263,7 +268,7 @@ ChemBond.prototype.createMask = function() {
 
 ChemBond.prototype.createSubmask = function(upper_bond) {
 	if (!this.mask) this.createMask();
-	upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${upper_bond.g.id}`});
+	upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${upper_bond.id}`});
 }
 
 ChemBond.prototype.deleteMask = function() {
@@ -278,7 +283,7 @@ ChemBond.prototype.deleteSubmask = function(upper_bond) {
 };
 
 ChemBond.prototype.deleteMaskLines = function(upper_bond, root, del_mask=false) {
-	var u_mask_lines = Array.from(root.getElementsByClassName(`u${upper_bond.g.id}`));
+	var u_mask_lines = Array.from(root.getElementsByClassName(`u${upper_bond.id}`));
 	var masks = new Set(u_mask_lines.map(m_line => m_line.parentNode));
 	u_mask_lines.forEach(u_mask_line => u_mask_line.remove());
 	if (del_mask) {
@@ -296,26 +301,26 @@ ChemBond.prototype.drawLines = function(parent, attrs={}) {
 };
 
 ChemBond.prototype.renderBond = function() {
-	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old lines
+	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old lines
 	if (this.pattern) {
 		this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
 		this.pattern.firstChild.setAttribute('fill', this.color);
 	}
 	this.drawLines(this.g, {
-		'fill': (this.pattern ? `url(#p${this.g.id})` : this.color), 
-		'mask': (this.mask ? `url(#m${this.g.id})`: null)
+		'fill': (this.pattern ? `url(#p${this.id})` : this.color), 
+		'mask': (this.mask ? `url(#m${this.id})`: null),
+		'class': 'sympoi'
 	});
 	ChemBond.prototype.deleteMaskLines(this, document, del_mask=false).forEach(mask => 
-		this.drawLines(mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${this.g.id}`})
+		this.drawLines(mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${this.id} sympoi`})
 	);
 }
 
 ChemBond.prototype.updateRect = function() {
-	var backrect = this.g.firstChild;
-	backrect.setAttribute('x', this.xy[0] - this.len / 2);
-	backrect.setAttribute('y', this.xy[1] - 5);
-	backrect.setAttribute('width', this.len);
-	backrect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
+	this.backrect.setAttribute('x', this.xy[0] - this.len / 2);
+	this.backrect.setAttribute('y', this.xy[1] - 5);
+	this.backrect.setAttribute('width', this.len);
+	this.backrect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
 }
 
 ChemBond.prototype.getNodeCenters = function() {
@@ -344,7 +349,7 @@ ChemBond.prototype.adjustLength = function(node) {
 	var node_idx = this.getNodeIdx(node);
 	var curxy = node_centers[node_idx];
 
-	var textbox = node.g.childNodes[1].getBBox();
+	var textbox = node.g.childNodes[0].getBBox();
 	var tb_w = textbox.width;
 	var tb_h = textbox.height;
 

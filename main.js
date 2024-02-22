@@ -95,7 +95,7 @@ class BaseButton {
 	}
 
 	deselectCond(event) {
-		if (event.target.parentNode.objref !== this && this.active) this.deselect();
+		if (event.target.objref !== this && this.active) this.deselect();
 	}
 
 	select() {
@@ -132,7 +132,7 @@ class SubButton extends RegularButton {
 	}
 
 	deselectCond(event) {
-		if (event.target.parentNode.objref !== this.parent) super.deselectCond(event);
+		if (event.target.objref !== this.parent) super.deselectCond(event);
 	}
 
 	createSvg() {
@@ -342,7 +342,7 @@ function invertCmd(kwargs_dir) {
 	});
 	if (kwargs_dir.del_bonds) kwargs_dir.del_bonds.forEach(id => {
 		var bond = document.getElementById(id).objref;
-		kwargs_rev.new_bonds_data[id] = [...bond.nodes.map(node => node.g.id), bond.type];
+		kwargs_rev.new_bonds_data[id] = [...bond.nodes.map(node => node.id), bond.type];
 	});
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
 	if (kwargs_dir.new_bonds_data) kwargs_rev.del_bonds = new Set(Object.keys(kwargs_dir.new_bonds_data));
@@ -422,7 +422,7 @@ function getCursorAtom(event, atomtext) {
 	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), '@' + atomtext);
 	cursoratom.parse();
 	cursoratom.renderText();
-	cursoratom.g.firstChild.setAttribute('class', 'cursor-circ');
+	cursoratom.backcircle.setAttribute('class', 'cursor-circ');
 	return cursoratom;
 }
 
@@ -440,7 +440,7 @@ function discreteAngle(pt0, [x, y], length=standard_bondlength) {
 }
 
 function pickNodePoint(event) {
-	var node = atomsall.contains(event.target) ? event.target.parentNode.objref : null;
+	var node = event.target.is_atom ? event.target.objref : null;
 	var pt = node ? node.xy : getSvgPoint(event);
 	return [pt, node];
 }
@@ -449,7 +449,7 @@ function pickNode([x, y]) {
 	[pt.x, pt.y] = [x, y];
 	var svgP2 = pt.matrixTransform(matrixrf.inverse());
 	var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
-	return (pt_elem != null && atomsall.contains(pt_elem)) ? pt_elem.parentNode.objref : null;
+	return (pt_elem != null && pt_elem.is_atom) ? pt_elem.objref : null;
 }
 
 function getBondEnd(event, pt0) {
@@ -479,14 +479,14 @@ class Overlap {
 			while (j < bond_group.length && bond1.min_x < bond0.max_x) {
 				if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
 					checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
-				) this.new_masks.push([bond0.g.id, bond1.g.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
+				) this.new_masks.push([bond0.id, bond1.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
 				bond1 = bond_group[++j];
 			}
 		}
 	}
 
 	refresh(exclude=[]) {
-		var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.g.id));
+		var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
 		this.detectIntersec(bond_group);
 
 		// Add masks
@@ -543,14 +543,14 @@ function chemNodeHandler(elbtn) {
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
 				if (node0.connections.length == 0 && (node0.text == atomtext || (node0.text == '' && atomtext == 'C'))) {
-					var kwargs = {del_atoms: new Set([node0.g.id])};
+					var kwargs = {del_atoms: new Set([node0.id])};
 					dispatcher.do(editStructure, kwargs);
 					return;
 				}
 				old_atomtext = node0.text;
 				new_atomtext = old_atomtext == atomtext ? '' : atomtext;
 				node0_is_new = false;
-				node0_id = node0.g.id;
+				node0_id = node0.id;
 			}
 			else { // If blanc space was clicked
 				old_atomtext = atomtext;
@@ -611,9 +611,9 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 
 	function stBond(event) { // Start drawing bond. Called when mouse button 1 is down.
 		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
-			if (bondsall.contains(event.target)) { // If an existing bond was clicked, change its multiplicity
-				var focobj = event.target.parentNode.objref;
-				var kwargs = {bonds_type: {[focobj.g.id]: focobj.getNextType(rotation_schema)}};
+			if (event.target.is_bond) { // If an existing bond was clicked, change its multiplicity
+				var focobj = event.target.objref;
+				var kwargs = {bonds_type: {[focobj.id]: focobj.getNextType(rotation_schema)}};
 				dispatcher.do(editStructure, kwargs);
 				overlap.refresh();
 			}
@@ -622,7 +622,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				new_node0id = ChemNode.prototype.getNewId();
 				new_node1id = ChemNode.prototype.getNewId();
 				new_bond_id = ChemBond.prototype.getNewId();
-				node0id = node0 ? node0.g.id : new_node0id;
+				node0id = node0 ? node0.id : new_node0id;
 				var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
 				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover .anode`;
 				document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover .brect`;
@@ -640,7 +640,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	function movBond(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_bond_id) !== null) dispatcher.undo();
 		var [pt1, node1] = getBondEnd(event, pt0);
-		var node1id = node1 ? node1.g.id : new_node1id;
+		var node1id = node1 ? node1.id : new_node1id;
 		if (pt1 !== null) {
 			var new_atoms_data = {};
 			if (node0id == new_node0id) new_atoms_data[node0id] = [...pt0, ''];
@@ -684,13 +684,13 @@ function deleteHandler(delbtn) {
 	}
 
 	function erase(event) { // Active eraser
-		if (atomsall.contains(event.target) || bondsall.contains(event.target)) {
-			var focobj = event.target.parentNode.objref;
+		if (event.target.is_atom || event.target.is_bond) {
+			var focobj = event.target.objref;
 			if (focobj.constructor == ChemNode) var kwargs = {
-				del_atoms: new Set([focobj.g.id]), 
-				del_bonds: new Set(focobj.connections.map(bond => bond.g.id))
+				del_atoms: new Set([focobj.id]), 
+				del_bonds: new Set(focobj.connections.map(bond => bond.id))
 			};
-			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.g.id])};
+			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.id])};
 			dispatcher.do(editStructure, kwargs);
 			overlap.refresh();
 		}
@@ -722,15 +722,12 @@ function moveHandler(movebtn) {
 	}
 
 	function moveAct(event) { // When mouse button is down
-		var parnode = event.target.parentNode;
-		var is_atom = atomsall.contains(event.target.parentNode);
-		var is_bond = bondsall.contains(event.target.parentNode);
-		if (is_atom || is_bond) { // If atom or bond was clicked
-			var poiobj = event.target.parentNode.objref;
-			if (!atoms_slctd.has(poiobj.g.id) && !bonds_slctd.has(poiobj.g.id)) { // Clicked element was not previously selected
+		if (event.target.is_atom || event.target.is_bond) { // If atom or bond was clicked
+			var poiobj = event.target.objref;
+			if (!atoms_slctd.has(poiobj.id) && !bonds_slctd.has(poiobj.id)) { // Clicked element was not previously selected
 				deselectAll();
-				if (is_atom) atoms_slctd.add(poiobj.g.id);
-				else if (is_bond) poiobj.nodes.forEach(node => atoms_slctd.add(node.g.id));
+				if (event.target.is_atom) atoms_slctd.add(poiobj.id); // Atom case
+				else poiobj.nodes.forEach(node => atoms_slctd.add(node.id)); // Bond case
 			}
 			mo_st = getSvgPoint(event);
 			accum_vec = [0, 0];
@@ -839,7 +836,7 @@ function textHandler(textbtn) {
 	function setNodeText() {
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
-			var kwargs = {atoms_text: {[node.g.id]: (old_input.value ? '@' : '') + old_input.value}};
+			var kwargs = {atoms_text: {[node.id]: (old_input.value ? '@' : '') + old_input.value}};
 			dispatcher.do(editStructure, kwargs);
 			old_input.remove();
 		}
@@ -920,9 +917,9 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				window.addEventListener('mousemove', rotatePolygon);
 				window.addEventListener('mouseup', appendPolygon);
 			}
-			else if (bondsall.contains(event.target)) { // Some bond was clicked
+			else if (event.target.is_bond) { // Some bond was clicked
 				stopCursor()
-				common_bond = event.target.parentNode.objref;
+				common_bond = event.target.objref;
 				dispatcher.do(editStructure, {});
 				flipPolygon(event);
 				window.addEventListener('mousemove', flipPolygon);
@@ -956,7 +953,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		delete new_atoms_data[new_node_ids[0]];
 		delete new_atoms_data[new_node_ids[1]];
 
-		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].g.id)
+		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id)
 		new_bonds_data[new_bond_ids[1]][0] = node1_id;
 		new_bonds_data[new_bond_ids[num-1]][1] = node0_id;
 		new_bonds_data[new_bond_ids[0]][0] = node0_id;
@@ -979,8 +976,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
 		delete new_atoms_data[new_node_ids[0]];
-		new_bonds_data[new_bond_ids[0]][0] = common_node.g.id;
-		new_bonds_data[new_bond_ids[num-1]][1] = common_node.g.id;
+		new_bonds_data[new_bond_ids[0]][0] = common_node.id;
+		new_bonds_data[new_bond_ids[num-1]][1] = common_node.id;
 		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
@@ -1019,7 +1016,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		for (const [id, data] of Object.entries(new_atoms_data)) {
 			node = pickNode(data.slice(0, 2));
 			if (node) { // ToDo: Consider extra condition in case of new heteroatom.
-				node_pairs[id] = node.g.id;
+				node_pairs[id] = node.id;
 				delete new_atoms_data[id];
 			}
 		}
@@ -1037,9 +1034,9 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 					delete new_bonds_data[id];
 					var old_bond = old_bonds[0];
 					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
-					var new_type_casted = data[0] != old_bond.nodes[0].g.id ? ChemBond.rev_type[data[2]] : data[2];
+					var new_type_casted = data[0] != old_bond.nodes[0].id ? ChemBond.rev_type[data[2]] : data[2];
 					if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
-						bonds_type[old_bond.g.id] = new_type_casted;
+						bonds_type[old_bond.id] = new_type_casted;
 					}
 				}
 			}

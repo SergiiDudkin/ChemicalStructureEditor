@@ -1,22 +1,26 @@
 function ChemNode(id, x, y, text) {
+	this.id = id
+
 	Object.assign(this, ChemNode.default_style);
 	this.text = text.toString(); // ??? maybe .toString() is not needed
 	this.connections = [];
 	this.select_circ = null;
 	
 	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-	this.g.id = id;
+	this.id = id;
 	this.g.setAttribute('id', id);
 	this.g.setAttribute('class', 'ag');
 	this.g.objref = this;
 	document.getElementById('atomsall').appendChild(this.g);
 
-	var backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	backcircle.setAttribute('class', 'anode');
-	backcircle.setAttribute('r', 8);
-	backcircle.setAttribute('cx', x);
-	backcircle.setAttribute('cy', y);
-	this.g.appendChild(backcircle);
+	this.backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	this.backcircle.setAttribute('class', 'anode');
+	this.backcircle.setAttribute('r', 8);
+	this.backcircle.setAttribute('cx', x);
+	this.backcircle.setAttribute('cy', y);
+	this.backcircle.is_atom = true;
+	this.backcircle.objref = this;
+	document.getElementById('sensors_a').appendChild(this.backcircle);
 
 	this.xy = [x, y];
 }
@@ -37,6 +41,7 @@ ChemNode.prototype.getNewId = function() {
 
 ChemNode.prototype.delete = function() {
 	this.g.remove();
+	this.backcircle.remove();
 	delete this.connections;
 };
 
@@ -75,15 +80,12 @@ ChemNode.prototype.translate = function(moving_vec) {
 	var [x, y] = this.xy;
 	this.xy = vecSum(this.xy, moving_vec);
 
-	var backcircle = this.g.childNodes[0];
-	backcircle.setAttribute('cx', x + dx);
-	backcircle.setAttribute('cy', y + dy);
+	this.backcircle.setAttribute('cx', x + dx);
+	this.backcircle.setAttribute('cy', y + dy);
 
 	for (var textnode of this.g.childNodes) {
-		if (textnode.previousSibling) {
-			textnode.setAttribute('x', parseFloat(textnode.getAttribute('x')) + dx);
-			textnode.setAttribute('y', parseFloat(textnode.getAttribute('y')) + dy);
-		}
+		textnode.setAttribute('x', parseFloat(textnode.getAttribute('x')) + dx);
+		textnode.setAttribute('y', parseFloat(textnode.getAttribute('y')) + dy);
 	}
 
 	if (this.select_circ != null) {
@@ -107,7 +109,7 @@ ChemNode.prototype.deselect = function() { // !!! Temp
 };
 
 ChemNode.prototype.renderText = function() {
-	while (this.g.childElementCount > 1) this.g.lastChild.remove(); // Remove old text
+	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old text
 	this.locateHydr();
 	textTermBuilder(this.bracket_tree, this.g, this.position_idx, styledict, this.xy)
 }
