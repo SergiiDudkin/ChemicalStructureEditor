@@ -5,21 +5,13 @@ function ChemNode(id, x, y, text) {
 	this.text = text.toString(); // ??? maybe .toString() is not needed
 	this.connections = [];
 	this.select_circ = null;
-	
-	this.g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-	this.g.setAttribute('class', 'ag');
-	this.g.objref = this;
-	document.getElementById('atomsall').appendChild(this.g);
 
-	this.backcircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	this.backcircle.setAttribute('id', id);
-	this.backcircle.setAttribute('class', 'anode');
-	this.backcircle.setAttribute('r', 8);
-	this.backcircle.setAttribute('cx', x);
-	this.backcircle.setAttribute('cy', y);
+	this.g = attachSvg(document.getElementById('atomsall'), 'g', {'class': 'ag'});
+	this.g.objref = this;
+
+	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {'id': id, 'class': 'anode', 'r': 8, 'cx': x, 'cy': y});
 	this.backcircle.is_atom = true;
 	this.backcircle.objref = this;
-	document.getElementById('sensors_a').appendChild(this.backcircle);
 
 	this.xy = [x, y];
 }

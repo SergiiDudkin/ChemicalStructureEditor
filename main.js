@@ -809,8 +809,8 @@ function moveHandler(movebtn) {
 			obj = el.objref;
 			var [x, y] = obj.xy;
 			if (rect_x < x && x < rect_x1 && rect_y < y && y < rect_y1) {
-				if (obj instanceof ChemNode) atoms_slctd.add(el.id);
-				else bonds_slctd.add(el.id);
+				if (obj instanceof ChemNode) atoms_slctd.add(obj.id);
+				else bonds_slctd.add(obj.id);
 				obj.select();
 			}
 		}
