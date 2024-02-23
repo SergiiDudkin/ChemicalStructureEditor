@@ -91,7 +91,7 @@ ChemNode.prototype.select = function() { // !!! Temp
 	this.select_circ.setAttribute('cx', this.xy[0]);
 	this.select_circ.setAttribute('cy', this.xy[1]);
 	this.select_circ.setAttribute('r', 10);
-	ahl.appendChild(this.select_circ);
+	highlights.appendChild(this.select_circ);
 };
 
 ChemNode.prototype.deselect = function() { // !!! Temp

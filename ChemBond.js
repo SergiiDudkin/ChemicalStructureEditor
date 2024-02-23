@@ -4,7 +4,7 @@ function ChemBond(id, node0, node1, type) {
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {'class': 'bg'});
 	this.g.objref = this;
 
-	this.backrect = attachSvg(document.getElementById('sensors_b'), 'rect', {'id': id, 'class': 'brect', 'height': 10})
+	this.backrect = attachSvg(document.getElementById('sensors_b'), 'rect', {'id': id, 'class': 'brect', 'height': 10});
 	this.backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
 	this.backrect.is_bond = true;
 	this.backrect.objref = this;
@@ -315,6 +315,10 @@ ChemBond.prototype.updateRect = function() {
 	this.backrect.setAttribute('y', this.xy[1] - 5);
 	this.backrect.setAttribute('width', this.len);
 	this.backrect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
+
+	if (this.select_rect != null) {
+		this.updateSelectRect();
+	}
 }
 
 ChemBond.prototype.getNodeCenters = function() {
@@ -384,10 +388,20 @@ ChemBond.prototype.adjustLength = function(node) {
 	return this.terms[node_idx];
 };
 
+ChemBond.prototype.updateSelectRect = function() {
+	this.select_rect.setAttribute('x', this.xy[0] + 4 - this.len / 2);
+	this.select_rect.setAttribute('y', this.xy[1] - 5);
+	this.select_rect.setAttribute('width', Math.max(this.len - 8, 0));
+	this.select_rect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
+}
+
 ChemBond.prototype.select = function() {
-	// ToDo: Get circle params of another bond!!!: !
+	this.select_rect = attachSvg(document.getElementById('atomhighlights'), 'rect', {'class': 'hlcirc', 'height': 10});
+	this.select_rect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
+	this.updateSelectRect();
 };
 
 ChemBond.prototype.deselect = function() {
-	// ToDo: !
+	this.select_rect.remove();
+	this.select_rect = null;
 };

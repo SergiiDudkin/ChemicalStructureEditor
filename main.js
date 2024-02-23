@@ -4,7 +4,7 @@ var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
 var bondsall = document.getElementById('bondsall');
 var atomsall = document.getElementById('atomsall');
-var ahl = document.getElementById('atomhighlights');
+var highlights = document.getElementById('atomhighlights');
 var pt, matrixrf, wmax; // Variables
 
 
@@ -723,8 +723,11 @@ function moveHandler(movebtn) {
 
 	function moveAct(event) { // When mouse button is down
 		if (event.target.is_atom || event.target.is_bond) { // If atom or bond was clicked
+			console.log('!0');
 			var poiobj = event.target.objref;
 			if (!atoms_slctd.has(poiobj.id) && !bonds_slctd.has(poiobj.id)) { // Clicked element was not previously selected
+				console.log(bonds_slctd);
+				console.log('deselectAll 0');
 				deselectAll();
 				if (event.target.is_atom) atoms_slctd.add(poiobj.id); // Atom case
 				else poiobj.nodes.forEach(node => atoms_slctd.add(node.id)); // Bond case
@@ -735,6 +738,7 @@ function moveHandler(movebtn) {
 			window.addEventListener('mouseup', finishMoving);
 		}
 		else {
+			console.log('deselectAll 1');
 			deselectAll()
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
 				pt.x = event.clientX;
@@ -814,7 +818,7 @@ function moveHandler(movebtn) {
 				obj.select();
 			}
 		}
-		is_selected = Boolean(atoms_slctd.size); // ToDo: ? Consider bonds_slctd
+		is_selected = Boolean(atoms_slctd.size + bonds_slctd.size); // ToDo: ? Consider bonds_slctd
 	}
 }
 
