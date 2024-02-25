@@ -4,7 +4,7 @@ function ChemBond(id, node0, node1, type) {
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {'class': 'bg'});
 	this.g.objref = this;
 
-	this.backrect = this.attachRect('sensors_b', {'id': id, 'class': 'brect', 'height': 10});
+	this.backrect = this.attachRect('sensors_b', {'id': id, 'class': 'brect', 'height': ChemBond.sel_h});
 	this.backrect.is_bond = true;
 	this.backrect.objref = this;
 
@@ -29,6 +29,8 @@ ChemBond.default_style = {
 	thick: 6,
 	bold: 5
 };
+ChemBond.sel_h = 12; // Selection rectangle height
+ChemBond.min_offset = 5;
 
 /*	Bond types:
 0 - hydrogen bond
@@ -236,8 +238,7 @@ ChemBond.prototype.setSideTip = function(node) {
 }
 
 ChemBond.prototype.createPattern = function() {
-	var svg_defs = document.getElementById('svg_defs');
-	this.pattern = attachSvg(svg_defs, 'pattern', 
+	this.pattern = attachSvg(document.getElementById('bondpatterns'), 'pattern', 
 		{id: 'p' + this.id, x: 0, y: 0, width: 4, height: 1, patternUnits: 'userSpaceOnUse'}
 	);
 	attachSvg(this.pattern, 'rect', {x: 0, y: 0, width: 2, height: 1});
@@ -257,7 +258,7 @@ ChemBond.prototype.createMask = function() {
 
 	attachSvg(this.mask, 'rect', {width: '100%', height: '100%', fill: 'white'}); // White bg
 
-	document.getElementById('svg_defs').appendChild(this.mask);
+	document.getElementById('bondcutouts').appendChild(this.mask);
 	this.renderBond(); // ToDo: Do not render bond! Set the mask for <g> instead.
 }
 
@@ -312,7 +313,7 @@ ChemBond.prototype.renderBond = function() {
 }
 
 ChemBond.prototype.updateAllRects = function() {
-	this.refreshRect(this.backrect, Math.max(this.offsets[0], 2), Math.max(this.offsets[1], 2));
+	this.refreshRect(this.backrect, ...this.offsets.map(offset => Math.max(offset, ChemBond.min_offset)));
 	this.refreshSelectRect();
 }
 
@@ -394,8 +395,9 @@ ChemBond.prototype.updateSelectRect = function() {
 }
 
 ChemBond.prototype.select = function() {
-	this.select_rect = this.attachRect('atomhighlights', {'class': 'hlcirc', 'height': 14});
-	this.masksel_rect = this.attachRect('selectholes', {'fill': 'black', 'height': 14});
+	this.backrect.setAttribute('class', 'invisible')
+	this.select_rect = this.attachRect('selecthighlight', {'height': ChemBond.sel_h});
+	this.masksel_rect = this.attachRect('selectholes', {'height': ChemBond.sel_h - 2});
 	this.refreshSelectRect();
 };
 
@@ -404,6 +406,7 @@ ChemBond.prototype.deselect = function() {
 	this.select_rect = null;
 	this.masksel_rect.remove();
 	this.masksel_rect = null;
+	this.backrect.setAttribute('class', 'brect')
 };
 
 ChemBond.prototype.attachRect = function(parent_id, svg_attrs) {
@@ -421,9 +424,8 @@ ChemBond.prototype.refreshRect = function(rect, st_offset, en_offset) {
 
 ChemBond.prototype.refreshSelectRect = function() {
 	if (this.select_rect) {
-		var st_offset = this.nodes[0].select_circ ? 0 : Math.max(this.offsets[0], 2);
-		var en_offset = this.nodes[1].select_circ ? 0 : Math.max(this.offsets[1], 2);
+		var [st_offset, en_offset] = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(offset, ChemBond.min_offset));
 		this.refreshRect(this.select_rect, st_offset, en_offset);
-		this.refreshRect(this.masksel_rect, st_offset, en_offset);
+		this.refreshRect(this.masksel_rect, st_offset + 1, en_offset + 1);
 	};
 };

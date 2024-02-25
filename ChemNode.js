@@ -9,7 +9,7 @@ function ChemNode(id, x, y, text) {
 	this.g = attachSvg(document.getElementById('atomsall'), 'g', {'class': 'ag'});
 	this.g.objref = this;
 
-	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {'id': id, 'class': 'anode', 'r': 8, 'cx': x, 'cy': y});
+	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {'id': id, 'class': 'anode', 'r': ChemNode.sel_r, 'cx': x, 'cy': y});
 	this.backcircle.is_atom = true;
 	this.backcircle.objref = this;
 
@@ -23,6 +23,7 @@ ChemNode.default_style = {
 	default_font_family: 'Arial',
 	default_size: 16
 };
+ChemNode.sel_r = 12; // Selection circle radius
 
 ChemNode.hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
@@ -88,8 +89,9 @@ ChemNode.prototype.translate = function(moving_vec) {
 };
 
 ChemNode.prototype.select = function() { // !!! Temp
-	this.select_circ = attachSvg(highlights, 'circle', {'class': 'hlcirc', 'cx': this.xy[0], 'cy': this.xy[1], 'r': 12});
-	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'fill': 'black', 'cx': this.xy[0], 'cy': this.xy[1], 'r': 12});
+	this.backcircle.setAttribute('class', 'invisible')
+	this.select_circ = attachSvg(highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
+	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1});
 };
 
 ChemNode.prototype.deselect = function() { // !!! Temp
@@ -97,6 +99,7 @@ ChemNode.prototype.deselect = function() { // !!! Temp
 	this.select_circ = null;
 	this.masksel_circ.remove();
 	this.masksel_circ = null;
+	this.backcircle.setAttribute('class', 'anode')
 };
 
 ChemNode.prototype.renderText = function() {

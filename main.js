@@ -4,7 +4,7 @@ var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
 var bondsall = document.getElementById('bondsall');
 var atomsall = document.getElementById('atomsall');
-var highlights = document.getElementById('atomhighlights');
+var highlights = document.getElementById('selecthighlight');
 var pt, matrixrf, wmax; // Variables
 
 
@@ -65,7 +65,7 @@ class BaseButton {
 		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
 		this.mask_g.objref = this;
 		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: 32, height: 32}); // Button tissue
-		this.selrecht = attachSvg(this.mask_g, 'polygon',
+		this.selrect = attachSvg(this.mask_g, 'polygon',
 			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
 		);
 	}
@@ -100,12 +100,12 @@ class BaseButton {
 
 	select() {
 		this.active = true;
-		this.selrecht.setAttribute('class', 'visible-anim');
+		this.selrect.setAttribute('class', 'visible-anim');
 	}
 
 	deselect() {
 		this.active = false;
-		this.selrecht.setAttribute('class', 'invisible');
+		this.selrect.setAttribute('class', 'invisible');
 	}
 }
 
@@ -227,12 +227,12 @@ class DropButton extends BaseButton {
 
 	select() {
 		this.img.innerHTML = this.active_subbtn.thml_text;
-		this.selrecht.setAttribute('class', 'visible');
+		this.selrect.setAttribute('class', 'visible');
 	}
 
 	deselect() {
 		this.img.innerHTML = this.thml_text;
-		this.selrecht.setAttribute('class', 'invisible');
+		this.selrect.setAttribute('class', 'invisible');
 	}
 }
 
@@ -315,9 +315,9 @@ var heptagonbtn = new SubButton(dropcycbtn,
 );
 
 
-var cnvclip = document.getElementById('cnvclip')
+var cnvclippath = document.getElementById('cnvclippath');
 function clipCnv(extra='') {
-	cnvclip.firstElementChild.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
+	cnvclippath.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
 }
 
 // Resize the canvas
@@ -713,7 +713,7 @@ function moveHandler(movebtn) {
 	var accum_vec;
 	var utils = document.getElementById('utils');
 	
-	var selectrect = makeSvg('rect', {fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
+	var selectrect = makeSvg('rect', {'class': 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
 	movebtn.mask_g.addEventListener('click', moveInit);
 
 	function moveInit(event) {
@@ -722,13 +722,13 @@ function moveHandler(movebtn) {
 	}
 
 	function moveAct(event) { // When mouse button is down
-		if (event.target.is_atom || event.target.is_bond) { // If atom or bond was clicked
+		if (event.target.is_atom || event.target.is_bond) { // Clicked element was not previously selected
+			deselectAll();
 			var poiobj = event.target.objref;
-			if (!atoms_slctd.has(poiobj.id) && !bonds_slctd.has(poiobj.id)) { // Clicked element was not previously selected
-				deselectAll();
-				if (event.target.is_atom) atoms_slctd.add(poiobj.id); // Atom case
-				else poiobj.nodes.forEach(node => atoms_slctd.add(node.id)); // Bond case
-			}
+			if (event.target.is_atom) atoms_slctd.add(poiobj.id); // Atom case
+			else poiobj.nodes.forEach(node => atoms_slctd.add(node.id)); // Bond case
+		}
+		if (event.target.is_atom || event.target.is_bond || highlights.contains(event.target)) { // If atom or bond was clicked
 			mo_st = getSvgPoint(event);
 			accum_vec = [0, 0];
 			window.addEventListener('mousemove', moving);

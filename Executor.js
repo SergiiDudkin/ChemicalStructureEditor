@@ -11,7 +11,7 @@ function editStructure({
 		bonds_d_adjust = new Set(), 
 		bonds_to_render = new Set(), 
 		bonds_transl = new Set(), 
-		bonds_update_recht = new Set(), 
+		bonds_update_rect = new Set(), 
 		bonds_scewed = new Set();
 
 	// Delete bonds
@@ -42,7 +42,7 @@ function editStructure({
 	// Create bonds
 	for (const [id, data] of Object.entries(new_bonds_data)) {
 		bond = new ChemBond(id, ...data); // data: [node0, node1, type]
-		bonds_update_recht.add(bond);
+		bonds_update_rect.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
 			var no_text = atoms_text[node.id] == '' || !(atoms_text[node.id] || node.text);
@@ -61,7 +61,7 @@ function editStructure({
 		atoms_parse.add(node);
 		if (node.text == '') atoms_refresh_tips.add(node);
 		for (const bond of node.connections) {
-			bonds_update_recht.add(bond);
+			bonds_update_rect.add(bond);
 			if (node.text != '') tips_update.add(`${node.id}&${bond.id}`);
 		}
 	}
@@ -97,7 +97,7 @@ function editStructure({
 	// Recalculate dimensions of skewed bonds and find affected elements
 	for (const bond of bonds_scewed) {
 		bond.recalcDims();
-		bonds_update_recht.add(bond);
+		bonds_update_rect.add(bond);
 		for (const node of bond.nodes) {
 			atoms_auto_d_bond.add(node);
 			atoms_render.add(node);
@@ -121,7 +121,7 @@ function editStructure({
 	for (const bond of bonds_transl) {
 		bond.translate(moving_vec);
 		bonds_to_render.add(bond);
-		bonds_update_recht.add(bond);
+		bonds_update_rect.add(bond);
 	}
 
 	// Fetch auto double bonds
@@ -162,8 +162,8 @@ function editStructure({
 		bond.renderBond();
 	}
 
-	// Update back rechtangle
-	for (const bond of bonds_update_recht) {
+	// Update back rectangle
+	for (const bond of bonds_update_rect) {
 		bond.updateAllRects();
 	}
 }
