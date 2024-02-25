@@ -1,11 +1,10 @@
 function ChemBond(id, node0, node1, type) {
 	this.id = id
-	
+
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {'class': 'bg'});
 	this.g.objref = this;
 
-	this.backrect = attachSvg(document.getElementById('sensors_b'), 'rect', {'id': id, 'class': 'brect', 'height': 10});
-	this.backrect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
+	this.backrect = this.attachRect('sensors_b', {'id': id, 'class': 'brect', 'height': 10});
 	this.backrect.is_bond = true;
 	this.backrect.objref = this;
 
@@ -107,6 +106,7 @@ ChemBond.prototype.setType = function(type) {
 	this.hsp = this.bond_spacing / 2; // Half of space between lines in multiple bonds
 
 	this.terms = new Array(2);
+	this.offsets = new Array(2);
 	this.hwt = new Array(2); // Actual half width of terminal
 	this.juncs = [new Array(2), new Array(2)];
 	this.lines = new Array(this.linecnt).fill().map(() => [[], []]);
@@ -163,6 +163,7 @@ ChemBond.prototype.updateTip = function(node) {
 ChemBond.prototype.updateConvTip = function(node) {
 	var node_idx = this.getNodeIdx(node);
 	this.terms[node_idx] = this.getNodeCenters()[node_idx];
+	this.offsets[node_idx] = 0;
 	this.hwt = this.hw.slice();
 	this.setSideTip(node);
 }
@@ -310,15 +311,9 @@ ChemBond.prototype.renderBond = function() {
 	);
 }
 
-ChemBond.prototype.updateRect = function() {
-	this.backrect.setAttribute('x', this.xy[0] - this.len / 2);
-	this.backrect.setAttribute('y', this.xy[1] - 5);
-	this.backrect.setAttribute('width', this.len);
-	this.backrect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
-
-	if (this.select_rect != null) {
-		this.updateSelectRect();
-	}
+ChemBond.prototype.updateAllRects = function() {
+	this.refreshRect(this.backrect, Math.max(this.offsets[0], 2), Math.max(this.offsets[1], 2));
+	this.refreshSelectRect();
 }
 
 ChemBond.prototype.getNodeCenters = function() {
@@ -381,6 +376,9 @@ ChemBond.prototype.adjustLength = function(node) {
 		vecSum(curxy, [fx1 * tb_w, fy1 * tb_h])
 	);
 
+	// Compute offsets
+	this.offsets[node_idx] = vecLen(vecDif(curxy, this.terms[node_idx]))
+
 	// Compute halw width of the actual bond terminals
 	prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
 	this.hwt[node_idx] = this.hw[node_idx] * (1 - prop) + this.hw[1 - node_idx] * prop;
@@ -396,12 +394,36 @@ ChemBond.prototype.updateSelectRect = function() {
 }
 
 ChemBond.prototype.select = function() {
-	this.select_rect = attachSvg(document.getElementById('atomhighlights'), 'rect', {'class': 'hlcirc', 'height': 10});
-	this.select_rect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
-	this.updateSelectRect();
+	this.select_rect = this.attachRect('atomhighlights', {'class': 'hlcirc', 'height': 14});
+	this.masksel_rect = this.attachRect('selectholes', {'fill': 'black', 'height': 14});
+	this.refreshSelectRect();
 };
 
 ChemBond.prototype.deselect = function() {
 	this.select_rect.remove();
 	this.select_rect = null;
+	this.masksel_rect.remove();
+	this.masksel_rect = null;
+};
+
+ChemBond.prototype.attachRect = function(parent_id, svg_attrs) {
+	var rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
+	rect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
+	return rect;
+};
+
+ChemBond.prototype.refreshRect = function(rect, st_offset, en_offset) {
+	rect.setAttribute('x', this.xy[0] + st_offset - this.len / 2);
+	rect.setAttribute('y', this.xy[1] - rect.getAttribute('height') / 2);
+	rect.setAttribute('width', Math.max(this.len - st_offset - en_offset, 0));
+	rect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
+};
+
+ChemBond.prototype.refreshSelectRect = function() {
+	if (this.select_rect) {
+		var st_offset = this.nodes[0].select_circ ? 0 : Math.max(this.offsets[0], 2);
+		var en_offset = this.nodes[1].select_circ ? 0 : Math.max(this.offsets[1], 2);
+		this.refreshRect(this.select_rect, st_offset, en_offset);
+		this.refreshRect(this.masksel_rect, st_offset, en_offset);
+	};
 };

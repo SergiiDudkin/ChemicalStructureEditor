@@ -8,8 +8,8 @@ function makeSvg(tag, attrs={}) {
 	return el;
 }
 
-function attachSvg(patent, tag, attrs={}) {
+function attachSvg(parent, tag, attrs={}) {
 	el = makeSvg(tag, attrs);
-	patent.appendChild(el);
+	parent.appendChild(el);
 	return el;
 }

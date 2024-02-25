@@ -66,7 +66,7 @@
 						<rect id="canvbckgrnd" class="brick" x="0" y="0" width="666" height="566" fill="white" clip-path="url(#cnvclip)" />
 					</g>
 					<g id="drawings" clip-path="url(#cnvclip)" >
-						<g id="atomhighlights"></g>
+						<g id="atomhighlights" mask="url(#selectmask)"></g>
 						<g id="sensors_b"></g>
 						<g id="sensors_a"></g>
 						<g id="bondsall"></g>
@@ -87,6 +87,10 @@
 						<clipPath id="cnvclip">
 							<path clip-rule="evenodd" />
 						</clipPath>
+						<mask id="selectmask">
+							<rect width="100%" height="100%" fill="white"></rect>
+							<g id="selectholes"></g>
+						</mask>
 					</defs>
 				</svg>
 			</div>

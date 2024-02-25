@@ -82,21 +82,21 @@ ChemNode.prototype.translate = function(moving_vec) {
 	if (this.select_circ != null) {
 		this.select_circ.setAttribute('cx', x + dx);
 		this.select_circ.setAttribute('cy', y + dy);
+		this.masksel_circ.setAttribute('cx', x + dx);
+		this.masksel_circ.setAttribute('cy', y + dy);
 	}
 };
 
 ChemNode.prototype.select = function() { // !!! Temp
-	this.select_circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-	this.select_circ.setAttribute('class', 'hlcirc');
-	this.select_circ.setAttribute('cx', this.xy[0]);
-	this.select_circ.setAttribute('cy', this.xy[1]);
-	this.select_circ.setAttribute('r', 10);
-	highlights.appendChild(this.select_circ);
+	this.select_circ = attachSvg(highlights, 'circle', {'class': 'hlcirc', 'cx': this.xy[0], 'cy': this.xy[1], 'r': 12});
+	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'fill': 'black', 'cx': this.xy[0], 'cy': this.xy[1], 'r': 12});
 };
 
 ChemNode.prototype.deselect = function() { // !!! Temp
 	this.select_circ.remove();
 	this.select_circ = null;
+	this.masksel_circ.remove();
+	this.masksel_circ = null;
 };
 
 ChemNode.prototype.renderText = function() {

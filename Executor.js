@@ -164,6 +164,6 @@ function editStructure({
 
 	// Update back rechtangle
 	for (const bond of bonds_update_recht) {
-		bond.updateRect();
+		bond.updateAllRects();
 	}
 }
