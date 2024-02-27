@@ -2,8 +2,8 @@ var canvas = document.getElementById('canvas');
 var canvas_container = document.getElementById('canvas-container');
 var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
-var bondsall = document.getElementById('bondsall');
-var atomsall = document.getElementById('atomsall');
+var sensors_b = document.getElementById('sensors_b');
+var sensors_a = document.getElementById('sensors_a');
 var highlights = document.getElementById('selecthighlight');
 var pt, matrixrf, wmax; // Variables
 
@@ -486,7 +486,7 @@ class Overlap {
 	}
 
 	refresh(exclude=[]) {
-		var bond_group = Array.from(bondsall.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
+		var bond_group = Array.from(sensors_b.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
 		this.detectIntersec(bond_group);
 
 		// Add masks
@@ -805,7 +805,7 @@ function moveHandler(movebtn) {
 
 		var rect_x1 = rect_x + rect_w;
 		var rect_y1 = rect_y + rect_h;
-		for (const el of [...atomsall.children, ...bondsall.children]) {
+		for (const el of [...sensors_a.children, ...sensors_b.children]) {
 			obj = el.objref;
 			var [x, y] = obj.xy;
 			if (rect_x < x && x < rect_x1 && rect_y < y && y < rect_y1) {

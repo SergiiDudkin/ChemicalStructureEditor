@@ -7,7 +7,6 @@ function ChemNode(id, x, y, text) {
 	this.select_circ = null;
 
 	this.g = attachSvg(document.getElementById('atomsall'), 'g', {'class': 'ag'});
-	this.g.objref = this;
 
 	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {'id': id, 'class': 'anode', 'r': ChemNode.sel_r, 'cx': x, 'cy': y});
 	this.backcircle.is_atom = true;
@@ -91,7 +90,7 @@ ChemNode.prototype.translate = function(moving_vec) {
 ChemNode.prototype.select = function() { // !!! Temp
 	this.backcircle.setAttribute('class', 'invisible')
 	this.select_circ = attachSvg(highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
-	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1});
+	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
 };
 
 ChemNode.prototype.deselect = function() { // !!! Temp
