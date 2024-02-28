@@ -737,7 +737,7 @@ function moveHandler(movebtn) {
 			window.addEventListener('mouseup', finishMoving);
 		}
 		else {
-			deselectAll()
+			deselectAll();
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
 				pt.x = event.clientX;
 				pt.y = event.clientY;
@@ -1050,11 +1050,6 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 function transformHandler(transformbtn) {
 	var svgP0, svgP1;
 	var rect_x, rect_y, rect_w, rect_h;
-	var atoms_slctd = new Set(); // Selected atoms
-	var bonds_slctd = new Set(); // Selected atoms
-	var is_selected = false;
-	var mo_st = new Array(2); // Cursor coordinates when dragging was started
-	var accum_vec;
 	var utils = document.getElementById('utils');
 	
 	var selectrect = makeSvg('rect', {'class': 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
@@ -1066,20 +1061,10 @@ function transformHandler(transformbtn) {
 	}
 
 	function moveAct(event) { // When mouse button is down
-		if (event.target.is_atom || event.target.is_bond) { // Clicked element was not previously selected
-			deselectAll();
-			var poiobj = event.target.objref;
-			if (event.target.is_atom) atoms_slctd.add(poiobj.id); // Atom case
-			else poiobj.nodes.forEach(node => atoms_slctd.add(node.id)); // Bond case
-		}
-		if (event.target.is_atom || event.target.is_bond || highlights.contains(event.target)) { // If atom or bond was clicked
-			mo_st = getSvgPoint(event);
-			accum_vec = [0, 0];
-			window.addEventListener('mousemove', moving);
-			window.addEventListener('mouseup', finishMoving);
+		if (false) { // Click on transform tool
+
 		}
 		else {
-			deselectAll()
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
 				pt.x = event.clientX;
 				pt.y = event.clientY;
@@ -1096,38 +1081,14 @@ function transformHandler(transformbtn) {
 		}
 	}
 
-	function moving(event) { // Active moving
-		var pt = getSvgPoint(event);
-		var moving_vec = vecDif(mo_st, pt);
-		accum_vec = vecSum(accum_vec, moving_vec);
-		mo_st = pt;
+	// function moving(event) { // Active moving
 
-		var kwargs = {moving_atoms: atoms_slctd, moving_vec: moving_vec}
-		editStructure(kwargs);
-	}
+	// }
 
-	function finishMoving() {
-		window.removeEventListener('mousemove', moving);
-		window.removeEventListener('mouseup', finishMoving);
-		var atoms_slctd_clone = new Set(atoms_slctd);
-		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec}
-		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
-		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
-		if (!is_selected) clearSlct();
-		overlap.refresh();
-	}
-
-	function clearSlct() {
-		atoms_slctd.clear();
-		bonds_slctd.clear();
-		is_selected = false;
-	}
-
-	function deselectAll() {
-		atoms_slctd.forEach(atom_id => document.getElementById(atom_id).objref.deselect());
-		bonds_slctd.forEach(bond_id => document.getElementById(bond_id).objref.deselect());
-		clearSlct();
-	}
+	// function finishMoving() {
+	// 	window.removeEventListener('mousemove', moving);
+	// 	window.removeEventListener('mouseup', finishMoving);
+	// }
 
 	function recalc(event) {
 		pt.x = event.clientX;
@@ -1146,19 +1107,6 @@ function transformHandler(transformbtn) {
 		window.removeEventListener('mousemove', recalc);
 		window.removeEventListener('mouseup', selectStop);
 		selectrect.remove();
-
-		var rect_x1 = rect_x + rect_w;
-		var rect_y1 = rect_y + rect_h;
-		for (const el of [...sensors_a.children, ...sensors_b.children]) {
-			obj = el.objref;
-			var [x, y] = obj.xy;
-			if (rect_x < x && x < rect_x1 && rect_y < y && y < rect_y1) {
-				if (obj instanceof ChemNode) atoms_slctd.add(obj.id);
-				else bonds_slctd.add(obj.id);
-				obj.select();
-			}
-		}
-		is_selected = Boolean(atoms_slctd.size + bonds_slctd.size); // ToDo: ? Consider bonds_slctd
 	}
 }
 
