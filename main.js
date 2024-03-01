@@ -1050,9 +1050,11 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 function transformHandler(transformbtn) {
 	var svgP0, svgP1;
 	var rect_x, rect_y, rect_w, rect_h;
+	var mo_st = new Array(2); // Cursor coordinates when dragging was started
+	this.transform_tool = null;
 	var utils = document.getElementById('utils');
 	
-	var selectrect = makeSvg('rect', {'class': 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
+	var selectrect = makeSvg('rect', {class: 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
 	transformbtn.mask_g.addEventListener('click', moveInit);
 
 	function moveInit(event) {
@@ -1061,11 +1063,19 @@ function transformHandler(transformbtn) {
 	}
 
 	function moveAct(event) { // When mouse button is down
-		if (false) { // Click on transform tool
-
+		if (event.target.id == 'model') { // Click on transform tool
+			mo_st = getSvgPoint(event);
+			window.addEventListener('mousemove', moving);
+			window.addEventListener('mouseup', finishMoving);
+			// console.log('!0');
 		}
 		else {
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
+				if (this.transform_tool) {
+					this.transform_tool.delete();
+					this.transform_tool = null;
+					this.model.delete();
+				};
 				pt.x = event.clientX;
 				pt.y = event.clientY;
 				svgP0 = pt.matrixTransform(matrixrf);
@@ -1081,14 +1091,18 @@ function transformHandler(transformbtn) {
 		}
 	}
 
-	// function moving(event) { // Active moving
+	function moving(event) { // Active moving
+		var pt = getSvgPoint(event);
+		var moving_vec = vecDif(mo_st, pt);
+		console.log(moving_vec);
+		mo_st = pt;
+		this.transform_tool.translate(moving_vec);
+	}
 
-	// }
-
-	// function finishMoving() {
-	// 	window.removeEventListener('mousemove', moving);
-	// 	window.removeEventListener('mouseup', finishMoving);
-	// }
+	function finishMoving() {
+		window.removeEventListener('mousemove', moving);
+		window.removeEventListener('mouseup', finishMoving);
+	}
 
 	function recalc(event) {
 		pt.x = event.clientX;
@@ -1107,8 +1121,84 @@ function transformHandler(transformbtn) {
 		window.removeEventListener('mousemove', recalc);
 		window.removeEventListener('mouseup', selectStop);
 		selectrect.remove();
+		var cx = rect_x + rect_w / 2;
+		var cy = rect_y + rect_h / 2;
+		this.transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
+		this.model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'});
 	}
 }
+
+
+class TransformTool {
+	constructor(parent_id, cx, cy, width, height) {
+		this.g = attachSvg(document.getElementById('utils'), 'g', {id: 'transform-tool'});
+		this.xy = [cx, cy];
+
+
+		var hw = width / 2;
+		var hh = height / 2;
+		this.corners = [];
+		this.sides = [];
+		for (const w_factor of [1, -1]) {
+			for (const h_factor of [1, -1]) {
+				this.corners.push(new CtrRect('transform-tool', cx + hw * w_factor, cy + hh * h_factor, {class: 'transformjig', width: 8, height: 8, fill: 'dimgray'}));
+			}
+		}
+		for (const w_factor of [1, -1]) {
+			this.sides.push(new CtrRect('transform-tool', cx + hw * w_factor, cy, {class: 'transformjig', width: 6, height: 12, fill: 'dimgray'}));
+		}
+		for (const h_factor of [1, -1]) {
+			this.sides.push(new CtrRect('transform-tool', cx, cy + hh * h_factor, {class: 'transformjig', width: 12, height: 6, fill: 'dimgray'}));
+		}
+
+		this.rotcircle = attachSvg(this.g, 'circle', {class: 'transformjig', cx: cx, cy: cy - hh - 30, r: 6, fill: 'dimgray'});
+
+		// this.anchor = attachSvg(this.g, 'polygon', {points: this.constructor.anchor_pts.map(pt => vecSum(pt, [cx, cy]).join()).join(' '), class: 'transformjig', fill: 'dimgray', 'fill-rule': 'evenodd'});
+
+		this.anchor = new CtrPolygon('transform-tool', cx, cy, this.constructor.anchor_pts, {class: 'transformjig', fill: 'dimgray', 'fill-rule': 'evenodd'});
+
+		// this.g.transform.baseVal.appendItem(canvas.createSVGTransform());
+		// this.g.transform.baseVal[0].setRotate(0.5, cx, cy);
+		// console.log('!!!');
+	}
+
+	static anchor_pts = [[2, 2], [2, 12], [-2, 12], [-2, -12], [2, -12], [2, 2], [-12, 2], [-12, -2], [12, -2], [12, 2]];
+	// setSize()
+
+	translate(moving_vec) {
+		for (var jigs of [this.corners, this.sides]) {
+			jigs.forEach(jig => jig.translate(moving_vec));
+		}
+		this.rotcircle.setAttribute('cx', (+this.rotcircle.getAttribute('cx')) + moving_vec[0]);
+		this.rotcircle.setAttribute('cy', (+this.rotcircle.getAttribute('cy')) + moving_vec[1]);
+
+		// this.anchor.setAttribute('points', this.constructor.anchor_pts.map(pt => vecSum(vecSum(pt, this.xy), moving_vec).join()).join(' '));
+		this.anchor.translate(moving_vec);
+
+
+		// this.x = cx;
+		// this.y = cy;
+		// this.rect.setAttribute('x', cx - this.rect.getAttribute('width') / 2);
+		// this.rect.setAttribute('y', cy - this.rect.getAttribute('height') / 2);
+	}
+
+	rotate(rot_angle) {
+		// this.rot_angle = rot_angle;
+		// this.rect.transform.baseVal[0].setRotate(this.rot_angle, this.x, this.y);
+	}
+
+	delete() {
+		for (var jigs of [this.corners, this.sides]) {
+			jigs.forEach(jig => jig.delete());
+			jigs = [];
+		}
+		this.anchor.delete();
+		this.rotcircle.remove();
+		this.rotcircle = null;
+
+	}
+}
+
 
 
 

@@ -1,9 +1,9 @@
 function ChemBond(id, node0, node1, type) {
 	this.id = id
 
-	this.g = attachSvg(document.getElementById('bondsall'), 'g', {'class': 'bg'});
+	this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
 
-	this.backrect = this.attachRect('sensors_b', {'id': id, 'class': 'brect', 'height': ChemBond.sel_h});
+	this.backrect = this.attachRect('sensors_b', {id: id, class: 'brect', height: ChemBond.sel_h});
 	this.backrect.is_bond = true;
 	this.backrect.objref = this;
 

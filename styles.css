@@ -167,3 +167,7 @@ body {
 #selecthighlight {
 	fill: blue;
 }
+.transformjig {
+	cursor: pointer;
+}
+

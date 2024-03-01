@@ -6,9 +6,9 @@ function ChemNode(id, x, y, text) {
 	this.connections = [];
 	this.select_circ = null;
 
-	this.g = attachSvg(document.getElementById('atomsall'), 'g', {'class': 'ag'});
+	this.g = attachSvg(document.getElementById('atomsall'), 'g', {class: 'ag'});
 
-	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {'id': id, 'class': 'anode', 'r': ChemNode.sel_r, 'cx': x, 'cy': y});
+	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {id: id, class: 'anode', r: ChemNode.sel_r, cx: x, cy: y});
 	this.backcircle.is_atom = true;
 	this.backcircle.objref = this;
 
