@@ -18,8 +18,10 @@ function attachSvg(parent, tag, attrs={}) {
 class CtrRect {
 	constructor(parent_id, cx, cy, svg_attrs) {
 		this.xy = [cx, cy];
+		this.abs_rot_ang_deg = 0;
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
 		this.rect.transform.baseVal.appendItem(this.rect.ownerSVGElement.createSVGTransform());
+		// this.rect.objref = this;
 		this.translate([0, 0]);
 	}
 
@@ -27,10 +29,12 @@ class CtrRect {
 		this.xy = vecSum(this.xy, moving_vec);
 		this.rect.setAttribute('x', this.xy[0] - this.rect.getAttribute('width') / 2);
 		this.rect.setAttribute('y', this.xy[1] - this.rect.getAttribute('height') / 2);
+		this.rotate(0);
 	}
 
 	rotate(rot_angle) {
-		this.rect.transform.baseVal[0].setRotate(rot_angle, ...this.xy);
+		this.abs_rot_ang_deg += rot_angle * 180 / Math.PI;
+		this.rect.transform.baseVal[0].setRotate(this.abs_rot_ang_deg, ...this.xy);
 	}
 
 	delete() {
@@ -53,11 +57,35 @@ class CtrPolygon {
 		this.polygon.setAttribute('points', this.points.map(pt => vecSum(pt, this.xy).join()).join(' '));
 	}
 
-	rotate(rot_angle) {}
-
 	delete() {
 		this.polygon.remove();
 		this.polygon = null;
 	}
 }
 
+
+class CtrCircle {
+	constructor(parent_id, cx, cy, svg_attrs) {
+		// this.xy = [cx, cy];
+		this.circle = attachSvg(document.getElementById(parent_id), 'circle', svg_attrs);
+		this.setCtr(cx, cy);
+		// this.translate([0, 0]);
+	}
+
+	translate(moving_vec) {
+		this.setCtr(...vecSum(this.xy, moving_vec));
+		// setAttrsSvg(this.circle, {cx: this.xy[0], cy: this.xy[1]});
+	}
+
+	setCtr(cx, cy) {
+		this.xy = [cx, cy];
+		setAttrsSvg(this.circle, {cx: this.xy[0], cy: this.xy[1]});
+	}
+
+	rotate(rot_angle) {} // For the unity of interface
+
+	delete() {
+		this.circle.remove();
+		this.circle = null;
+	}
+}

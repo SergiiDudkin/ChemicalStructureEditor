@@ -168,6 +168,11 @@ body {
 	fill: blue;
 }
 .transformjig {
+	stroke: black;
+	stroke-width: 1;
+	fill: gray;
 	cursor: pointer;
 }
-
+.transformjig:hover {
+	fill: blue;
+}
