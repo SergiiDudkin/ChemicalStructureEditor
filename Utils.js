@@ -17,18 +17,20 @@ function attachSvg(parent, tag, attrs={}) {
 
 class CtrRect {
 	constructor(parent_id, cx, cy, svg_attrs) {
-		this.xy = [cx, cy];
-		this.abs_rot_ang_deg = 0;
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
 		this.rect.transform.baseVal.appendItem(this.rect.ownerSVGElement.createSVGTransform());
-		// this.rect.objref = this;
-		this.translate([0, 0]);
+		this.abs_rot_ang_deg = 0;
+		this.setCtr(cx, cy);
 	}
 
 	translate(moving_vec) {
-		this.xy = vecSum(this.xy, moving_vec);
-		this.rect.setAttribute('x', this.xy[0] - this.rect.getAttribute('width') / 2);
-		this.rect.setAttribute('y', this.xy[1] - this.rect.getAttribute('height') / 2);
+		this.setCtr(...vecSum(this.xy, moving_vec));
+	}
+
+	setCtr(cx, cy) {
+		this.xy = [cx, cy];
+		this.rect.setAttribute('x', cx - this.rect.getAttribute('width') / 2);
+		this.rect.setAttribute('y', cy - this.rect.getAttribute('height') / 2);
 		this.rotate(0);
 	}
 
@@ -46,14 +48,17 @@ class CtrRect {
 
 class CtrPolygon {
 	constructor(parent_id, cx, cy, points, svg_attrs) {
-		this.xy = [cx, cy];
-		this.points = structuredClone(points);
 		this.polygon = attachSvg(document.getElementById(parent_id), 'polygon', svg_attrs);
-		this.translate([0, 0]);
+		this.points = structuredClone(points);
+		this.setCtr(cx, cy);
 	}
 
 	translate(moving_vec) {
-		this.xy = vecSum(this.xy, moving_vec);
+		this.setCtr(...vecSum(this.xy, moving_vec));
+	}
+
+	setCtr(cx, cy) {
+		this.xy = [cx, cy];
 		this.polygon.setAttribute('points', this.points.map(pt => vecSum(pt, this.xy).join()).join(' '));
 	}
 
@@ -66,20 +71,17 @@ class CtrPolygon {
 
 class CtrCircle {
 	constructor(parent_id, cx, cy, svg_attrs) {
-		// this.xy = [cx, cy];
 		this.circle = attachSvg(document.getElementById(parent_id), 'circle', svg_attrs);
 		this.setCtr(cx, cy);
-		// this.translate([0, 0]);
 	}
 
 	translate(moving_vec) {
 		this.setCtr(...vecSum(this.xy, moving_vec));
-		// setAttrsSvg(this.circle, {cx: this.xy[0], cy: this.xy[1]});
 	}
 
 	setCtr(cx, cy) {
 		this.xy = [cx, cy];
-		setAttrsSvg(this.circle, {cx: this.xy[0], cy: this.xy[1]});
+		setAttrsSvg(this.circle, {cx: cx, cy: cy});
 	}
 
 	rotate(rot_angle) {} // For the unity of interface

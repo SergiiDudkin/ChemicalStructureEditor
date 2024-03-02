@@ -1202,7 +1202,6 @@ class TransformTool {
 		for (const [cx, cy, width, height, class_] of vals) {
 			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}));
 		}
-		// this.rotable.push(new CtrCircle('transform-tool', cx, cy - this.hh - 30, {id: 'rotor', class: 'transformjig', r: 6}));
 		
 		this.movable = [...this.rotable];
 		var anchor_pts = [[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], [aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]];
@@ -1219,31 +1218,22 @@ class TransformTool {
 	}
 
 	rotate(rot_angle) {
+		this.xy = rotateAroundCtr(this.xy, rot_angle, this.anchor.xy)
 		this.rotable.forEach(jig => {
-			var old_casted_pt = vecDif(this.anchor.xy, jig.xy);
-			var new_casted_pt = rotateVec(old_casted_pt, rot_angle);
-			var moving_vec = vecDif(old_casted_pt, new_casted_pt);
-			jig.translate(moving_vec);
+			jig.setCtr(...rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy));
 			jig.rotate(rot_angle);
 		});
-		this.xy = vecDiv(vecSum(this.rotable[1].xy, this.rotable[3].xy), 2);
 	}
 
 	scale(scale_factor) {
 		this.hw *= scale_factor;
 		this.hh *= scale_factor;
+		this.xy = scaleAroundCtr(this.xy, scale_factor, this.anchor.xy);
 		this.rotable.slice(1).forEach(jig => {
-			var old_casted_pt = vecDif(this.anchor.xy, jig.xy);
-			var new_casted_pt = vecMul(old_casted_pt, scale_factor);
-			var moving_vec = vecDif(old_casted_pt, new_casted_pt);
-			jig.translate(moving_vec);
+			jig.setCtr(...scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
 		});
-		this.xy = vecDiv(vecSum(this.rotable[1].xy, this.rotable[3].xy), 2);
 		var new_rotor_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), 30));
 		this.rotor.setCtr(...new_rotor_ctr);
-		
-
-		// console.log(this.rotable[8]);
 	}
 
 	anchorMove(event) {
@@ -1270,8 +1260,6 @@ class TransformTool {
 		[this.movable, this.rotable, this.g] = [null, null, null];
 	}
 }
-
-
 
 
 for (const elbtn of elbtns) chemNodeHandler(elbtn);

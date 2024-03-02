@@ -88,6 +88,20 @@ function rot90acw([x, y]) {
 	return [y, -x];
 }
 
+function rotateAroundCtr(pt, rot_angle, rot_ctr) {
+	var old_casted_pt = vecDif(rot_ctr, pt);
+	var new_casted_pt = rotateVec(old_casted_pt, rot_angle);
+	var moving_vec = vecDif(old_casted_pt, new_casted_pt);
+	return vecSum(pt, moving_vec);
+}
+
+function scaleAroundCtr(pt, scale_factor, scale_ctr) {
+	var old_casted_pt = vecDif(scale_ctr, pt);
+	var new_casted_pt = vecMul(old_casted_pt, scale_factor);
+	var moving_vec = vecDif(old_casted_pt, new_casted_pt);
+	return vecSum(pt, moving_vec);
+}
+
 function angleBisector(xy0, xy1) { // Not normalized, no direction control
 	if (vecDotProd(xy0, xy1) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
 		xy0 = rot90cw(xy0);
