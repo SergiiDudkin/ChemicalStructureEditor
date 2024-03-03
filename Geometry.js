@@ -102,6 +102,13 @@ function scaleAroundCtr(pt, scale_factor, scale_ctr) {
 	return vecSum(pt, moving_vec);
 }
 
+function stretchAlongDir(pt, stretch_factor, dir_angle, stretch_ctr) {
+	var casted_pt = rotateVec(vecDif(stretch_ctr, pt), -dir_angle);
+	casted_pt[0] *= stretch_factor;
+	return vecSum(rotateVec(casted_pt, dir_angle), stretch_ctr);
+}
+
+
 function angleBisector(xy0, xy1) { // Not normalized, no direction control
 	if (vecDotProd(xy0, xy1) < 0) { // If obtuse angle, rotate vectors 90 deg towards each other for better precision
 		xy0 = rot90cw(xy0);

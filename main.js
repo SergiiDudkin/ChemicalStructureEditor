@@ -1085,6 +1085,12 @@ function transformHandler(transformbtn) {
 			window.addEventListener('mousemove', scaling);
 			window.addEventListener('mouseup', finishScaling);
 		}
+		else if (event.target.classList.contains('side')) {
+			curr_jig = event.target.objref;
+			init_ctr_pt_error = vecDif(curr_jig.xy, getSvgPoint(event));
+			window.addEventListener('mousemove', stretching);
+			window.addEventListener('mouseup', finishStretching);
+		}
 		else {
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
 				if (this.transform_tool) {
@@ -1146,6 +1152,21 @@ function transformHandler(transformbtn) {
 		window.removeEventListener('mouseup', finishScaling);
 	}
 
+	function stretching(event) { // Active moving
+		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
+		var stratch_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
+		var ref_vec = vecDif(this.transform_tool.anchor.xy, curr_jig.xy);
+		var dir_vec = vecDif(this.transform_tool.xy, curr_jig.xy);
+		var stratch_factor = vecDotProd(dir_vec, stratch_vec) / vecDotProd(dir_vec, ref_vec);
+		dir_angle = Math.atan2(...dir_vec.toReversed());
+		this.transform_tool.stretch(stratch_factor, dir_angle);
+	}
+
+	function finishStretching() {
+		window.removeEventListener('mousemove', stretching);
+		window.removeEventListener('mouseup', finishStretching);
+	}
+
 	function recalc(event) {
 		pt.x = event.clientX;
 		pt.y = event.clientY;
@@ -1175,9 +1196,8 @@ class TransformTool {
 	constructor(parent_id, cx, cy, width, height) {
 		this.g = attachSvg(document.getElementById('utils'), 'g', {id: 'transform-tool'});
 		this.xy = [cx, cy];
-		this.hw = width / 2; // Transform tool half witdth
-		this.hh = height / 2; // Transform tool half height
-		this.anchor_mo_st = new Array(2); // Cursor coordinates when dragging of anchor was started
+		var hw = width / 2; // Transform tool half witdth
+		var hh = height / 2; // Transform tool half height
 
 		// Dimensions
 		var cl = 8; // Corner rectangle length
@@ -1187,17 +1207,17 @@ class TransformTool {
 		var ahl = 14; // Anchor half length
 		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
-		var vals = [
-			[cx + this.hw, cy + this.hh, cl, cl, 'corner'],
-			[cx - this.hw, cy + this.hh, cl, cl, 'corner'],
-			[cx - this.hw, cy - this.hh, cl, cl, 'corner'],
-			[cx + this.hw, cy - this.hh, cl, cl, 'corner'],
-			[cx + this.hw, cy, sw, sh, 'side'],
-			[cx - this.hw, cy, sw, sh, 'side'],
-			[cx, cy + this.hh, sh, sw, 'side'],
-			[cx, cy - this.hh, sh, sw, 'side']
+		var vals = [ // Rectangles init data: [x, y, width, height, class]
+			[cx + hw, cy + hh, cl, cl, 'corner'], // Bottom-right
+			[cx - hw, cy + hh, cl, cl, 'corner'], // Bottom-left
+			[cx - hw, cy - hh, cl, cl, 'corner'], // Top-left
+			[cx + hw, cy - hh, cl, cl, 'corner'], // Top-right
+			[cx + hw, cy, sw, sh, 'side'], // Right
+			[cx - hw, cy, sw, sh, 'side'], // Left
+			[cx, cy + hh, sh, sw, 'side'], // Bottom
+			[cx, cy - hh, sh, sw, 'side'] // Top
 		];
-		this.lever = new CtrCircle('transform-tool', cx, cy - this.hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6});
+		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6});
 		this.rotable = [this.lever];
 		for (const [cx, cy, width, height, class_] of vals) {
 			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}));
@@ -1231,8 +1251,6 @@ class TransformTool {
 	}
 
 	scale(scale_factor) {
-		this.hw *= scale_factor;
-		this.hh *= scale_factor;
 		this.xy = scaleAroundCtr(this.xy, scale_factor, this.anchor.xy);
 		this.rotable.slice(1).forEach(jig => {
 			jig.setCtr(...scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
@@ -1240,8 +1258,16 @@ class TransformTool {
 		this.locateLever();
 	}
 
+	stretch(stretch_factor, dir_angle) {
+		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.anchor.xy)
+		this.rotable.slice(1).forEach(jig => {
+			jig.setCtr(...stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy));
+		});
+		this.locateLever();
+	}
+
 	anchorMove(event) {
-		this.anchor_mo_st = getSvgPoint(event);
+		this.anchor_mo_st = getSvgPoint(event); // Cursor coordinates when dragging of anchor was started
 		window.addEventListener('mousemove', this.movingAnchor);
 		window.addEventListener('mouseup', this.finishMovingAnchor);
 	}
