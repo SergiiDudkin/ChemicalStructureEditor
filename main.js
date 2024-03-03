@@ -1052,8 +1052,9 @@ function transformHandler(transformbtn) {
 	var rect_x, rect_y, rect_w, rect_h;
 	var mo_st = new Array(2); // Cursor coordinates when dragging was started
 	var rot_st; // Angle when rotating was started 
-	var ref_scale_vec = new Array(2);
+	var ref_scale_vec; // = new Array(2);
 	var sc_f_st; // Previous scale factor
+	var init_ctr_pt_error;
 	this.transform_tool = null;
 	var utils = document.getElementById('utils');
 	
@@ -1070,7 +1071,6 @@ function transformHandler(transformbtn) {
 			mo_st = getSvgPoint(event);
 			window.addEventListener('mousemove', moving);
 			window.addEventListener('mouseup', finishMoving);
-			// console.log('!0');
 		}
 		else if (event.target.id == 'rotor') {
 			rot_st = Math.atan2(...vecDif(this.transform_tool.anchor.xy, getSvgPoint(event)).toReversed());
@@ -1081,7 +1081,9 @@ function transformHandler(transformbtn) {
 			this.transform_tool.anchorMove(event);
 		}
 		else if (event.target.classList.contains('corner')) {
-			ref_scale_vec = vecDif(this.transform_tool.anchor.xy, getSvgPoint(event));
+			jig_ctr = event.target.objref.xy;
+			ref_scale_vec = vecDif(this.transform_tool.anchor.xy, jig_ctr);
+			init_ctr_pt_error = vecDif(jig_ctr, getSvgPoint(event));
 			sc_f_st = 1;
 			window.addEventListener('mousemove', scaling);
 			window.addEventListener('mouseup', finishScaling);
@@ -1135,7 +1137,8 @@ function transformHandler(transformbtn) {
 	}
 
 	function scaling(event) { // Active moving
-		var scale_vec = vecDif(this.transform_tool.anchor.xy, getSvgPoint(event));
+		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
+		var scale_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
 		var scale_factor = vecDotProd(ref_scale_vec, scale_vec) / sqVecLen(ref_scale_vec);
 		var rel_scale_factor = scale_factor / sc_f_st;
 		sc_f_st = scale_factor;

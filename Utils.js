@@ -19,6 +19,7 @@ class CtrRect {
 	constructor(parent_id, cx, cy, svg_attrs) {
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
 		this.rect.transform.baseVal.appendItem(this.rect.ownerSVGElement.createSVGTransform());
+		this.rect.objref = this;
 		this.abs_rot_ang_deg = 0;
 		this.setCtr(cx, cy);
 	}
