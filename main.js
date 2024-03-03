@@ -1052,9 +1052,8 @@ function transformHandler(transformbtn) {
 	var rect_x, rect_y, rect_w, rect_h;
 	var mo_st = new Array(2); // Cursor coordinates when dragging was started
 	var rot_st; // Angle when rotating was started 
-	var ref_scale_vec; // = new Array(2);
-	var sc_f_st; // Previous scale factor
 	var init_ctr_pt_error;
+	var curr_jig;
 	this.transform_tool = null;
 	var utils = document.getElementById('utils');
 	
@@ -1072,7 +1071,7 @@ function transformHandler(transformbtn) {
 			window.addEventListener('mousemove', moving);
 			window.addEventListener('mouseup', finishMoving);
 		}
-		else if (event.target.id == 'rotor') {
+		else if (event.target.id == 'lever') {
 			rot_st = Math.atan2(...vecDif(this.transform_tool.anchor.xy, getSvgPoint(event)).toReversed());
 			window.addEventListener('mousemove', rotating);
 			window.addEventListener('mouseup', finishRotating);
@@ -1081,10 +1080,8 @@ function transformHandler(transformbtn) {
 			this.transform_tool.anchorMove(event);
 		}
 		else if (event.target.classList.contains('corner')) {
-			jig_ctr = event.target.objref.xy;
-			ref_scale_vec = vecDif(this.transform_tool.anchor.xy, jig_ctr);
-			init_ctr_pt_error = vecDif(jig_ctr, getSvgPoint(event));
-			sc_f_st = 1;
+			curr_jig = event.target.objref;
+			init_ctr_pt_error = vecDif(curr_jig.xy, getSvgPoint(event));
 			window.addEventListener('mousemove', scaling);
 			window.addEventListener('mouseup', finishScaling);
 		}
@@ -1139,10 +1136,9 @@ function transformHandler(transformbtn) {
 	function scaling(event) { // Active moving
 		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
 		var scale_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
+		var ref_scale_vec = vecDif(this.transform_tool.anchor.xy, curr_jig.xy);
 		var scale_factor = vecDotProd(ref_scale_vec, scale_vec) / sqVecLen(ref_scale_vec);
-		var rel_scale_factor = scale_factor / sc_f_st;
-		sc_f_st = scale_factor;
-		this.transform_tool.scale(rel_scale_factor);
+		this.transform_tool.scale(scale_factor);
 	}
 
 	function finishScaling() {
@@ -1189,6 +1185,7 @@ class TransformTool {
 		var sh = 12; // Side rectangle height
 		var aht = 2; // Anchor half thickness
 		var ahl = 14; // Anchor half length
+		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
 		var vals = [
 			[cx + this.hw, cy + this.hh, cl, cl, 'corner'],
@@ -1200,8 +1197,8 @@ class TransformTool {
 			[cx, cy + this.hh, sh, sw, 'side'],
 			[cx, cy - this.hh, sh, sw, 'side']
 		];
-		this.rotor = new CtrCircle('transform-tool', cx, cy - this.hh - 30, {id: 'rotor', class: 'transformjig', r: 6});
-		this.rotable = [this.rotor];
+		this.lever = new CtrCircle('transform-tool', cx, cy - this.hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6});
+		this.rotable = [this.lever];
 		for (const [cx, cy, width, height, class_] of vals) {
 			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}));
 		}
@@ -1213,6 +1210,11 @@ class TransformTool {
 
 		this.movingAnchor = this.movingAnchor.bind(this);
 		this.finishMovingAnchor = this.finishMovingAnchor.bind(this);
+	}
+
+	locateLever() {
+		var new_lever_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), this.lever_len));
+		this.lever.setCtr(...new_lever_ctr);
 	}
 
 	translate(moving_vec) {
@@ -1235,8 +1237,7 @@ class TransformTool {
 		this.rotable.slice(1).forEach(jig => {
 			jig.setCtr(...scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
 		});
-		var new_rotor_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), 30));
-		this.rotor.setCtr(...new_rotor_ctr);
+		this.locateLever();
 	}
 
 	anchorMove(event) {
