@@ -3,9 +3,9 @@ function ChemBond(id, node0, node1, type) {
 
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
 
-	this.backrect = this.attachRect('sensors_b', {id: id, class: 'brect', height: ChemBond.sel_h});
-	this.backrect.is_bond = true;
-	this.backrect.objref = this;
+	this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: ChemBond.sel_h})
+	this.backrect.shape.is_bond = true;
+	this.backrect.shape.objref = this;
 
 	Object.assign(this, ChemBond.default_style);
 	this.setType(type);
@@ -70,7 +70,7 @@ ChemBond.prototype.recalcDims = function() {
 	this.len = vecLen(this.difxy); // Distance between nodes
 	this.uv = vecDiv(this.difxy, this.len); // Unit vector
 	this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
-	this.rotang = Math.atan2(...this.uv.toReversed()) * 180 / Math.PI; // Rotation angle of the bond
+	this.rotang = Math.atan2(...this.uv.toReversed()); // Rotation angle of the bond
 	this.recalcLims();
 };
 
@@ -120,7 +120,7 @@ ChemBond.prototype.delete = function() {
 	ChemBond.prototype.deleteMaskLines(this, document, del_mask=true);
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
-	this.backrect.remove();
+	this.backrect.delete();
 	delete this.nodes;
 	this.deletePattern();
 	this.deleteMask();
@@ -295,7 +295,7 @@ ChemBond.prototype.drawLines = function(parent, attrs={}) {
 ChemBond.prototype.renderBond = function() {
 	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old lines
 	if (this.pattern) {
-		this.pattern.setAttribute('patternTransform', `rotate(${this.rotang})`);
+		this.pattern.setAttribute('patternTransform', `rotate(${this.rotang * 180 / Math.PI})`);
 		this.pattern.firstChild.setAttribute('fill', this.color);
 	}
 	this.drawLines(this.g, {
@@ -309,7 +309,8 @@ ChemBond.prototype.renderBond = function() {
 }
 
 ChemBond.prototype.updateAllRects = function() {
-	this.refreshRect(this.backrect, ...this.offsets.map(offset => Math.max(offset, ChemBond.min_offset)));
+	var offsets = this.offsets.map(offset => Math.max(offset, ChemBond.min_offset))
+	this.backrect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
 	this.refreshSelectRect();
 }
 
@@ -383,45 +384,25 @@ ChemBond.prototype.adjustLength = function(node) {
 	return this.terms[node_idx];
 };
 
-ChemBond.prototype.updateSelectRect = function() {
-	this.select_rect.setAttribute('x', this.xy[0] + 4 - this.len / 2);
-	this.select_rect.setAttribute('y', this.xy[1] - 5);
-	this.select_rect.setAttribute('width', Math.max(this.len - 8, 0));
-	this.select_rect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
-}
-
 ChemBond.prototype.select = function() {
-	this.backrect.setAttribute('class', 'invisible')
-	this.select_rect = this.attachRect('selecthighlight', {'height': ChemBond.sel_h});
-	this.masksel_rect = this.attachRect('selectholes', {'height': ChemBond.sel_h - 3});
+	this.backrect.shape.setAttribute('class', 'invisible')
+	this.select_rect = new OffsetRect('selecthighlight', 0, 0, {'height': ChemBond.sel_h});
+	this.masksel_rect = new OffsetRect('selectholes', 0, 0, {'height': ChemBond.sel_h - 3});
 	this.refreshSelectRect();
 };
 
 ChemBond.prototype.deselect = function() {
-	this.select_rect.remove();
+	this.select_rect.delete();
 	this.select_rect = null;
-	this.masksel_rect.remove();
+	this.masksel_rect.delete();
 	this.masksel_rect = null;
-	this.backrect.setAttribute('class', 'brect')
-};
-
-ChemBond.prototype.attachRect = function(parent_id, svg_attrs) {
-	var rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
-	rect.transform.baseVal.appendItem(canvas.createSVGTransform()); // Append rotation
-	return rect;
-};
-
-ChemBond.prototype.refreshRect = function(rect, st_offset, en_offset) {
-	rect.setAttribute('x', this.xy[0] + st_offset - this.len / 2);
-	rect.setAttribute('y', this.xy[1] - rect.getAttribute('height') / 2);
-	rect.setAttribute('width', Math.max(this.len - st_offset - en_offset, 0));
-	rect.transform.baseVal[0].setRotate(this.rotang, ...this.xy);
+	this.backrect.shape.setAttribute('class', 'brect');
 };
 
 ChemBond.prototype.refreshSelectRect = function() {
 	if (this.select_rect) {
-		var [st_offset, en_offset] = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(offset, ChemBond.min_offset));
-		this.refreshRect(this.select_rect, st_offset, en_offset);
-		this.refreshRect(this.masksel_rect, st_offset + 1.5, en_offset + 1.5);
-	};
+		var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(offset, ChemBond.min_offset));
+		this.select_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
+		this.masksel_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets.map(item => item + 1.5)).setAbsRotAng(this.rotang).render();
+	}
 };

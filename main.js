@@ -1154,12 +1154,12 @@ function transformHandler(transformbtn) {
 
 	function stretching(event) { // Active moving
 		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
-		var stratch_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
+		var stretch_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
 		var ref_vec = vecDif(this.transform_tool.anchor.xy, curr_jig.xy);
 		var dir_vec = vecDif(this.transform_tool.xy, curr_jig.xy);
-		var stratch_factor = vecDotProd(dir_vec, stratch_vec) / vecDotProd(dir_vec, ref_vec);
+		var stretch_factor = vecDotProd(dir_vec, stretch_vec) / vecDotProd(dir_vec, ref_vec);
 		dir_angle = Math.atan2(...dir_vec.toReversed());
-		this.transform_tool.stretch(stratch_factor, dir_angle);
+		this.transform_tool.stretch(stretch_factor, dir_angle);
 	}
 
 	function finishStretching() {

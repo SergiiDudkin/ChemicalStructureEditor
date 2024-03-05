@@ -15,7 +15,6 @@ function attachSvg(parent, tag, attrs={}) {
 }
 
 
-
 class CtrShape {
 	// Abstract shape class that supports method cascading
 	constructor(parent_id, cx, cy, svg_attrs) {
@@ -29,12 +28,6 @@ class CtrShape {
 	}
 
 	static tag; // Abstract attribute
-
-	render() {
-		this.shape.transform.baseVal[0].setRotate(this.abs_rot_ang * 180 / Math.PI, ...this.xy);
-		this.shape.transform.baseVal[1].setTranslate(...this.xy);
-		return this;
-	}
 
 	translate(moving_vec) {
 		return this.setCtr(vecSum(this.xy, moving_vec));
@@ -54,6 +47,12 @@ class CtrShape {
 		return this;
 	}
 
+	render() {
+		this.shape.transform.baseVal[0].setRotate(this.abs_rot_ang * 180 / Math.PI, ...this.xy);
+		this.shape.transform.baseVal[1].setTranslate(...this.xy);
+		return this;
+	}
+
 	delete() {
 		this.shape.remove();
 		this.shape = null;
@@ -67,6 +66,28 @@ class CtrRect extends CtrShape {
 	render() {
 		this.shape.setAttribute('x', -this.shape.getAttribute('width') / 2);
 		this.shape.setAttribute('y', -this.shape.getAttribute('height') / 2);
+		return super.render();
+	}
+}
+
+
+class OffsetRect extends CtrShape {
+	static tag = 'rect';
+
+	setOffsets(offsets) {
+		this.offsets = [...offsets];
+		return this;
+	}
+
+	setWidth(width) {
+		this.width = width;
+		return this;
+	}
+
+	render() {
+		this.shape.setAttribute('x', this.offsets[0] - this.width / 2);
+		this.shape.setAttribute('y', -this.shape.getAttribute('height') / 2);
+		this.shape.setAttribute('width', Math.max(this.width - this.offsets[0] - this.offsets[1], 0));
 		return super.render();
 	}
 }
