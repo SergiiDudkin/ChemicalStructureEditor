@@ -1234,7 +1234,7 @@ class TransformTool {
 
 	locateLever() {
 		var new_lever_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), this.lever_len));
-		this.lever.setCtr(...new_lever_ctr);
+		this.lever.setCtr(new_lever_ctr);
 	}
 
 	translate(moving_vec) {
@@ -1245,7 +1245,7 @@ class TransformTool {
 	rotate(rot_angle) {
 		this.xy = rotateAroundCtr(this.xy, rot_angle, this.anchor.xy)
 		this.rotable.forEach(jig => {
-			jig.setCtr(...rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy));
+			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy));
 			jig.rotate(rot_angle);
 		});
 	}
@@ -1253,7 +1253,7 @@ class TransformTool {
 	scale(scale_factor) {
 		this.xy = scaleAroundCtr(this.xy, scale_factor, this.anchor.xy);
 		this.rotable.slice(1).forEach(jig => {
-			jig.setCtr(...scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
+			jig.setCtr(scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
 		});
 		this.locateLever();
 	}
@@ -1261,7 +1261,7 @@ class TransformTool {
 	stretch(stretch_factor, dir_angle) {
 		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.anchor.xy)
 		this.rotable.slice(1).forEach(jig => {
-			jig.setCtr(...stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy));
+			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy));
 		});
 		this.locateLever();
 	}
