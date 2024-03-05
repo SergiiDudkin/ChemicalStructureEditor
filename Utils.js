@@ -15,80 +15,68 @@ function attachSvg(parent, tag, attrs={}) {
 }
 
 
-class CtrRect {
+
+class CtrShape {
+	// Abstract shape class that supports method cascading
 	constructor(parent_id, cx, cy, svg_attrs) {
-		this.rect = attachSvg(document.getElementById(parent_id), 'rect', svg_attrs);
-		this.rect.transform.baseVal.appendItem(this.rect.ownerSVGElement.createSVGTransform());
-		this.rect.objref = this;
-		this.abs_rot_ang_deg = 0;
+		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, svg_attrs);
+		for (var i = 0; i < 2; i++) {
+			this.shape.transform.baseVal.appendItem(this.shape.ownerSVGElement.createSVGTransform());
+		}
+		this.shape.objref = this;
+		this.abs_rot_ang = 0;
 		this.setCtr([cx, cy]);
 	}
 
+	static tag; // Abstract attribute
+
+	render() {
+		this.shape.transform.baseVal[0].setRotate(this.abs_rot_ang * 180 / Math.PI, ...this.xy);
+		this.shape.transform.baseVal[1].setTranslate(...this.xy);
+		return this;
+	}
+
 	translate(moving_vec) {
-		this.setCtr(vecSum(this.xy, moving_vec));
+		return this.setCtr(vecSum(this.xy, moving_vec));
 	}
 
 	setCtr(xy) {
 		this.xy = [...xy];
-		this.rect.setAttribute('x', this.xy[0] - this.rect.getAttribute('width') / 2);
-		this.rect.setAttribute('y', this.xy[1] - this.rect.getAttribute('height') / 2);
-		this.rotate(0);
+		return this;
 	}
 
 	rotate(rot_angle) {
-		this.abs_rot_ang_deg += rot_angle * 180 / Math.PI;
-		this.rect.transform.baseVal[0].setRotate(this.abs_rot_ang_deg, ...this.xy);
+		return this.setAbsRotAng(this.abs_rot_ang + rot_angle);
+	}
+
+	setAbsRotAng(abs_rot_ang) {
+		this.abs_rot_ang = abs_rot_ang;
+		return this;
 	}
 
 	delete() {
-		this.rect.remove();
-		this.rect = null;
+		this.shape.remove();
+		this.shape = null;
 	}
 }
 
 
-class CtrPolygon {
-	constructor(parent_id, cx, cy, points, svg_attrs) {
-		this.polygon = attachSvg(document.getElementById(parent_id), 'polygon', svg_attrs);
-		this.points = structuredClone(points);
-		this.setCtr([cx, cy]);
-	}
+class CtrRect extends CtrShape {
+	static tag = 'rect';
 
-	translate(moving_vec) {
-		this.setCtr(vecSum(this.xy, moving_vec));
-	}
-
-	setCtr(xy) {
-		this.xy = [...xy];
-		this.polygon.setAttribute('points', this.points.map(pt => vecSum(pt, this.xy).join()).join(' '));
-	}
-
-	delete() {
-		this.polygon.remove();
-		this.polygon = null;
+	render() {
+		this.shape.setAttribute('x', -this.shape.getAttribute('width') / 2);
+		this.shape.setAttribute('y', -this.shape.getAttribute('height') / 2);
+		return super.render();
 	}
 }
 
 
-class CtrCircle {
-	constructor(parent_id, cx, cy, svg_attrs) {
-		this.circle = attachSvg(document.getElementById(parent_id), 'circle', svg_attrs);
-		this.setCtr([cx, cy]);
-	}
+class CtrCircle extends CtrShape {
+	static tag = 'circle';
+}
 
-	translate(moving_vec) {
-		this.setCtr(vecSum(this.xy, moving_vec));
-	}
 
-	setCtr(xy) {
-		this.xy = [...xy];
-		setAttrsSvg(this.circle, {cx: this.xy[0], cy: this.xy[1]});
-	}
-
-	rotate(rot_angle) {} // For the unity of interface
-
-	delete() {
-		this.circle.remove();
-		this.circle = null;
-	}
+class CtrPolygon extends CtrShape {
+	static tag = 'polygon';
 }

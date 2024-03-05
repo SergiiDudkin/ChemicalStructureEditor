@@ -1187,7 +1187,7 @@ function transformHandler(transformbtn) {
 		var cx = rect_x + rect_w / 2;
 		var cy = rect_y + rect_h / 2;
 		this.transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
-		this.model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'});
+		this.model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'}).render();
 	}
 }
 
@@ -1217,15 +1217,18 @@ class TransformTool {
 			[cx, cy + hh, sh, sw, 'side'], // Bottom
 			[cx, cy - hh, sh, sw, 'side'] // Top
 		];
-		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6});
+		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6}).render();
 		this.rotable = [this.lever];
 		for (const [cx, cy, width, height, class_] of vals) {
-			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}));
+			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}).render());
 		}
 		
 		this.movable = [...this.rotable];
-		var anchor_pts = [[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], [aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]];
-		this.anchor = new CtrPolygon('transform-tool', cx, cy, anchor_pts, {id: 'anchor', class: 'transformjig', 'fill-rule': 'evenodd'});
+		var anchor_pts = [
+			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], 
+			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
+		].map(pt => pt.join()).join(' ');
+		this.anchor = new CtrPolygon('transform-tool', cx, cy, {id: 'anchor', class: 'transformjig', points: anchor_pts, 'fill-rule': 'evenodd'}).render();
 		this.movable.push(this.anchor);
 
 		this.movingAnchor = this.movingAnchor.bind(this);
@@ -1234,26 +1237,25 @@ class TransformTool {
 
 	locateLever() {
 		var new_lever_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), this.lever_len));
-		this.lever.setCtr(new_lever_ctr);
+		this.lever.setCtr(new_lever_ctr).render();
 	}
 
 	translate(moving_vec) {
 		this.xy = vecSum(this.xy, moving_vec);
-		this.movable.forEach(jig => jig.translate(moving_vec));
+		this.movable.forEach(jig => jig.translate(moving_vec).render());
 	}
 
 	rotate(rot_angle) {
 		this.xy = rotateAroundCtr(this.xy, rot_angle, this.anchor.xy)
 		this.rotable.forEach(jig => {
-			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy));
-			jig.rotate(rot_angle);
+			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy)).rotate(rot_angle).render();
 		});
 	}
 
 	scale(scale_factor) {
 		this.xy = scaleAroundCtr(this.xy, scale_factor, this.anchor.xy);
 		this.rotable.slice(1).forEach(jig => {
-			jig.setCtr(scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy));
+			jig.setCtr(scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy)).render();
 		});
 		this.locateLever();
 	}
@@ -1261,7 +1263,7 @@ class TransformTool {
 	stretch(stretch_factor, dir_angle) {
 		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.anchor.xy)
 		this.rotable.slice(1).forEach(jig => {
-			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy));
+			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy)).render();
 		});
 		this.locateLever();
 	}
@@ -1276,7 +1278,7 @@ class TransformTool {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(this.anchor_mo_st, pt);
 		this.anchor_mo_st = pt;
-		this.anchor.translate(moving_vec);
+		this.anchor.translate(moving_vec).render();
 	}
 
 	finishMovingAnchor() {
