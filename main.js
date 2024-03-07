@@ -1148,45 +1148,43 @@ class TransformTool extends DeletableAbortable {
 		var sh = 12; // Side rectangle height
 		var aht = 2; // Anchor half thickness
 		var ahl = 14; // Anchor half length
+		var lever_r = 6; // Lever radius
 		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
-		var vals = [ // Rectangles init data: [x, y, width, height, class]
-			[cx + hw, cy + hh, cl, cl, this.startScaling], // Bottom-right
-			[cx - hw, cy + hh, cl, cl, this.startScaling], // Bottom-left
-			[cx - hw, cy - hh, cl, cl, this.startScaling], // Top-left
-			[cx + hw, cy - hh, cl, cl, this.startScaling], // Top-right
-			[cx + hw, cy, sw, sh, this.startStretching], // Right
-			[cx - hw, cy, sw, sh, this.startStretching], // Left
-			[cx, cy + hh, sh, sw, this.startStretching], // Bottom
-			[cx, cy - hh, sh, sw, this.startStretching] // Top
-		];
-		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {r: 6})
-			.render().addEventListener('mousedown', this.startRotating, this.signal_opt);
-		this.rotable = [this.lever];
-		for (const [cx, cy, width, height, callback] of vals) {
-			this.rotable.push(new CtrRect('transform-tool', cx, cy, {width: width, height: height})
-				.render().addEventListener('mousedown', callback, this.signal_opt));
-		}
-		
-		this.movable = [...this.rotable];
 		var anchor_pts = [
 			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], 
 			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
 		].map(pt => pt.join()).join(' ');
-		this.anchor = new CtrPolygon('transform-tool', cx, cy, {points: anchor_pts, 'fill-rule': 'evenodd'})
-			.render().addEventListener('mousedown', this.startMovingAnchor, this.signal_opt);
-		this.movable.push(this.anchor);
-		this.movable.forEach(jig => jig.shape.setAttribute('class', 'transformjig'));
+
+		var vals = [ // Jigs init data: [ShapeClass, cx, cy, svg_args, callback]
+			[CtrPolygon, cx, cy, {points: anchor_pts, 'fill-rule': 'evenodd'}, this.startMovingAnchor], // Anchor
+			[CtrCircle, cx, cy - hh - this.lever_len, {r: lever_r}, this.startRotating], // Lever
+			[CtrRect, cx + hw, cy + hh, {width: cl, height: cl}, this.startScaling], // Bottom-right square
+			[CtrRect, cx - hw, cy + hh, {width: cl, height: cl}, this.startScaling], // Bottom-left square
+			[CtrRect, cx - hw, cy - hh, {width: cl, height: cl}, this.startScaling], // Top-left square
+			[CtrRect, cx + hw, cy - hh, {width: cl, height: cl}, this.startScaling], // Top-right square
+			[CtrRect, cx + hw, cy, {width: sw, height: sh}, this.startStretching], // Right rectangle
+			[CtrRect, cx - hw, cy, {width: sw, height: sh}, this.startStretching], // Left rectangle
+			[CtrRect, cx, cy + hh, {width: sh, height: sw}, this.startStretching], // Bottom rectangle
+			[CtrRect, cx, cy - hh, {width: sh, height: sw}, this.startStretching] // Top rectangle
+		];
+		vals.forEach(item => item[3].class = 'transformjig');
+		this.jigs = vals.map(([ShapeClass, cx, cy, svg_args, callback]) => 
+			new ShapeClass('transform-tool', cx, cy, svg_args).render()
+				.addEventListener('mousedown', callback, this.signal_opt)
+		);
+		this.anchor = this.jigs[0];
+		this.lever = this.jigs[1];
 	}
 
 	locateLever() {
-		var new_lever_ctr = vecSum(this.rotable[8].xy, vecMul(unitVec(vecDif(this.xy, this.rotable[8].xy)), this.lever_len));
+		var new_lever_ctr = vecSum(this.jigs[9].xy, vecMul(unitVec(vecDif(this.xy, this.jigs[9].xy)), this.lever_len));
 		this.lever.setCtr(new_lever_ctr).render();
 	}
 
 	translate(moving_vec) {
 		this.xy = vecSum(this.xy, moving_vec);
-		this.movable.forEach(jig => jig.translate(moving_vec).render());
+		this.jigs.forEach(jig => jig.translate(moving_vec).render());
 	}
 
 	startRotating(event) {
@@ -1210,7 +1208,7 @@ class TransformTool extends DeletableAbortable {
 
 	rotate(rot_angle) {
 		this.xy = rotateAroundCtr(this.xy, rot_angle, this.anchor.xy)
-		this.rotable.forEach(jig => {
+		this.jigs.slice(1).forEach(jig => {
 			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy)).rotate(rot_angle).render();
 		});
 	}
@@ -1238,7 +1236,7 @@ class TransformTool extends DeletableAbortable {
 
 	scale(scale_factor) {
 		this.xy = scaleAroundCtr(this.xy, scale_factor, this.anchor.xy);
-		this.rotable.slice(1).forEach(jig => {
+		this.jigs.slice(2).forEach(jig => {
 			jig.setCtr(scaleAroundCtr(jig.xy, scale_factor, this.anchor.xy)).render();
 		});
 		this.locateLever();
@@ -1269,7 +1267,7 @@ class TransformTool extends DeletableAbortable {
 
 	stretch(stretch_factor, dir_angle) {
 		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.anchor.xy)
-		this.rotable.slice(1).forEach(jig => {
+		this.jigs.slice(2).forEach(jig => {
 			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.anchor.xy)).render();
 		});
 		this.locateLever();
@@ -1295,7 +1293,7 @@ class TransformTool extends DeletableAbortable {
 	}
 
 	delete() {
-		this.movable.forEach(jig => jig.delete());
+		this.jigs.forEach(jig => jig.delete());
 		this.g.remove();
 		super.delete();
 	}
