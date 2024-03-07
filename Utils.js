@@ -15,9 +15,32 @@ function attachSvg(parent, tag, attrs={}) {
 }
 
 
-class CtrShape {
+
+class Deletable {
+	delete() {
+		Object.keys(this).forEach(key => delete this[key]);
+	}
+}
+
+
+class DeletableAbortable extends Deletable {
+	constructor() {
+		super();
+		this.controller = new AbortController();
+		this.signal_opt = {signal: this.controller.signal};
+	}
+
+	delete() {
+		this.controller.abort();
+		super.delete();
+	}	
+}
+
+
+class CtrShape extends Deletable {
 	// Abstract shape class that supports method cascading
 	constructor(parent_id, cx, cy, svg_attrs) {
+		super();
 		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, svg_attrs);
 		for (var i = 0; i < 2; i++) {
 			this.shape.transform.baseVal.appendItem(this.shape.ownerSVGElement.createSVGTransform());
@@ -53,9 +76,14 @@ class CtrShape {
 		return this;
 	}
 
+	addEventListener(...args) {
+		this.shape.addEventListener(...args);
+		return this;
+	}
+
 	delete() {
 		this.shape.remove();
-		this.shape = null;
+		super.delete();
 	}
 }
 

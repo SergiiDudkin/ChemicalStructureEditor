@@ -1051,10 +1051,7 @@ function transformHandler(transformbtn) {
 	var svgP0, svgP1;
 	var rect_x, rect_y, rect_w, rect_h;
 	var mo_st = new Array(2); // Cursor coordinates when dragging was started
-	var rot_st; // Angle when rotating was started 
-	var init_ctr_pt_error;
-	var curr_jig;
-	this.transform_tool = null;
+	var transform_tool = null;
 	var utils = document.getElementById('utils');
 	
 	var selectrect = makeSvg('rect', {class: 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
@@ -1071,31 +1068,11 @@ function transformHandler(transformbtn) {
 			window.addEventListener('mousemove', moving);
 			window.addEventListener('mouseup', finishMoving);
 		}
-		else if (event.target.id == 'lever') {
-			rot_st = Math.atan2(...vecDif(this.transform_tool.anchor.xy, getSvgPoint(event)).toReversed());
-			window.addEventListener('mousemove', rotating);
-			window.addEventListener('mouseup', finishRotating);
-		}
-		else if (event.target.id == 'anchor') {
-			this.transform_tool.anchorMove(event);
-		}
-		else if (event.target.classList.contains('corner')) {
-			curr_jig = event.target.objref;
-			init_ctr_pt_error = vecDif(curr_jig.xy, getSvgPoint(event));
-			window.addEventListener('mousemove', scaling);
-			window.addEventListener('mouseup', finishScaling);
-		}
-		else if (event.target.classList.contains('side')) {
-			curr_jig = event.target.objref;
-			init_ctr_pt_error = vecDif(curr_jig.xy, getSvgPoint(event));
-			window.addEventListener('mousemove', stretching);
-			window.addEventListener('mouseup', finishStretching);
-		}
 		else {
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
-				if (this.transform_tool) {
-					this.transform_tool.delete();
-					this.transform_tool = null;
+				if (transform_tool) {
+					transform_tool.delete();
+					transform_tool = null;
 					this.model.delete();
 				}
 				else {
@@ -1119,52 +1096,12 @@ function transformHandler(transformbtn) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
-		this.transform_tool.translate(moving_vec);
+		transform_tool.translate(moving_vec);
 	}
 
 	function finishMoving() {
 		window.removeEventListener('mousemove', moving);
 		window.removeEventListener('mouseup', finishMoving);
-	}
-
-	function rotating(event) { // Active moving
-		var rot_en = Math.atan2(...vecDif(this.transform_tool.anchor.xy, getSvgPoint(event)).toReversed());
-		var rot_angle = rot_en - rot_st;
-		rot_st = rot_en;
-		this.transform_tool.rotate(rot_angle);
-	}
-
-	function finishRotating() {
-		window.removeEventListener('mousemove', rotating);
-		window.removeEventListener('mouseup', finishRotating);
-	}
-
-	function scaling(event) { // Active moving
-		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
-		var scale_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
-		var ref_scale_vec = vecDif(this.transform_tool.anchor.xy, curr_jig.xy);
-		var scale_factor = vecDotProd(ref_scale_vec, scale_vec) / sqVecLen(ref_scale_vec);
-		this.transform_tool.scale(scale_factor);
-	}
-
-	function finishScaling() {
-		window.removeEventListener('mousemove', scaling);
-		window.removeEventListener('mouseup', finishScaling);
-	}
-
-	function stretching(event) { // Active moving
-		var corrected_point = vecDif(init_ctr_pt_error, getSvgPoint(event));
-		var stretch_vec = vecDif(this.transform_tool.anchor.xy, corrected_point);
-		var ref_vec = vecDif(this.transform_tool.anchor.xy, curr_jig.xy);
-		var dir_vec = vecDif(this.transform_tool.xy, curr_jig.xy);
-		var stretch_factor = vecDotProd(dir_vec, stretch_vec) / vecDotProd(dir_vec, ref_vec);
-		dir_angle = Math.atan2(...dir_vec.toReversed());
-		this.transform_tool.stretch(stretch_factor, dir_angle);
-	}
-
-	function finishStretching() {
-		window.removeEventListener('mousemove', stretching);
-		window.removeEventListener('mouseup', finishStretching);
 	}
 
 	function recalc(event) {
@@ -1186,14 +1123,20 @@ function transformHandler(transformbtn) {
 		selectrect.remove();
 		var cx = rect_x + rect_w / 2;
 		var cy = rect_y + rect_h / 2;
-		this.transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
+		transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
 		this.model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'}).render();
 	}
 }
 
 
-class TransformTool {
+class TransformTool extends DeletableAbortable {
 	constructor(parent_id, cx, cy, width, height) {
+		super();
+		[
+			'movingAnchor', 'finishMovingAnchor', 'startMovingAnchor', 'startRotating', 'rotating', 'finishRotating', 
+			'startScaling', 'scaling', 'finishScaling', 'startStretching', 'stretching', 'finishStretching'
+		].forEach(method => this[method] = this[method].bind(this));
+
 		this.g = attachSvg(document.getElementById('utils'), 'g', {id: 'transform-tool'});
 		this.xy = [cx, cy];
 		var hw = width / 2; // Transform tool half witdth
@@ -1208,19 +1151,21 @@ class TransformTool {
 		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
 		var vals = [ // Rectangles init data: [x, y, width, height, class]
-			[cx + hw, cy + hh, cl, cl, 'corner'], // Bottom-right
-			[cx - hw, cy + hh, cl, cl, 'corner'], // Bottom-left
-			[cx - hw, cy - hh, cl, cl, 'corner'], // Top-left
-			[cx + hw, cy - hh, cl, cl, 'corner'], // Top-right
-			[cx + hw, cy, sw, sh, 'side'], // Right
-			[cx - hw, cy, sw, sh, 'side'], // Left
-			[cx, cy + hh, sh, sw, 'side'], // Bottom
-			[cx, cy - hh, sh, sw, 'side'] // Top
+			[cx + hw, cy + hh, cl, cl, this.startScaling], // Bottom-right
+			[cx - hw, cy + hh, cl, cl, this.startScaling], // Bottom-left
+			[cx - hw, cy - hh, cl, cl, this.startScaling], // Top-left
+			[cx + hw, cy - hh, cl, cl, this.startScaling], // Top-right
+			[cx + hw, cy, sw, sh, this.startStretching], // Right
+			[cx - hw, cy, sw, sh, this.startStretching], // Left
+			[cx, cy + hh, sh, sw, this.startStretching], // Bottom
+			[cx, cy - hh, sh, sw, this.startStretching] // Top
 		];
-		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {id: 'lever', class: 'transformjig', r: 6}).render();
+		this.lever = new CtrCircle('transform-tool', cx, cy - hh - this.lever_len, {r: 6})
+			.render().addEventListener('mousedown', this.startRotating, this.signal_opt);
 		this.rotable = [this.lever];
-		for (const [cx, cy, width, height, class_] of vals) {
-			this.rotable.push(new CtrRect('transform-tool', cx, cy, {class: 'transformjig ' + class_, width: width, height: height}).render());
+		for (const [cx, cy, width, height, callback] of vals) {
+			this.rotable.push(new CtrRect('transform-tool', cx, cy, {width: width, height: height})
+				.render().addEventListener('mousedown', callback, this.signal_opt));
 		}
 		
 		this.movable = [...this.rotable];
@@ -1228,11 +1173,10 @@ class TransformTool {
 			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], 
 			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
 		].map(pt => pt.join()).join(' ');
-		this.anchor = new CtrPolygon('transform-tool', cx, cy, {id: 'anchor', class: 'transformjig', points: anchor_pts, 'fill-rule': 'evenodd'}).render();
+		this.anchor = new CtrPolygon('transform-tool', cx, cy, {points: anchor_pts, 'fill-rule': 'evenodd'})
+			.render().addEventListener('mousedown', this.startMovingAnchor, this.signal_opt);
 		this.movable.push(this.anchor);
-
-		this.movingAnchor = this.movingAnchor.bind(this);
-		this.finishMovingAnchor = this.finishMovingAnchor.bind(this);
+		this.movable.forEach(jig => jig.shape.setAttribute('class', 'transformjig'));
 	}
 
 	locateLever() {
@@ -1245,11 +1189,51 @@ class TransformTool {
 		this.movable.forEach(jig => jig.translate(moving_vec).render());
 	}
 
+	startRotating(event) {
+		event.stopPropagation();
+		this.rot_st = Math.atan2(...vecDif(this.anchor.xy, getSvgPoint(event)).toReversed());
+		window.addEventListener('mousemove', this.rotating, this.signal_opt);
+		window.addEventListener('mouseup', this.finishRotating, this.signal_opt);
+	}
+
+	rotating(event) { // Active moving
+		var rot_en = Math.atan2(...vecDif(this.anchor.xy, getSvgPoint(event)).toReversed());
+		var rot_angle = rot_en - this.rot_st;
+		this.rot_st = rot_en;
+		this.rotate(rot_angle);
+	}
+
+	finishRotating() {
+		window.removeEventListener('mousemove', this.rotating);
+		window.removeEventListener('mouseup', this.finishRotating);
+	}
+
 	rotate(rot_angle) {
 		this.xy = rotateAroundCtr(this.xy, rot_angle, this.anchor.xy)
 		this.rotable.forEach(jig => {
 			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, this.anchor.xy)).rotate(rot_angle).render();
 		});
+	}
+
+	startScaling(event) {
+		event.stopPropagation();
+		this.curr_jig = event.target.objref;
+		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
+		window.addEventListener('mousemove', this.scaling, this.signal_opt);
+		window.addEventListener('mouseup', this.finishScaling, this.signal_opt);
+	}
+
+	scaling(event) { // Active moving
+		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		var scale_vec = vecDif(this.anchor.xy, corrected_point);
+		var ref_scale_vec = vecDif(this.anchor.xy, this.curr_jig.xy);
+		var scale_factor = vecDotProd(ref_scale_vec, scale_vec) / sqVecLen(ref_scale_vec);
+		this.scale(scale_factor);
+	}
+
+	finishScaling() {
+		window.removeEventListener('mousemove', this.scaling);
+		window.removeEventListener('mouseup', this.finishScaling);
 	}
 
 	scale(scale_factor) {
@@ -1260,6 +1244,29 @@ class TransformTool {
 		this.locateLever();
 	}
 
+	startStretching(event) {
+		event.stopPropagation();
+		this.curr_jig = event.target.objref;
+		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
+		window.addEventListener('mousemove', this.stretching, this.signal_opt);
+		window.addEventListener('mouseup', this.finishStretching, this.signal_opt);
+	}
+
+	stretching(event) { // Active moving
+		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		var stretch_vec = vecDif(this.anchor.xy, corrected_point);
+		var ref_vec = vecDif(this.anchor.xy, this.curr_jig.xy);
+		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
+		var stretch_factor = vecDotProd(dir_vec, stretch_vec) / vecDotProd(dir_vec, ref_vec);
+		var dir_angle = Math.atan2(...dir_vec.toReversed());
+		this.stretch(stretch_factor, dir_angle);
+	}
+
+	finishStretching() {
+		window.removeEventListener('mousemove', this.stretching);
+		window.removeEventListener('mouseup', this.finishStretching);
+	}
+
 	stretch(stretch_factor, dir_angle) {
 		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.anchor.xy)
 		this.rotable.slice(1).forEach(jig => {
@@ -1268,10 +1275,11 @@ class TransformTool {
 		this.locateLever();
 	}
 
-	anchorMove(event) {
+	startMovingAnchor(event) {
+		event.stopPropagation();
 		this.anchor_mo_st = getSvgPoint(event); // Cursor coordinates when dragging of anchor was started
-		window.addEventListener('mousemove', this.movingAnchor);
-		window.addEventListener('mouseup', this.finishMovingAnchor);
+		window.addEventListener('mousemove', this.movingAnchor, this.signal_opt);
+		window.addEventListener('mouseup', this.finishMovingAnchor, this.signal_opt);
 	}
 
 	movingAnchor(event) {
@@ -1289,7 +1297,7 @@ class TransformTool {
 	delete() {
 		this.movable.forEach(jig => jig.delete());
 		this.g.remove();
-		[this.movable, this.rotable, this.g] = [null, null, null];
+		super.delete();
 	}
 }
 
