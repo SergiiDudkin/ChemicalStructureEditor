@@ -1208,16 +1208,13 @@ class TransformTool extends DeletableAbortable {
 		this.lever = this.jigs[1];
 	}
 
-	locateLever() {
-		var new_lever_ctr = vecSum(this.jigs[9].xy, vecMul(unitVec(vecDif(this.xy, this.jigs[9].xy)), this.lever_len));
-		this.lever.setCtr(new_lever_ctr).render();
-	}
-
+	// Moving all jigs
 	translate(moving_vec) {
 		this.xy = vecSum(this.xy, moving_vec);
 		this.jigs.forEach(jig => jig.translate(moving_vec).render());
 	}
 
+	// Rotating
 	startRotating(event) {
 		event.stopPropagation();
 		this.rot_st = Math.atan2(...vecDif(this.anchor.xy, getSvgPoint(event)).toReversed());
@@ -1225,7 +1222,7 @@ class TransformTool extends DeletableAbortable {
 		window.addEventListener('mouseup', this.finishRotating, this.signal_opt);
 	}
 
-	rotating(event) { // Active moving
+	rotating(event) {
 		var rot_en = Math.atan2(...vecDif(this.anchor.xy, getSvgPoint(event)).toReversed());
 		var rot_angle = rot_en - this.rot_st;
 		this.rot_st = rot_en;
@@ -1244,6 +1241,7 @@ class TransformTool extends DeletableAbortable {
 		});
 	}
 
+	// Scaling
 	startScaling(event) {
 		event.stopPropagation();
 		this.curr_jig = event.target.objref;
@@ -1252,12 +1250,9 @@ class TransformTool extends DeletableAbortable {
 		window.addEventListener('mouseup', this.finishScaling, this.signal_opt);
 	}
 
-	scaling(event) { // Active moving
-		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
-		var scale_vec = vecDif(this.anchor.xy, corrected_point);
-		var ref_scale_vec = vecDif(this.anchor.xy, this.curr_jig.xy);
-		var scale_factor = vecDotProd(ref_scale_vec, scale_vec) / sqVecLen(ref_scale_vec);
-		this.scale(scale_factor);
+	scaling(event) {
+		var [factor, dir_vec] = this.getFactor();
+		this.scale(factor);
 	}
 
 	finishScaling() {
@@ -1273,6 +1268,7 @@ class TransformTool extends DeletableAbortable {
 		this.locateLever();
 	}
 
+	// Stretching along x or y
 	startStretching(event) {
 		event.stopPropagation();
 		this.curr_jig = event.target.objref;
@@ -1281,14 +1277,10 @@ class TransformTool extends DeletableAbortable {
 		window.addEventListener('mouseup', this.finishStretching, this.signal_opt);
 	}
 
-	stretching(event) { // Active moving
-		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
-		var stretch_vec = vecDif(this.anchor.xy, corrected_point);
-		var ref_vec = vecDif(this.anchor.xy, this.curr_jig.xy);
-		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
-		var stretch_factor = vecDotProd(dir_vec, stretch_vec) / vecDotProd(dir_vec, ref_vec);
+	stretching(event) {
+		var [factor, dir_vec] = this.getFactor();
 		var dir_angle = Math.atan2(...dir_vec.toReversed());
-		this.stretch(stretch_factor, dir_angle);
+		this.stretch(factor, dir_angle);
 	}
 
 	finishStretching() {
@@ -1304,6 +1296,7 @@ class TransformTool extends DeletableAbortable {
 		this.locateLever();
 	}
 
+	// Moving anchor
 	startMovingAnchor(event) {
 		event.stopPropagation();
 		this.anchor_mo_st = getSvgPoint(event); // Cursor coordinates when dragging of anchor was started
@@ -1321,6 +1314,21 @@ class TransformTool extends DeletableAbortable {
 	finishMovingAnchor() {
 		window.removeEventListener('mousemove', this.movingAnchor);
 		window.removeEventListener('mouseup', this.finishMovingAnchor);
+	}
+
+	// Utils
+	getFactor() {
+		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		var transform_vec = vecDif(this.anchor.xy, corrected_point);
+		var ref_vec = vecDif(this.anchor.xy, this.curr_jig.xy);
+		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
+		var factor = vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
+		return [factor, dir_vec];
+	}
+
+	locateLever() {
+		var new_lever_ctr = vecSum(this.jigs[9].xy, vecMul(unitVec(vecDif(this.xy, this.jigs[9].xy)), this.lever_len));
+		this.lever.setCtr(new_lever_ctr).render();
 	}
 
 	delete() {
