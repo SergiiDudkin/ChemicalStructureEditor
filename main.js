@@ -1047,49 +1047,40 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 }
 
-function transformHandler(transformbtn) {
-	var svgP0, svgP1;
-	var rect_x, rect_y, rect_w, rect_h;
-	var mo_st = new Array(2); // Cursor coordinates when dragging was started
-	var transform_tool = null;
-	var utils = document.getElementById('utils');
-	
-	var selectrect = makeSvg('rect', {class: 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1});
-	transformbtn.mask_g.addEventListener('click', moveInit);
 
-	function moveInit(event) {
+function transformHandler(transformbtn) {
+	var mo_st; // Cursor coordinates when dragging was started
+	var transform_tool = null;
+	var select_rect = null;
+	var model = null;
+	transformbtn.mask_g.addEventListener('click', selectInit);
+
+	function selectInit(event) {
 		transformbtn.selectCond();
-		window.addEventListener('mousedown', moveAct);
+		canvas.addEventListener('mousedown', selectAct);
+		window.addEventListener('mousedown', exit);
 	}
 
-	function moveAct(event) { // When mouse button is down
-		if (event.target.id == 'model') { // Click on transform tool
-			mo_st = getSvgPoint(event);
-			window.addEventListener('mousemove', moving);
-			window.addEventListener('mouseup', finishMoving);
-		}
-		else {
-			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
-				if (transform_tool) {
-					transform_tool.delete();
-					transform_tool = null;
-					this.model.delete();
-				}
-				else {
-					pt.x = event.clientX;
-					pt.y = event.clientY;
-					svgP0 = pt.matrixTransform(matrixrf);
-					recalc(event);
-					utils.appendChild(selectrect);
-					window.addEventListener('mousemove', recalc);
-					window.addEventListener('mouseup', selectStop);
-				}
-			}
-			else {
-				window.removeEventListener('mousedown', moveAct); // If clicked out of canvas, exit moving routine.
-				transformbtn.deselectCond(event);
-			}
-		}
+	function selectAct(event) {
+		event.stopPropagation();
+		deselect();
+		select_rect = new SelectRect('utils', selectCallback);
+	}
+
+	function selectCallback(rect_x, rect_y, rect_w, rect_h) {
+		var cx = rect_x + rect_w / 2;
+		var cy = rect_y + rect_h / 2;
+		transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
+		model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'})
+			.render().addEventListener('mousedown', startMoving);
+		select_rect = null;
+	}
+
+	function startMoving(event) { // When mouse button is down
+		event.stopPropagation();
+		mo_st = getSvgPoint(event);
+		window.addEventListener('mousemove', moving);
+		window.addEventListener('mouseup', finishMoving);
 	}
 
 	function moving(event) { // Active moving
@@ -1104,27 +1095,67 @@ function transformHandler(transformbtn) {
 		window.removeEventListener('mouseup', finishMoving);
 	}
 
-	function recalc(event) {
-		pt.x = event.clientX;
-		pt.y = event.clientY;
-		svgP1 = pt.matrixTransform(matrixrf);
-
-		rect_x = Math.min(svgP0.x, svgP1.x);
-		rect_y = Math.min(svgP0.y, svgP1.y);
-		rect_w = Math.abs(svgP1.x - svgP0.x);
-		rect_h = Math.abs(svgP1.y - svgP0.y);
-
-		setAttrsSvg(selectrect, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
+	function deselect() {
+		if (transform_tool) {
+			transform_tool.delete();
+			transform_tool = null;
+			model.shape.removeEventListener('mousedown', startMoving);
+			model.delete();
+		}
 	}
 
-	function selectStop() {
-		window.removeEventListener('mousemove', recalc);
-		window.removeEventListener('mouseup', selectStop);
-		selectrect.remove();
-		var cx = rect_x + rect_w / 2;
-		var cy = rect_y + rect_h / 2;
-		transform_tool = new TransformTool('utils', rect_x + rect_w / 2, rect_y + rect_h / 2, rect_w, rect_h);
-		this.model = new CtrRect('sensors_a', cx + 25, cy + 25, {id: 'model', class: 'transformjig', width: 20, height: 20, fill: 'black'}).render();
+	function exit(event) {
+		canvas.removeEventListener('mousedown', selectAct);
+		window.removeEventListener('mousedown', exit);
+		deselect();
+		transformbtn.deselectCond(event);
+	}
+}
+
+
+class SelectRect extends DeletableAbortable {
+	constructor(parent_id, callback) {
+		super();
+		this.callback = callback;
+		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {
+			class: 'sympoi', fill: 'none', stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1
+		});
+
+		this.recalc = this.recalc.bind(this);
+		this.selectStop = this.selectStop.bind(this);
+
+		pt.x = event.clientX;
+		pt.y = event.clientY;
+		this.svg_pt0 = pt.matrixTransform(matrixrf);
+		this.recalc(event);
+		
+		window.addEventListener('mousemove', this.recalc, this.signal_opt);
+		window.addEventListener('mouseup', this.selectStop, this.signal_opt)
+	}
+
+	recalc(event) {
+		pt.x = event.clientX;
+		pt.y = event.clientY;
+		var svg_pt1 = pt.matrixTransform(matrixrf);
+
+		this.rect_x = Math.min(this.svg_pt0.x, svg_pt1.x);
+		this.rect_y = Math.min(this.svg_pt0.y, svg_pt1.y);
+		this.rect_w = Math.abs(svg_pt1.x - this.svg_pt0.x);
+		this.rect_h = Math.abs(svg_pt1.y - this.svg_pt0.y);
+
+		setAttrsSvg(this.rect, {x: this.rect_x, y: this.rect_y, width: this.rect_w, height: this.rect_h});
+	}
+
+	selectStop() {
+		window.removeEventListener('mousemove', this.recalc);
+		window.removeEventListener('mouseup', this.selectStop);
+		this.callback(this.rect_x, this.rect_y, this.rect_w, this.rect_h);
+		this.delete();
+	}
+
+	delete() {
+		this.rect.remove();
+		super.delete();
 	}
 }
 
@@ -1137,7 +1168,7 @@ class TransformTool extends DeletableAbortable {
 			'startScaling', 'scaling', 'finishScaling', 'startStretching', 'stretching', 'finishStretching'
 		].forEach(method => this[method] = this[method].bind(this));
 
-		this.g = attachSvg(document.getElementById('utils'), 'g', {id: 'transform-tool'});
+		this.g = attachSvg(document.getElementById(parent_id), 'g', {id: 'transform-tool'});
 		this.xy = [cx, cy];
 		var hw = width / 2; // Transform tool half witdth
 		var hh = height / 2; // Transform tool half height
