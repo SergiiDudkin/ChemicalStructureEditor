@@ -1055,7 +1055,7 @@ function transformHandler(transformbtn) {
 	var select_rect = null;
 	var atoms_slctd = new Set(); // Selected atoms
 	var bonds_slctd = new Set(); // Selected atoms
-	var is_selected = false;
+	var is_highlighted = false;
 	var highlights = document.getElementById('selecthighlight');
 	var sensors_a = document.getElementById('sensors_a');
 	var sensors_b = document.getElementById('sensors_b');
@@ -1064,8 +1064,10 @@ function transformHandler(transformbtn) {
 	function selectInit(event) {
 		transformbtn.selectCond();
 		canvas.addEventListener('mousedown', selectAct);
-		sensors_a.addEventListener('mousedown', clickOnAtom);
-		sensors_b.addEventListener('mousedown', clickOnBond);
+		sensors_a.addEventListener('mousedown', (e) => pick(e, (e) => atoms_slctd.add(e.target.objref.id)));
+		sensors_b.addEventListener('mousedown', 
+			(e) => pick(e, (e) => e.target.objref.nodes.forEach(node => atoms_slctd.add(node.id)))
+		);
 		window.addEventListener('mousedown', exit);
 	}
 
@@ -1078,8 +1080,8 @@ function transformHandler(transformbtn) {
 	function selectCallback(atoms_slctd_objs, bonds_slctd_objs) {
 		atoms_slctd = new Set(atoms_slctd_objs.map(item => item.id));
 		bonds_slctd = new Set(bonds_slctd_objs.map(item => item.id));
-		is_selected = Boolean(atoms_slctd.size + bonds_slctd.size);
-		if (is_selected) {
+		is_highlighted = Boolean(atoms_slctd.size + bonds_slctd.size);
+		if (is_highlighted) {
 			var margin = 6;
 			var bbox = highlights.getBBox();
 			var width = bbox.width + margin * 2;
@@ -1095,7 +1097,7 @@ function transformHandler(transformbtn) {
 	function clearSlct() {
 		atoms_slctd.clear();
 		bonds_slctd.clear();
-		is_selected = false;
+		is_highlighted = false;
 	}
 
 	function deselectAll() {
@@ -1113,17 +1115,10 @@ function transformHandler(transformbtn) {
 		deselectAll();
 	}
 
-	function clickOnAtom(event) {
+	function pick(event, selectfunc) {
 		event.stopPropagation();
 		deselect();
-		atoms_slctd.add(event.target.objref.id);
-		startMoving(event);
-	}
-
-	function clickOnBond(event) {
-		event.stopPropagation();
-		deselect();
-		event.target.objref.nodes.forEach(node => atoms_slctd.add(node.id));
+		selectfunc(event);
 		startMoving(event);
 	}
 
@@ -1152,7 +1147,7 @@ function transformHandler(transformbtn) {
 		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec}
 		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
-		if (!is_selected) clearSlct();
+		if (!is_highlighted) clearSlct();
 		overlap.refresh();
 	}
 
