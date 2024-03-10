@@ -354,8 +354,24 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.bonds_type) kwargs_rev.bonds_type = Object.fromEntries(Object.keys(kwargs_dir.bonds_type).map(
 		id => [id, document.getElementById(id).objref.type]
 	));
-	if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = kwargs_dir.moving_atoms.slice(); 
+	if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms); 
 	if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
+
+
+	if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms); 
+	if (kwargs_dir.rot_angle) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
+	if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
+
+	if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms); 
+	if (kwargs_dir.scale_factor) kwargs_rev.scale_factor = 1 / kwargs_dir.scale_factor;
+	if (kwargs_dir.scale_ctr) kwargs_rev.scale_ctr = kwargs_dir.scale_ctr.slice();
+
+	if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms); 
+	if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
+	if (kwargs_dir.dir_angle) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
+	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
+
+
 	return kwargs_rev;
 }
 
@@ -1064,10 +1080,8 @@ function transformHandler(transformbtn) {
 	function selectInit(event) {
 		transformbtn.selectCond();
 		canvas.addEventListener('mousedown', selectAct);
-		sensors_a.addEventListener('mousedown', (e) => pick(e, (e) => atoms_slctd.add(e.target.objref.id)));
-		sensors_b.addEventListener('mousedown', 
-			(e) => pick(e, (e) => e.target.objref.nodes.forEach(node => atoms_slctd.add(node.id)))
-		);
+		sensors_a.addEventListener('mousedown', pickAtom);
+		sensors_b.addEventListener('mousedown', pickBond);
 		window.addEventListener('mousedown', exit);
 	}
 
@@ -1089,6 +1103,12 @@ function transformHandler(transformbtn) {
 			var cx = bbox.x - margin + width / 2;
 			var cy = bbox.y - margin + height / 2;
 			transform_tool = new TransformTool('utils', cx, cy, width, height);
+			transform_tool.rotate_callback = rotate;
+			transform_tool.scale_callback = scale;
+			transform_tool.stretch_callback = stretch;
+			transform_tool.finish_rotating_callback = finishRotating;
+			transform_tool.finish_scaling_callback = finishScaling;
+			transform_tool.finish_stretching_callback = finishStretching;
 			highlights.addEventListener('mousedown', startMoving);
 		}
 		select_rect = null;
@@ -1115,6 +1135,14 @@ function transformHandler(transformbtn) {
 		deselectAll();
 	}
 
+	function pickAtom(event) {
+		pick(event, (e) => atoms_slctd.add(e.target.objref.id));
+	}
+
+	function pickBond(event) {
+		pick(event, (e) => e.target.objref.nodes.forEach(node => atoms_slctd.add(node.id)));
+	}
+
 	function pick(event, selectfunc) {
 		event.stopPropagation();
 		deselect();
@@ -1136,7 +1164,7 @@ function transformHandler(transformbtn) {
 		mo_st = pt;
 		if (transform_tool) transform_tool.translate(moving_vec);
 		accum_vec = vecSum(accum_vec, moving_vec);
-		var kwargs = {moving_atoms: atoms_slctd, moving_vec: moving_vec}
+		var kwargs = {moving_atoms: atoms_slctd, moving_vec: moving_vec};
 		editStructure(kwargs);
 	}
 
@@ -1144,17 +1172,56 @@ function transformHandler(transformbtn) {
 		window.removeEventListener('mousemove', moving);
 		window.removeEventListener('mouseup', finishMoving);
 		var atoms_slctd_clone = new Set(atoms_slctd);
-		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec}
-		var kwargs_rev = {moving_atoms: atoms_slctd_clone, moving_vec: vecMul(accum_vec, -1)};
+		var kwargs = {moving_atoms: atoms_slctd_clone, moving_vec: accum_vec};
+		var kwargs_rev = invertCmd(kwargs);
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		if (!is_highlighted) clearSlct();
 		overlap.refresh();
 	}
 
+	function rotate(rot_angle, rot_ctr) {
+		var kwargs = {rotating_atoms: atoms_slctd, rot_angle: rot_angle, rot_ctr: rot_ctr};
+		editStructure(kwargs);
+	}
+
+	function finishRotating(accum_rot_angle, rot_ctr) {
+		var atoms_slctd_clone = new Set(atoms_slctd);
+		var kwargs = {rotating_atoms: atoms_slctd_clone, rot_angle: accum_rot_angle, rot_ctr: rot_ctr};
+		var kwargs_rev = invertCmd(kwargs);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
+		overlap.refresh();
+	}
+
+	function scale(scale_factor, scale_ctr) {
+		var kwargs = {scaling_atoms: atoms_slctd, scale_factor: scale_factor, scale_ctr: scale_ctr};
+		editStructure(kwargs);
+	}
+
+	function finishScaling(accum_scale_factor, scale_ctr) {
+		var atoms_slctd_clone = new Set(atoms_slctd);
+		var kwargs = {scaling_atoms: atoms_slctd, scale_factor: accum_scale_factor, scale_ctr: scale_ctr};
+		var kwargs_rev = invertCmd(kwargs);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
+		overlap.refresh();
+	}
+
+	function stretch(stretch_factor, dir_angle, stretch_ctr) {
+		var kwargs = {stretching_atoms: atoms_slctd, stretch_factor: stretch_factor, dir_angle: dir_angle, stretch_ctr: stretch_ctr};
+		editStructure(kwargs);
+	}
+
+	function finishStretching(accum_stretch_factor, dir_angle, stretch_ctr) {
+		var atoms_slctd_clone = new Set(atoms_slctd);
+		var kwargs = {stretching_atoms: atoms_slctd, stretch_factor: accum_stretch_factor, dir_angle: dir_angle, stretch_ctr: stretch_ctr};
+		var kwargs_rev = invertCmd(kwargs);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
+		overlap.refresh();
+	}
+
 	function exit(event) {
 		canvas.removeEventListener('mousedown', selectAct);
-		sensors_a.removeEventListener('mousedown', clickOnAtom);
-		sensors_b.removeEventListener('mousedown', clickOnBond);
+		sensors_a.removeEventListener('mousedown', pickAtom);
+		sensors_b.removeEventListener('mousedown', pickBond);
 		window.removeEventListener('mousedown', exit);
 		deselect();
 		transformbtn.deselectCond(event);
@@ -1280,6 +1347,7 @@ class TransformTool extends DeletableAbortable {
 	// Rotating
 	startRotating(event) {
 		event.stopPropagation();
+		this.accum_rot_angle = 0;
 		this.rot_st = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed());
 		window.addEventListener('mousemove', this.rotating, this.signal_opt);
 		window.addEventListener('mouseup', this.finishRotating, this.signal_opt);
@@ -1288,13 +1356,16 @@ class TransformTool extends DeletableAbortable {
 	rotating(event) {
 		var rot_en = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed());
 		var rot_angle = rot_en - this.rot_st;
+		this.accum_rot_angle += rot_angle;
 		this.rot_st = rot_en;
 		this.rotate(rot_angle);
+		this.rotate_callback(rot_angle, [...this.pivot.xy]);
 	}
 
 	finishRotating() {
 		window.removeEventListener('mousemove', this.rotating);
 		window.removeEventListener('mouseup', this.finishRotating);
+		this.finish_rotating_callback(this.accum_rot_angle, [...this.pivot.xy]);
 	}
 
 	rotate(rot_angle) {
@@ -1307,6 +1378,7 @@ class TransformTool extends DeletableAbortable {
 	// Scaling
 	startScaling(event) {
 		event.stopPropagation();
+		this.accum_scale_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
 		window.addEventListener('mousemove', this.scaling, this.signal_opt);
@@ -1314,13 +1386,16 @@ class TransformTool extends DeletableAbortable {
 	}
 
 	scaling(event) {
-		var [factor, dir_vec] = this.getFactor();
+		var factor = this.getFactor();
+		this.accum_scale_factor *= factor;
 		this.scale(factor);
+		this.scale_callback(factor, [...this.pivot.xy]);
 	}
 
 	finishScaling() {
 		window.removeEventListener('mousemove', this.scaling);
 		window.removeEventListener('mouseup', this.finishScaling);
+		this.finish_scaling_callback(this.accum_scale_factor, [...this.pivot.xy]);
 	}
 
 	scale(scale_factor) {
@@ -1334,27 +1409,31 @@ class TransformTool extends DeletableAbortable {
 	// Stretching along x or y
 	startStretching(event) {
 		event.stopPropagation();
+		this.accum_stretch_factor = 1;
 		this.curr_jig = event.target.objref;
+		this.dir_angle = Math.atan2(...vecDif(this.xy, this.curr_jig.xy).toReversed());
 		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
 		window.addEventListener('mousemove', this.stretching, this.signal_opt);
 		window.addEventListener('mouseup', this.finishStretching, this.signal_opt);
 	}
 
 	stretching(event) {
-		var [factor, dir_vec] = this.getFactor();
-		var dir_angle = Math.atan2(...dir_vec.toReversed());
-		this.stretch(factor, dir_angle);
+		var factor = this.getFactor();
+		this.accum_stretch_factor *= factor;
+		this.stretch(factor);
+		this.stretch_callback(factor, this.dir_angle, [...this.pivot.xy]);
 	}
 
 	finishStretching() {
 		window.removeEventListener('mousemove', this.stretching);
 		window.removeEventListener('mouseup', this.finishStretching);
+		this.finish_stretching_callback(this.accum_stretch_factor, this.dir_angle, [...this.pivot.xy]);
 	}
 
-	stretch(stretch_factor, dir_angle) {
-		this.xy = stretchAlongDir(this.xy, stretch_factor, dir_angle, this.pivot.xy)
+	stretch(stretch_factor) {
+		this.xy = stretchAlongDir(this.xy, stretch_factor, this.dir_angle, this.pivot.xy)
 		this.jigs.slice(2).forEach(jig => {
-			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, dir_angle, this.pivot.xy)).render();
+			jig.setCtr(stretchAlongDir(jig.xy, stretch_factor, this.dir_angle, this.pivot.xy)).render();
 		});
 		this.locateLever();
 	}
@@ -1385,8 +1464,7 @@ class TransformTool extends DeletableAbortable {
 		var transform_vec = vecDif(this.pivot.xy, corrected_point);
 		var ref_vec = vecDif(this.pivot.xy, this.curr_jig.xy);
 		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
-		var factor = vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
-		return [factor, dir_vec];
+		return vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
 	}
 
 	locateLever() {

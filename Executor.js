@@ -1,6 +1,11 @@
 function editStructure({
-	new_atoms_data={}, new_bonds_data={}, del_atoms=new Set([]), del_bonds=new Set([]), 
-	atoms_text={}, bonds_type={}, moving_atoms=new Set(), moving_vec=[0, 0]
+	new_atoms_data={}, new_bonds_data={}, 
+	del_atoms=new Set([]), del_bonds=new Set([]), 
+	atoms_text={}, bonds_type={}, 
+	moving_atoms=new Set(), moving_vec=[0, 0], 
+	rotating_atoms=new Set(), rot_angle=0, rot_ctr=[0, 0],
+	scaling_atoms=new Set(), scale_factor=0, scale_ctr=[0, 0],
+	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0]
 }) {
 	var atoms_parse = new Set(), 
 		atoms_render = new Set(), 
@@ -92,6 +97,30 @@ function editStructure({
 				bonds_scewed.add(bond);
 			}
 		}
+	}
+
+	// Rotate
+	for (const atom_id of rotating_atoms) {
+		var atom = document.getElementById(atom_id).objref;
+		atom.translate(vecDif(atom.xy, rotateAroundCtr(atom.xy, rot_angle, rot_ctr)));
+		atoms_render.add(atom);
+		for (const bond of atom.connections) bonds_scewed.add(bond);
+	}
+
+	// Scale
+	for (const atom_id of scaling_atoms) {
+		var atom = document.getElementById(atom_id).objref;
+		atom.translate(vecDif(atom.xy, scaleAroundCtr(atom.xy, scale_factor, scale_ctr)));
+		atoms_render.add(atom);
+		for (const bond of atom.connections) bonds_scewed.add(bond);
+	}
+
+	// Stretch
+	for (const atom_id of stretching_atoms) {
+		var atom = document.getElementById(atom_id).objref;
+		atom.translate(vecDif(atom.xy, stretchAlongDir(atom.xy, stretch_factor, dir_angle, stretch_ctr)));
+		atoms_render.add(atom);
+		for (const bond of atom.connections) bonds_scewed.add(bond);
 	}
 
 	// Recalculate dimensions of skewed bonds and find affected elements
