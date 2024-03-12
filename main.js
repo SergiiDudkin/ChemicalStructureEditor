@@ -1290,6 +1290,80 @@ function selectItems(parent_id, cover_shape) {
 }
 
 
+class Selection {
+	constructor() {
+		this.atoms_slctd = new Set(); // Selected atoms
+		this.bonds_slctd = new Set(); // Selected bonds
+		this.highlights = document.getElementById('selecthighlight');
+		this.is_highlighted = false;
+	}
+
+	static parent_map = {
+		'atoms_slctd': 'sensors_a',
+		'bonds_slctd': 'sensors_b'
+	}
+
+	static objsUnderShape(parent_id, covering_shape) {
+		return [...document.getElementById(parent_id).children].map(el => el.objref)
+			.filter(el => {
+				var pt = new DOMPoint(...el.xy).matrixTransform(matrixrf.inverse());
+				return document.elementFromPoint(pt.x, pt.y) == covering_shape;
+			});
+	}
+
+	setSelectedAtoms(atom_ids) {
+		this.atoms_slctd = new Set(atom_ids);
+	}
+
+	selectFromShape(covering_shape) {
+		for (const [attr, parent_id] of Object.entries(this.constructor.parent_map)) {
+			this[attr] = new Set(this.constructor.objsUnderShape(parent_id, covering_shape).map(item => item.id));
+		}
+	}
+
+	highlight() {
+		[...this.atoms_slctd, ...this.bonds_slctd].forEach(item => item.select());
+		this.is_highlighted = Boolean(atoms_slctd.size + bonds_slctd.size);
+	}
+
+	deselect() {
+		this.atoms_slctd.clear();
+		this.bonds_slctd.clear();
+	}
+
+	dehighlight() {
+		this.atoms_slctd.forEach(atom_id => document.getElementById(atom_id).objref.deselect());
+		this.bonds_slctd.forEach(bond_id => document.getElementById(bond_id).objref.deselect());
+		this.is_highlighted = false;
+	}
+
+	attachTransformTool() {
+		this.is_highlighted = Boolean(this.atoms_slctd.size + this.bonds_slctd.size);
+		if (this.is_highlighted) {
+			var margin = 6;
+			var bbox = this.highlights.getBBox();
+			var width = bbox.width + margin * 2;
+			var height = bbox.height + margin * 2;
+			var cx = bbox.x - margin + width / 2;
+			var cy = bbox.y - margin + height / 2;
+			this.transform_tool = new TransformTool('utils', cx, cy, width, height);
+		}
+	}
+
+	relocatingAtoms(action_type, kwargs) {
+		kwargs[action_type + '_atoms'] = new Set(this.atoms_slctd);
+		editStructure(kwargs);
+	}
+
+	finishRelocatingAtoms(action_type, kwargs) {
+		kwargs[action_type + '_atoms'] = new Set(this.atoms_slctd);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, invertCmd(kwargs));
+		overlap.refresh();
+		if (!this.is_highlighted) this.deselect();
+	}
+}
+
+
 class TransformTool extends DeletableAbortable {
 	constructor(parent_id, cx, cy, width, height) {
 		super();
