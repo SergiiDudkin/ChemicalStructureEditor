@@ -109,19 +109,13 @@ ChemNode.prototype.renderText = function() {
 
 ChemNode.prototype.locateHydr = function() { 
 	// Find the least ocupied direction in terms of the most interfearing bond angle (or to be exect, unit vector projection)
-	if (this.connections.length == 0) this.position_idx = 0; // If there are no bonds, draw hydrogens right
-	else {
-		var proj_rldu = [[], [], [], []]; // Unit vector projections in each direction, right, left, down and up respectively
-		for (const bond of this.connections) {
-			var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len)
-			proj_rldu[0].push(bondcos > 0 ? bondcos : 0);
-			proj_rldu[1].push(-bondcos > 0 ? -bondcos : 0);
-			proj_rldu[2].push(bondsin > 0 ? bondsin : 0);
-			proj_rldu[3].push(-bondsin > 0 ? -bondsin : 0);
-		}
-		var max_rldu = proj_rldu.map(projs => Math.max(...projs)) // Within each direction, isolate projections of the most interfearing bonds
-		this.position_idx = max_rldu.indexOf(Math.min(...max_rldu)); // Find index of the least ocupied direction
+	var proj_rldu = [0, 0, 0, 0];
+	for (const bond of this.connections) {
+		var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len)
+		proj_rldu = [bondcos, -bondcos, bondsin, -bondsin].map((item, idx) => Math.max(item, proj_rldu[idx]));
 	}
+	proj_rldu = [0, 1e-6, 2e-6, 3e-6].map((item, idx) => item + proj_rldu[idx]); // Set micro priority
+	this.position_idx = proj_rldu.indexOf(Math.min(...proj_rldu)); // Find index of the least ocupied direction
 };
 
 ChemNode.prototype.sortConnections = function() {
