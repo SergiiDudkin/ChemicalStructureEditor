@@ -871,8 +871,8 @@ function textHandler(textbtn) {
 				input.setAttribute('type', 'text');
 				input.setAttribute('size', '10');
 				input.setAttribute('value', node.text.replace(/^@/, ''));
-				input.style.setProperty('top', `${top}px`);
-				input.style.setProperty('left', `${left}px`);
+				input.style.setProperty('top', `${top + window.scrollY}px`);
+				input.style.setProperty('left', `${left + window.scrollX}px`);
 				input.style.setProperty('color', styledict.fill);
 				input.style.setProperty('font-family', styledict['font-family']);
 				input.style.setProperty('font-size', styledict['font-size']);
