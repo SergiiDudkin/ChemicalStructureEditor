@@ -129,3 +129,8 @@ class CtrCircle extends CtrShape {
 class CtrPolygon extends CtrShape {
 	static tag = 'polygon';
 }
+
+
+function excludeNonExisting(el_ids) {
+	return [...el_ids].filter(el_id => document.getElementById(el_id));
+}

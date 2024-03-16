@@ -13,6 +13,11 @@ function ChemBond(id, node0, node1, type) {
 	this.nodes = [node0, node1].map(node => typeof node === "string" ? document.getElementById(node).objref : node);
 	this.nodes.forEach(node => node.connections.push(this));
 	this.recalcDims();
+
+	if (ChemBond.delSel.has(this.id)) {
+		this.select();
+		ChemBond.delSel.delete(this.id);
+	}
 }
 
 ChemBond.counter = 0;
@@ -27,6 +32,8 @@ ChemBond.default_style = {
 };
 ChemBond.sel_h = 12; // Selection rectangle height
 ChemBond.min_offset = 5;
+
+ChemBond.delSel = new Set(); // Bonds deleted while selected
 
 /*	Bond types:
 0 - hydrogen bond
@@ -117,6 +124,10 @@ ChemBond.prototype.setType = function(type) {
 };
 
 ChemBond.prototype.delete = function() {
+	if (this.select_rect) {
+		ChemBond.delSel.add(this.id);
+		this.deselect();
+	}
 	ChemBond.prototype.deleteMaskLines(this, document, del_mask=true);
 	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
@@ -400,7 +411,7 @@ ChemBond.prototype.deselect = function() {
 };
 
 ChemBond.prototype.refreshSelectRect = function() {
-	if (this.select_rect) {
+	if (this.select_rect && !this.offsets.includes(undefined)) {
 		var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(offset, ChemBond.min_offset));
 		this.select_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
 		this.masksel_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets.map(item => item + 1.5)).setAbsRotAng(this.rotang).render();

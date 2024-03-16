@@ -1,5 +1,5 @@
 function ChemNode(id, x, y, text) {
-	this.id = id
+	this.id = id;
 
 	Object.assign(this, ChemNode.default_style);
 	this.text = text.toString(); // ??? maybe .toString() is not needed
@@ -13,6 +13,11 @@ function ChemNode(id, x, y, text) {
 	this.backcircle.objref = this;
 
 	this.xy = [x, y];
+
+	if (ChemNode.delSel.has(this.id)) {
+		this.select();
+		ChemNode.delSel.delete(this.id);
+	}
 }
 
 ChemNode.counter = 0;
@@ -26,11 +31,17 @@ ChemNode.sel_r = 12; // Selection circle radius
 
 ChemNode.hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
+ChemNode.delSel = new Set(); // Nodes deleted while selected
+
 ChemNode.prototype.getNewId = function() {
 	return 'a' + ChemNode.counter++;
 };
 
 ChemNode.prototype.delete = function() {
+	if (this.select_circ) {
+		ChemNode.delSel.add(this.id);
+		this.deselect();
+	}
 	this.g.remove();
 	this.backcircle.remove();
 	delete this.connections;
@@ -87,18 +98,18 @@ ChemNode.prototype.translate = function(moving_vec) {
 	}
 };
 
-ChemNode.prototype.select = function() { // !!! Temp
+ChemNode.prototype.select = function() {
 	this.backcircle.setAttribute('class', 'invisible')
 	this.select_circ = attachSvg(highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
 	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
 };
 
-ChemNode.prototype.deselect = function() { // !!! Temp
+ChemNode.prototype.deselect = function() {
 	this.select_circ.remove();
 	this.select_circ = null;
 	this.masksel_circ.remove();
 	this.masksel_circ = null;
-	this.backcircle.setAttribute('class', 'anode')
+	this.backcircle.setAttribute('class', 'anode');
 };
 
 ChemNode.prototype.renderText = function() {
