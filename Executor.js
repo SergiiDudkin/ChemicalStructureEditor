@@ -116,11 +116,18 @@ function editStructure({
 	}
 
 	// Stretch
+	var mirrored = new Set();
 	for (const atom_id of stretching_atoms) {
 		var atom = document.getElementById(atom_id).objref;
 		atom.translate(vecDif(atom.xy, stretchAlongDir(atom.xy, stretch_factor, dir_angle, stretch_ctr)));
 		atoms_render.add(atom);
-		for (const bond of atom.connections) bonds_scewed.add(bond);
+		for (const bond of atom.connections) {
+			if (stretch_factor < 0 && [8, 10].includes(bond.type) && !mirrored.has(bond.id)) {
+				bond.setType(ChemBond.db_mirror[bond.type]);
+				mirrored.add(bond.id);
+			};
+			bonds_scewed.add(bond);
+		}
 	}
 
 	// Recalculate dimensions of skewed bonds and find affected elements
