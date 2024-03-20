@@ -1238,6 +1238,7 @@ class Selection {
 
 	startMoving(event) { // Click on selection
 		event.stopPropagation();
+		this.indicator = new Indicator('utils');
 		this.mo_st = getSvgPoint(event);
 		this.accum_vec = [0, 0];
 		window.addEventListener('mousemove', this.moving);
@@ -1248,6 +1249,7 @@ class Selection {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(this.mo_st, pt);
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
+		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`, event);
 		this.mo_st = pt;
 		this.relocatingAtoms('moving', {moving_vec: moving_vec});
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
@@ -1315,6 +1317,7 @@ class TransformTool extends DeletableAbortable {
 			'startScaling', 'scaling', 'finishScaling', 'startStretching', 'stretching', 'finishStretching'
 		].forEach(method => this[method] = this[method].bind(this));
 
+		this.parent_id = parent_id;
 		this.g = attachSvg(document.getElementById(parent_id), 'g', {id: 'transform-tool'});
 		this.xy = [cx, cy];
 		var hw = width / 2; // Transform tool half witdth
@@ -1364,6 +1367,7 @@ class TransformTool extends DeletableAbortable {
 	// Rotating
 	startRotating(event) {
 		event.stopPropagation();
+		this.indicator = new Indicator(this.parent_id);
 		this.accum_rot_angle = 0;
 		this.rot_st = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed());
 		window.addEventListener('mousemove', this.rotating, this.signal_opt);
@@ -1374,6 +1378,7 @@ class TransformTool extends DeletableAbortable {
 		var rot_en = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed());
 		var rot_angle = rot_en - this.rot_st;
 		this.accum_rot_angle += rot_angle;
+		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180).toFixed(1)} \u00B0`, event);
 		this.rot_st = rot_en;
 		this.rotate(rot_angle, this.pivot.xy);
 		selection.relocatingAtoms('rotating', {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
@@ -1396,6 +1401,7 @@ class TransformTool extends DeletableAbortable {
 	// Scaling
 	startScaling(event) {
 		event.stopPropagation();
+		this.indicator = new Indicator(this.parent_id);
 		this.accum_scale_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
@@ -1406,6 +1412,7 @@ class TransformTool extends DeletableAbortable {
 	scaling(event) {
 		var factor = this.getFactor();
 		this.accum_scale_factor *= factor;
+		this.indicator.setText(`${(this.accum_scale_factor * 100).toFixed(1)}%`, event);
 		this.scale(factor, this.pivot.xy);
 		selection.relocatingAtoms('scaling', {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
 	}
@@ -1428,6 +1435,7 @@ class TransformTool extends DeletableAbortable {
 	// Stretching along x or y
 	startStretching(event) {
 		event.stopPropagation();
+		this.indicator = new Indicator(this.parent_id);
 		this.accum_stretch_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.dir_angle = Math.atan2(...vecDif(this.xy, this.curr_jig.xy).toReversed());
@@ -1439,6 +1447,7 @@ class TransformTool extends DeletableAbortable {
 	stretching(event) {
 		var factor = this.getFactor();
 		this.accum_stretch_factor *= factor;
+		this.indicator.setText(`${(this.accum_stretch_factor * 100).toFixed(1)}%`, event);
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
 		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
 	}
@@ -1461,14 +1470,16 @@ class TransformTool extends DeletableAbortable {
 	// Moving pivot
 	startMovingPivot(event) {
 		event.stopPropagation();
+		this.indicator = new Indicator(this.parent_id);
 		this.pivot_mo_st = getSvgPoint(event); // Cursor coordinates when dragging of pivot was started
 		window.addEventListener('mousemove', this.movingPivot, this.signal_opt);
 		window.addEventListener('mouseup', this.finishMovingPivot, this.signal_opt);
 	}
-
+		
 	movingPivot(event) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(this.pivot_mo_st, pt);
+		this.indicator.setText(`x: ${pt[0].toFixed(0)}\n\y: ${pt[1].toFixed(0)}`, event);
 		this.pivot_mo_st = pt;
 		this.pivot.translate(moving_vec).render();
 	}
@@ -1496,6 +1507,41 @@ class TransformTool extends DeletableAbortable {
 	delete() {
 		this.jigs.forEach(jig => jig.delete());
 		this.g.remove();
+		super.delete();
+	}
+}
+
+
+class Indicator extends DeletableAbortable {
+	constructor(parent_id) {
+		super();
+		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
+		this.text = attachSvg(document.getElementById(parent_id), 'text', {style: styleToString(this.constructor.textstyle), id: 'indicator'});
+		this.delete = this.delete.bind(this);
+		window.addEventListener('mouseup', this.delete, this.signal_opt);
+	}
+
+	static textstyle = {
+		fill: 'white',
+		'font-family': 'Arial',
+		'font-size': '12px',
+		'font-weight': 'bold'
+	}
+
+	setText(text, event) {
+		while (this.text.childElementCount) this.text.lastChild.remove();
+		var pt = getSvgPoint(event);
+		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
+		text.split('\n').toReversed().forEach((line, idx) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`}).appendChild(document.createTextNode(line)));
+		var bbox = this.text.getBBox();
+		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));
+		bbox = this.text.getBBox();
+		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});
+	}
+
+	delete() {
+		this.rect.remove();
+		this.text.remove();
 		super.delete();
 	}
 }
