@@ -1385,11 +1385,16 @@ class TransformTool extends DeletableAbortable {
 	}
 
 	rotating(event) {
-		var rot_en = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed());
-		var rot_angle = rot_en - this.rot_st;
+		var rot_angle = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed()) - this.rot_st;
+		if (event.shiftKey) {
+			const five_deg = 5 * Math.PI / 180;
+			var new_accum_rot_angle = this.accum_rot_angle + rot_angle;
+			new_accum_rot_angle = Math.round(new_accum_rot_angle / five_deg) * five_deg;
+			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? (new_accum_rot_angle - this.accum_rot_angle) : 0;
+		}
 		this.accum_rot_angle += rot_angle;
 		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180).toFixed(1)} \u00B0`, event);
-		this.rot_st = rot_en;
+		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
 		selection.relocatingAtoms('rotating', {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
 	}
@@ -1412,7 +1417,8 @@ class TransformTool extends DeletableAbortable {
 	startScaling(event) {
 		event.stopPropagation();
 		this.indicator = new Indicator(this.parent_id);
-		this.accum_scale_factor = 1;
+		this.accum_factor = 1;
+		// this._accum_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
 		window.addEventListener('mousemove', this.scaling, this.signal_opt);
@@ -1421,8 +1427,8 @@ class TransformTool extends DeletableAbortable {
 
 	scaling(event) {
 		var factor = this.getFactor();
-		this.accum_scale_factor *= factor;
-		this.indicator.setText(`${(this.accum_scale_factor * 100).toFixed(1)}%`, event);
+		// this.accum_factor *= factor;
+		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.scale(factor, this.pivot.xy);
 		selection.relocatingAtoms('scaling', {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
 	}
@@ -1430,7 +1436,7 @@ class TransformTool extends DeletableAbortable {
 	finishScaling() {
 		window.removeEventListener('mousemove', this.scaling);
 		window.removeEventListener('mouseup', this.finishScaling);
-		selection.finishRelocatingAtoms('scaling', {scale_factor: this.accum_scale_factor, scale_ctr: [...this.pivot.xy]});
+		selection.finishRelocatingAtoms('scaling', {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
 	}
 
 	scale(scale_factor, scale_ctr) {
@@ -1446,7 +1452,8 @@ class TransformTool extends DeletableAbortable {
 	startStretching(event) {
 		event.stopPropagation();
 		this.indicator = new Indicator(this.parent_id);
-		this.accum_stretch_factor = 1;
+		this.accum_factor = 1;
+		// this._accum_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.dir_angle = Math.atan2(...vecDif(this.xy, this.curr_jig.xy).toReversed());
 		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, getSvgPoint(event));
@@ -1456,8 +1463,8 @@ class TransformTool extends DeletableAbortable {
 
 	stretching(event) {
 		var factor = this.getFactor();
-		this.accum_stretch_factor *= factor;
-		this.indicator.setText(`${(this.accum_stretch_factor * 100).toFixed(1)}%`, event);
+		// this.accum_factor *= factor;
+		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
 		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
 	}
@@ -1465,7 +1472,7 @@ class TransformTool extends DeletableAbortable {
 	finishStretching() {
 		window.removeEventListener('mousemove', this.stretching);
 		window.removeEventListener('mouseup', this.finishStretching);
-		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_stretch_factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
+		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
 	}
 
 	stretch(stretch_factor, dir_angle, stretch_ctr) {
@@ -1518,7 +1525,16 @@ class TransformTool extends DeletableAbortable {
 		var ref_vec = vecDif(this.pivot.xy, this.curr_jig.xy);
 		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
 		var factor = vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
-		return Math.abs(factor) > 0.01 ? factor : 1;
+		factor = Math.abs(this.accum_factor * factor) > 0.025 ? factor : 1;
+		var new_accum_factor = this.accum_factor * factor;
+		if (event.shiftKey) {
+			var sign = Math.sign(new_accum_factor);
+			var abs = Math.abs(new_accum_factor);
+			var rounded_new_accum_factor = sign * parseFloat(((Math.floor((abs + 0.025) / 0.05)) * 0.05).toFixed(2));
+			factor = rounded_new_accum_factor != this.accum_factor ? rounded_new_accum_factor / this.accum_factor : 1;
+		}
+		this.accum_factor = this.accum_factor * factor;
+		return factor;
 	}
 
 	locateLever() {
