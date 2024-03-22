@@ -1236,6 +1236,16 @@ class Selection {
 		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.deselect());
 	}
 
+	eventsOn() {
+		this.highlights.classList.remove('sympoi');
+		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.eventsOff());
+	};
+
+	eventsOff() {
+		this.highlights.classList.add('sympoi');
+		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.eventsOn());
+	};
+
 	startMoving(event) { // Click on selection
 		event.stopPropagation();
 		this.indicator = new Indicator('utils');
@@ -1471,22 +1481,34 @@ class TransformTool extends DeletableAbortable {
 	startMovingPivot(event) {
 		event.stopPropagation();
 		this.indicator = new Indicator(this.parent_id);
-		this.pivot_mo_st = getSvgPoint(event); // Cursor coordinates when dragging of pivot was started
+		this.init_ctr_pt_error = vecDif(this.pivot.xy, getSvgPoint(event));
+		this.jigs.slice(1).forEach(jig => jig.shape.classList.add('sympoi'));
 		window.addEventListener('mousemove', this.movingPivot, this.signal_opt);
 		window.addEventListener('mouseup', this.finishMovingPivot, this.signal_opt);
 	}
 		
 	movingPivot(event) {
-		var pt = getSvgPoint(event);
-		var moving_vec = vecDif(this.pivot_mo_st, pt);
-		this.indicator.setText(`x: ${pt[0].toFixed(0)}\n\y: ${pt[1].toFixed(0)}`, event);
-		this.pivot_mo_st = pt;
-		this.pivot.translate(moving_vec).render();
+		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		if (event.shiftKey) {
+			this.pivot.shape.classList.add('sympoi', 'jigforcehover');
+			selection.eventsOff();
+			var el = event.target;
+			if (el.is_atom || el.is_bond) corrected_point = el.objref.xy;
+		}
+		else {
+			this.pivot.shape.classList.remove('sympoi', 'jigforcehover');
+			selection.eventsOn();
+		}
+		this.indicator.setText(`x: ${corrected_point[0].toFixed(0)}\n\y: ${corrected_point[1].toFixed(0)}`, event);
+		this.pivot.setCtr(corrected_point).render();
 	}
 
 	finishMovingPivot() {
 		window.removeEventListener('mousemove', this.movingPivot);
 		window.removeEventListener('mouseup', this.finishMovingPivot);
+		this.jigs.forEach(jig => jig.shape.classList.remove('sympoi'));
+		this.pivot.shape.classList.remove('jigforcehover');
+		selection.eventsOn();
 	}
 
 	// Utils

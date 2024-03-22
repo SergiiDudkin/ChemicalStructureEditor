@@ -99,7 +99,7 @@ ChemNode.prototype.translate = function(moving_vec) {
 };
 
 ChemNode.prototype.select = function() {
-	this.backcircle.setAttribute('class', 'invisible')
+	this.eventsOff();
 	this.select_circ = attachSvg(highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
 	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
 };
@@ -109,7 +109,15 @@ ChemNode.prototype.deselect = function() {
 	this.select_circ = null;
 	this.masksel_circ.remove();
 	this.masksel_circ = null;
-	this.backcircle.setAttribute('class', 'anode');
+	this.eventsOn();
+};
+
+ChemNode.prototype.eventsOn = function() {
+	this.backcircle.classList.remove('sympoi');
+};
+
+ChemNode.prototype.eventsOff = function() {
+	this.backcircle.classList.add('sympoi');
 };
 
 ChemNode.prototype.renderText = function() {

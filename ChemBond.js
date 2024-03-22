@@ -397,7 +397,7 @@ ChemBond.prototype.adjustLength = function(node) {
 };
 
 ChemBond.prototype.select = function() {
-	this.backrect.shape.setAttribute('class', 'invisible')
+	this.eventsOff();
 	this.select_rect = new OffsetRect('selecthighlight', 0, 0, {'height': ChemBond.sel_h});
 	this.masksel_rect = new OffsetRect('selectholes', 0, 0, {'height': ChemBond.sel_h - 3});
 	this.refreshSelectRect();
@@ -408,7 +408,15 @@ ChemBond.prototype.deselect = function() {
 	this.select_rect = null;
 	this.masksel_rect.delete();
 	this.masksel_rect = null;
-	this.backrect.shape.setAttribute('class', 'brect');
+	this.eventsOn();
+};
+
+ChemBond.prototype.eventsOn = function() {
+	this.backrect.shape.classList.remove('sympoi');
+};
+
+ChemBond.prototype.eventsOff = function() {
+	this.backrect.shape.classList.add('sympoi');
 };
 
 ChemBond.prototype.refreshSelectRect = function() {

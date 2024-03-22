@@ -173,6 +173,6 @@ body {
 	fill: gray;
 	cursor: pointer;
 }
-.transformjig:hover {
+.transformjig:hover, .jigforcehover {
 	fill: blue;
 }
