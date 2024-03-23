@@ -1,11 +1,7 @@
 var canvas = document.getElementById('canvas');
-var canvas_container = document.getElementById('canvas-container');
 var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
-var sensors_b = document.getElementById('sensors_b');
-var sensors_a = document.getElementById('sensors_a');
-var highlights = document.getElementById('selecthighlight');
-var pt, matrixrf, wmax; // Variables
+var matrixrf, wmax; // Variables
 
 
 function download() { // Download .svg
@@ -316,14 +312,12 @@ var heptagonbtn = new SubButton(dropcycbtn,
 var transformbtn = new RegularButton(flex_container, toBtnText('tr'));
 
 
-
 var cnvclippath = document.getElementById('cnvclippath');
 function clipCnv(extra='') {
 	cnvclippath.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
 }
 
-// Resize the canvas
-pt = canvas.createSVGPoint();       
+// Resize the canvas     
 function svgWidth(event) {
 	wmax = mainframe.offsetWidth - 36;
 	canvbckgrnd.setAttribute("width", wmax);
@@ -383,6 +377,7 @@ function invertCmd(kwargs_dir) {
 function Dispatcher() { // Dispatcher provides undo-redo mechanism
 	this.commands = [];
 	this.ptr = 0;
+	document.addEventListener('keydown', event => this.keyHandler(event));
 }
 
 Dispatcher.prototype.addCmd = function(func_dir, args_dir, func_rev, args_rev) {
@@ -422,19 +417,14 @@ Dispatcher.prototype.keyHandler = function(event) {
 
 var dispatcher = new Dispatcher();
 
-document.addEventListener('keydown', event => dispatcher.keyHandler(event));
-
 
 function getSvgPoint(event) {
-	pt.x = event.clientX;
-	pt.y = event.clientY;
-	var svgP0 = pt.matrixTransform(matrixrf);
-	return [svgP0.x, svgP0.y];
+	var {x, y} = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrixrf);
+	return [x, y];
 }
 
 function getScreenPoint([svg_x, svg_y]) {
-	[pt.x, pt.y] = [svg_x, svg_y];
-	var {x, y} = pt.matrixTransform(matrixrf.inverse());
+	var {x, y} = new DOMPoint(svg_x, svg_y).matrixTransform(matrixrf.inverse());
 	return [x, y];
 }
 
@@ -446,21 +436,20 @@ function getCursorAtom(event, atomtext) {
 	var cursoratom = new ChemNode('cursoratom', ...clampToCnv(getSvgPoint(event)), '@' + atomtext);
 	cursoratom.parse();
 	cursoratom.renderText();
-	cursoratom.backcircle.setAttribute('class', 'cursor-circ');
+	cursoratom.eventsOff();
 	return cursoratom;
 }
 
 var standard_bondlength = 40;
-var angtab = [0, 15, 30, 45, 60, 75, 90]; // Target bond angles
-var radtab = angtab.map(angdeg => angdeg * (Math.PI / 180));
-var dxytab = radtab.map(angrad => [Math.cos(angrad), Math.sin(angrad)]);
-var tantab = Array.from({length: radtab.length - 1}, (_, i) => Math.tan((radtab[i] + radtab[i+1]) / 2));
 
-function discreteAngle(pt0, [x, y], length=standard_bondlength) {
-	// Returns pt1 with discrete angle and fixed length
-	tan = Math.abs(y / x);
-	for (var j = 0; j < tantab.length; j++) if (tan < tantab[j]) break; // Find angle index j
-	return [x, y].map((dim, i) => pt0[i] + Math.sign(dim) * dxytab[j][i] * length);
+function discreteAngle(angle, discr_deg) {
+	const discr_rad = discr_deg * Math.PI / 180;
+	return Math.round(angle / discr_rad) * discr_rad;
+}
+
+function getDiscreteBondEnd(pt0, [x, y], length=standard_bondlength) {
+	var angle = discreteAngle(Math.atan2(y, x), 15);
+	return vecSum(pt0, vecMul([Math.cos(angle), Math.sin(angle)], length));
 }
 
 function pickNodePoint(event) {
@@ -469,10 +458,8 @@ function pickNodePoint(event) {
 	return [pt, node];
 }
 
-function pickNode([x, y]) {
-	[pt.x, pt.y] = [x, y];
-	var svgP2 = pt.matrixTransform(matrixrf.inverse());
-	var pt_elem = document.elementFromPoint(svgP2.x, svgP2.y);
+function pickNode(pt) {
+	var pt_elem = document.elementFromPoint(...getScreenPoint(pt));
 	return (pt_elem != null && pt_elem.is_atom) ? pt_elem.objref : null;
 }
 
@@ -481,7 +468,7 @@ function getBondEnd(event, pt0) {
 	var difxy = vecDif(pt0, pt1);
 	if (vecLen(difxy) < 16) return [null, null];
 	if (!node1) {
-		pt1 = discreteAngle(pt0, difxy);
+		pt1 = getDiscreteBondEnd(pt0, difxy);
 		node1 = pickNode(pt1);
 		pt1 = node1 ? node1.xy : pt1;
 	}
@@ -491,6 +478,7 @@ function getBondEnd(event, pt0) {
 
 class Overlap {
 	constructor() {
+		this.sensors_b = document.getElementById('sensors_b');
 		this.old_masks = [];
 	}
 
@@ -510,7 +498,7 @@ class Overlap {
 	}
 
 	refresh(exclude=[]) {
-		var bond_group = Array.from(sensors_b.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
+		var bond_group = Array.from(this.sensors_b.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
 		this.detectIntersec(bond_group);
 
 		// Add masks
@@ -604,7 +592,7 @@ function chemNodeHandler(elbtn) {
 		var kwargs = {};
 		var difxy = vecDif(pt0, getSvgPoint(event));
 		if (vecLen(difxy) >= 16) {
-			kwargs.new_atoms_data = {[new_node1id]: [...discreteAngle(pt0, difxy), atomtext]};
+			kwargs.new_atoms_data = {[new_node1id]: [...getDiscreteBondEnd(pt0, difxy), atomtext]};
 			kwargs.new_bonds_data = {[new_bond_id]: [node0_id, new_node1id, 1]};
 			if (!node0_is_new) kwargs.atoms_text = {[node0_id]: old_atomtext};
 		}
@@ -761,13 +749,13 @@ function moveHandler(movebtn) {
 		else {
 			deselectAll();
 			if (canvas.contains(event.target)) { // If clicked on of canvas, start selection.
-				pt.x = event.clientX;
-				pt.y = event.clientY;
-				svgP0 = pt.matrixTransform(matrixrf);
-				recalc(event);
-				utils.appendChild(selectrect);
-				window.addEventListener('mousemove', recalc);
-				window.addEventListener('mouseup', selectStop);
+				// pt.x = event.clientX;
+				// pt.y = event.clientY;
+				// svgP0 = pt.matrixTransform(matrixrf);
+				// recalc(event);
+				// utils.appendChild(selectrect);
+				// window.addEventListener('mousemove', recalc);
+				// window.addEventListener('mouseup', selectStop);
 			}
 			else {
 				window.removeEventListener('mousedown', moveAct); // If clicked out of canvas, exit moving routine.
@@ -810,16 +798,16 @@ function moveHandler(movebtn) {
 	}
 
 	function recalc(event) {
-		pt.x = event.clientX;
-		pt.y = event.clientY;
-		svgP1 = pt.matrixTransform(matrixrf);
+		// pt.x = event.clientX;
+		// pt.y = event.clientY;
+		// svgP1 = pt.matrixTransform(matrixrf);
 
-		rect_x = Math.min(svgP0.x, svgP1.x);
-		rect_y = Math.min(svgP0.y, svgP1.y);
-		rect_w = Math.abs(svgP1.x - svgP0.x);
-		rect_h = Math.abs(svgP1.y - svgP0.y);
+		// rect_x = Math.min(svgP0.x, svgP1.x);
+		// rect_y = Math.min(svgP0.y, svgP1.y);
+		// rect_w = Math.abs(svgP1.x - svgP0.x);
+		// rect_h = Math.abs(svgP1.y - svgP0.y);
 
-		setAttrsSvg(selectrect, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
+		// setAttrsSvg(selectrect, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
 	}
 
 	function selectStop() {
@@ -882,7 +870,7 @@ function textHandler(textbtn) {
 				input.style.setProperty('color', styledict.fill);
 				input.style.setProperty('font-family', styledict['font-family']);
 				input.style.setProperty('font-size', styledict['font-size']);
-				canvas_container.appendChild(input);
+				document.getElementById('canvas-container').appendChild(input);
 				window.setTimeout(() => input.focus(), 0);
 			}
 		}
@@ -995,7 +983,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		var difxy = vecDif(common_node.xy, getSvgPoint(event));
 
-		var ctr = discreteAngle(common_node.xy, difxy, length=pvcd);
+		var ctr = getDiscreteBondEnd(common_node.xy, difxy, length=pvcd);
 		var vec0 = vecDif(ctr, common_node.xy);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
@@ -1125,9 +1113,7 @@ class SelectRect extends DeletableAbortable {
 		this.recalc = this.recalc.bind(this);
 		this.selectStop = this.selectStop.bind(this);
 
-		pt.x = event.clientX;
-		pt.y = event.clientY;
-		this.svg_pt0 = pt.matrixTransform(matrixrf);
+		this.svg_pt0 = getSvgPoint(event);
 		this.recalc(event);
 		
 		window.addEventListener('mousemove', this.recalc, this.signal_opt);
@@ -1135,15 +1121,11 @@ class SelectRect extends DeletableAbortable {
 	}
 
 	recalc(event) {
-		pt.x = event.clientX;
-		pt.y = event.clientY;
-		var svg_pt1 = pt.matrixTransform(matrixrf);
-
-		this.rect_x = Math.min(this.svg_pt0.x, svg_pt1.x);
-		this.rect_y = Math.min(this.svg_pt0.y, svg_pt1.y);
-		this.rect_w = Math.abs(svg_pt1.x - this.svg_pt0.x);
-		this.rect_h = Math.abs(svg_pt1.y - this.svg_pt0.y);
-
+		var svg_pt1 = getSvgPoint(event);
+		this.rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
+		this.rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
+		this.rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
+		this.rect_h = Math.abs(svg_pt1[1] - this.svg_pt0[1]);
 		setAttrsSvg(this.rect, {x: this.rect_x, y: this.rect_y, width: this.rect_w, height: this.rect_h});
 	}
 
@@ -1179,10 +1161,7 @@ class Selection {
 
 	static objsUnderShape(parent_id, covering_shape) {
 		return [...document.getElementById(parent_id).children].map(el => el.objref)
-			.filter(el => {
-				var pt = new DOMPoint(...el.xy).matrixTransform(matrixrf.inverse());
-				return document.elementFromPoint(pt.x, pt.y) == covering_shape;
-			});
+			.filter(el => document.elementFromPoint(...getScreenPoint(el.xy)) == covering_shape);
 	}
 
 	activate(covering_shape) {
@@ -1385,10 +1364,8 @@ class TransformTool extends DeletableAbortable {
 	rotating(event) {
 		var rot_angle = Math.atan2(...vecDif(this.pivot.xy, getSvgPoint(event)).toReversed()) - this.rot_st;
 		if (event.shiftKey) {
-			const five_deg = 5 * Math.PI / 180;
-			var new_accum_rot_angle = this.accum_rot_angle + rot_angle;
-			new_accum_rot_angle = Math.round(new_accum_rot_angle / five_deg) * five_deg;
-			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? (new_accum_rot_angle - this.accum_rot_angle) : 0;
+			var new_accum_rot_angle = discreteAngle(this.accum_rot_angle + rot_angle, 5);
+			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? new_accum_rot_angle - this.accum_rot_angle : 0;
 		}
 		this.accum_rot_angle += rot_angle;
 		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180).toFixed(1)} \u00B0`, event);

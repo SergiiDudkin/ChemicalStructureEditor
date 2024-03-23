@@ -1,5 +1,5 @@
 function ChemBond(id, node0, node1, type) {
-	this.id = id
+	this.id = id;
 
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
 

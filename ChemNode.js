@@ -1,5 +1,6 @@
 function ChemNode(id, x, y, text) {
 	this.id = id;
+	this.highlights = document.getElementById('selecthighlight');
 
 	Object.assign(this, ChemNode.default_style);
 	this.text = text.toString(); // ??? maybe .toString() is not needed
@@ -100,7 +101,7 @@ ChemNode.prototype.translate = function(moving_vec) {
 
 ChemNode.prototype.select = function() {
 	this.eventsOff();
-	this.select_circ = attachSvg(highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
+	this.select_circ = attachSvg(this.highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
 	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
 };
 
