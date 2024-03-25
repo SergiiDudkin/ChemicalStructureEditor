@@ -1,6 +1,6 @@
 function editStructure({
 	new_atoms_data={}, new_bonds_data={}, 
-	del_atoms=new Set([]), del_bonds=new Set([]), 
+	del_atoms=new Set(), del_bonds=new Set(), 
 	atoms_text={}, bonds_type={}, 
 	moving_atoms=new Set(), moving_vec=[0, 0], 
 	rotating_atoms=new Set(), rot_angle=0, rot_ctr=[0, 0],

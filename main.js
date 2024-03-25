@@ -241,14 +241,6 @@ var flex_container = document.getElementsByClassName('flex-container')[0];
 
 var elbtnseq = ['C', 'H', 'O', 'N', 'S'];
 
-// var movebtn = new RegularButton(flex_container, `
-// 	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
-// 	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
-// 	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
-// 	<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
-// 	<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
-// 	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
-// `);
 var selectbtn = new DropButton(flex_container, `
 	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
 	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
@@ -260,6 +252,7 @@ var selectbtn = new DropButton(flex_container, `
 var selrebtn = new SubButton(selectbtn, toBtnText('re'));
 selectbtn.focusSubbtn(selrebtn);
 var sellabtn = new SubButton(selectbtn, toBtnText('la'));
+var selmobtn = new SubButton(selectbtn, toBtnText('mo'));
 
 
 var dropelbtn = new DropButton(flex_container, `
@@ -486,6 +479,16 @@ function getBondEnd(event, pt0) {
 		pt1 = node1 ? node1.xy : pt1;
 	}
 	return [pt1, node1];
+}
+
+function pickMol(node, atoms=new Set(), bonds=new Set()) {
+	atoms.add(node.id);
+	for (const bond of node.connections) {
+		var next_node = bond.nodes.filter(item => item != node)[0];
+		bonds.add(bond.id);
+		if (!atoms.has(next_node.id)) pickMol(next_node, atoms, bonds);
+	}
+	return [atoms, bonds];
 }
 
 
@@ -954,7 +957,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 }
 
 
-function transformHandler(btn, SelectTool) {
+function transformHandler(btn, SelectTool=null) {
 	var sensors_a = document.getElementById('sensors_a');
 	var sensors_b = document.getElementById('sensors_b');
 	btn.mask_g.addEventListener('click', selectInit);
@@ -970,7 +973,7 @@ function transformHandler(btn, SelectTool) {
 	function selectAct(event) { // Click on canvas
 		event.stopPropagation();
 		selection.deactivate();
-		new SelectTool('utils');
+		if (SelectTool) new SelectTool('utils');
 	}
 
 	function pickAtom(event) {
@@ -984,7 +987,12 @@ function transformHandler(btn, SelectTool) {
 	function pick(event, node_ids) {
 		event.stopPropagation();
 		selection.deactivate();
-		selection.setSelectedAtoms(node_ids);
+		if (SelectTool) {
+			selection.setSelectedAtoms(node_ids);
+		}
+		else {
+			selection.activateFromIds(...pickMol(document.getElementById(node_ids[0]).objref));
+		}
 		selection.startMoving(event);
 	}
 
@@ -999,83 +1007,75 @@ function transformHandler(btn, SelectTool) {
 }
 
 
-class SelectRect extends DeletableAbortable {
+class SelectShape extends DeletableAbortable {
+	// Abstract class
 	constructor(parent_id) {
 		super();
-		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {
+		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, {
 			class: 'sympoi', 'fill-opacity': 0, stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1
 		});
 
 		this.recalc = this.recalc.bind(this);
 		this.selectStop = this.selectStop.bind(this);
-
-		this.svg_pt0 = getSvgPoint(event);
-		this.recalc(event);
-		
 		window.addEventListener('mousemove', this.recalc, this.signal_opt);
 		window.addEventListener('mouseup', this.selectStop, this.signal_opt)
 	}
 
-	recalc(event) {
-		var svg_pt1 = getSvgPoint(event);
-		this.rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
-		this.rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
-		this.rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
-		this.rect_h = Math.abs(svg_pt1[1] - this.svg_pt0[1]);
-		setAttrsSvg(this.rect, {x: this.rect_x, y: this.rect_y, width: this.rect_w, height: this.rect_h});
-	}
+	static tag; // Abstract attribute
+
+	recalc(event) {} // Abstract method
 
 	selectStop() {
 		window.removeEventListener('mousemove', this.recalc);
 		window.removeEventListener('mouseup', this.selectStop);
-		this.rect.removeAttribute('class');
-		selection.activate(this.rect);
+		this.shape.removeAttribute('class');
+		selection.activateFromShape(this.shape);
 		this.delete();
 	}
 
 	delete() {
-		this.rect.remove();
+		this.shape.remove();
 		super.delete();
 	}
 }
 
 
-class SelectLasso extends DeletableAbortable {
+class SelectRect extends SelectShape {
 	constructor(parent_id) {
-		super();
-		this.polygon = attachSvg(document.getElementById(parent_id), 'polygon', {
-			class: 'sympoi', 'fill-opacity': 0, stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1, 'fill-rule': 'evenodd'
-		});
+		super(parent_id);
+		this.svg_pt0 = getSvgPoint(event);
+		this.recalc(event);
+	}
 
-		this.recalc = this.recalc.bind(this);
-		this.selectStop = this.selectStop.bind(this);
+	static tag = 'rect';
 
+	recalc(event) {
+		var svg_pt1 = getSvgPoint(event);
+		var rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
+		var rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
+		var rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
+		var rect_h = Math.abs(svg_pt1[1] - this.svg_pt0[1]);
+		setAttrsSvg(this.shape, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
+	}
+}
+
+
+class SelectLasso extends SelectShape {
+	constructor(parent_id) {
+		super(parent_id);
+		this.shape.setAttribute('fill-rule', 'evenodd');
 		this.pts = [getSvgPoint(event)];
 		this.recalc(event);
-		
-		window.addEventListener('mousemove', this.recalc, this.signal_opt);
-		window.addEventListener('mouseup', this.selectStop, this.signal_opt)
 	}
+
+	static tag = 'polygon';
 
 	recalc(event) {
 		var pt = getSvgPoint(event);
-		if (findDist(this.pts[this.pts.length - 1], pt)) {
+		if (findDist(this.pts[this.pts.length - 1], pt) > 4) {
 			this.pts.push(pt);
-			setAttrsSvg(this.polygon, {points: this.pts.map(pt => pt.join()).join(' ')});
+			this.shape.setAttribute('points', this.pts.map(pt => pt.join()).join(' '));
 		}
-	}
-
-	selectStop() {
-		window.removeEventListener('mousemove', this.recalc);
-		window.removeEventListener('mouseup', this.selectStop);
-		this.polygon.removeAttribute('class');
-		selection.activate(this.polygon);
-		this.delete();
-	}
-
-	delete() {
-		this.polygon.remove();
-		super.delete();
 	}
 }
 
@@ -1100,8 +1100,18 @@ class Selection {
 			.filter(el => document.elementFromPoint(...getScreenPoint(el.xy)) == covering_shape);
 	}
 
-	activate(covering_shape) {
+	activateFromShape(covering_shape) {
 		this.selectFromShape(covering_shape);
+		this.activate();
+	}
+
+	activateFromIds(atom_ids, bond_ids) {
+		this.atoms = atom_ids;
+		this.bonds = bond_ids;
+		this.activate();
+	}
+
+	activate() {
 		this.highlight();
 		this.addTransformTool();
 		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
@@ -1492,6 +1502,7 @@ class Indicator extends DeletableAbortable {
 for (const elbtn of elbtns) chemNodeHandler(elbtn);
 transformHandler(selrebtn, SelectRect);
 transformHandler(sellabtn, SelectLasso);
+transformHandler(selmobtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
 chemBondHandler(dbondbtn, 8, 2); // Upper bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
