@@ -4,22 +4,27 @@ var canvbckgrnd = document.getElementById('canvbckgrnd');
 var matrixrf, wmax; // Variables
 
 
-function download() { // Download .svg
-	var element = document.createElement('a');
-	svg_content = document.getElementById('canvas').outerHTML;
-	svg_content = svg_content.replaceAll(/<defs>.*?defs>/gms, '');
-	svg_content = svg_content.replaceAll(/<rect class="brect".*?rect>/gm, '');
-	svg_content = svg_content.replaceAll(/<circle class="anode".*?circle>/gm, '');
-	svg_content = svg_content.replaceAll(/class=".*?"/gm, '');
+function indentHtml(el) {
+	if (el.childElementCount) {
+		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n').replaceAll(/^/gm, '\t') + '\n';
+	}
+	return el.outerHTML;
+}
 
-	subst =
+function download() { // Download .svg
+	var svg_el = document.getElementById('canvas').cloneNode();
+	svg_el.appendChild(document.getElementById('bondsall').cloneNode(true));
+	svg_el.appendChild(document.getElementById('atomsall').cloneNode(true));
+	svg_el.appendChild(document.getElementById('bondcutouts').cloneNode(true));
+	svg_el.appendChild(document.getElementById('bondpatterns').cloneNode(true));
+	header =
 `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
 	<!ENTITY ns_svg "http://www.w3.org/2000/svg">
 	<!ENTITY ns_xlink "http://www.w3.org/1999/xlink">
 ]>
-<svg`;
-	svg_content = svg_content.replaceAll('<svg', subst);
-
+`;
+	svg_content = header + indentHtml(svg_el).replaceAll(/class=".*?"/gm, '').replaceAll(/ mask="null"/gm, '').replaceAll(/ >/gm, '>');
+	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(svg_content));
 	element.setAttribute('download', 'molecule.svg');
 	element.click();
