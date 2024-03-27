@@ -11,7 +11,7 @@ function indentHtml(el) {
 	return el.outerHTML;
 }
 
-function download() { // Download .svg
+function downloadSvg() { // Download .svg
 	var svg_el = document.getElementById('canvas').cloneNode();
 	svg_el.appendChild(document.getElementById('bondsall').cloneNode(true));
 	svg_el.appendChild(document.getElementById('atomsall').cloneNode(true));
@@ -29,8 +29,74 @@ function download() { // Download .svg
 	element.setAttribute('download', 'molecule.svg');
 	element.click();
 }
+document.getElementById('download-svg').addEventListener('click', downloadSvg);
 
-document.getElementById('download-svg').addEventListener('click', download);
+
+function gatherAtomsBondsData(atom_ids, bond_ids) {
+	var kwargs = {};
+	if (atom_ids) {
+		kwargs.new_atoms_data = {};
+		atom_ids.forEach(id => {
+			var node = document.getElementById(id).objref;
+			kwargs.new_atoms_data[id] = [...node.xy, node.text];
+		});
+	}
+	if (bond_ids) {
+		kwargs.new_bonds_data = {};
+		bond_ids.forEach(id => {
+			var bond = document.getElementById(id).objref;
+			kwargs.new_bonds_data[id] = [...bond.nodes.map(node => node.id), bond.type];
+		});
+	}
+	return kwargs;
+}
+
+
+function downloadJson() { // Download .svg
+	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
+	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
+	var json_content = JSON.stringify(gatherAtomsBondsData(atom_ids, bond_ids), null, '\t');
+	var element = document.createElement('a');
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
+	element.setAttribute('download', 'molecule.json');
+	element.click();
+}
+document.getElementById('download-json').addEventListener('click', downloadJson);
+
+
+function blankCanvasCmd() {
+	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
+	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
+	var kwargs = {};
+	if (atom_ids) kwargs.del_atoms = new Set(atom_ids);
+	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
+	return kwargs;
+}
+
+
+function openJsonFile(event) {
+	var file = event.target.files[0];
+	if (!file) return;
+	var reader = new FileReader();
+	reader.addEventListener('load', (event) => {
+		var kwargs = JSON.parse(event.target.result);
+		ChemNode.counter = Math.max(...Object.keys(kwargs.new_atoms_data).map(id => parseInt(id.slice(1)))) + 1;
+		ChemBond.counter = Math.max(...Object.keys(kwargs.new_bonds_data).map(id => parseInt(id.slice(1)))) + 1;
+		Object.assign(kwargs, blankCanvasCmd());
+		dispatcher.do(editStructure, kwargs);
+		refreshBondCutouts();
+		document.getElementById('file-input').value = null;
+	});
+	reader.readAsText(file);
+}
+document.getElementById('open-json').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', openJsonFile);
+
+
+function eraseAll() {
+	dispatcher.do(editStructure, blankCanvasCmd());
+}
+document.getElementById('new-file').addEventListener('click', eraseAll);
 
 
 class BaseButton {
@@ -320,7 +386,6 @@ var hexagonbtn = new SubButton(dropcycbtn,
 var heptagonbtn = new SubButton(dropcycbtn,
 	'<polygon points="15.0,27.7 5.1,22.9 2.6,12.2 9.5,3.6 20.5,3.6 27.4,12.2 24.9,22.9" stroke="black" stroke-width="2" fill="none" />'
 );
-// var transformbtn = new RegularButton(flex_container, toBtnText('tr'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -342,21 +407,7 @@ window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse
 
 
 function invertCmd(kwargs_dir) {
-	var kwargs_rev = {}; //{new_atoms_data: {}, new_bonds_data: {}};
-	if (kwargs_dir.del_atoms) {
-		kwargs_rev.new_atoms_data = {};
-		kwargs_dir.del_atoms.forEach(id => {
-			var node = document.getElementById(id).objref;
-			kwargs_rev.new_atoms_data[id] = [...node.xy, node.text];
-		});
-	}
-	if (kwargs_dir.del_bonds) {
-		kwargs_rev.new_bonds_data = {};
-		kwargs_dir.del_bonds.forEach(id => {
-			var bond = document.getElementById(id).objref;
-			kwargs_rev.new_bonds_data[id] = [...bond.nodes.map(node => node.id), bond.type];
-		});
-	}
+	var kwargs_rev = gatherAtomsBondsData(kwargs_dir.del_atoms, kwargs_dir.del_bonds);
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
 	if (kwargs_dir.new_bonds_data) kwargs_rev.del_bonds = new Set(Object.keys(kwargs_dir.new_bonds_data));
 	if (kwargs_dir.atoms_text) kwargs_rev.atoms_text = Object.fromEntries(Object.keys(kwargs_dir.atoms_text).map(
@@ -407,7 +458,6 @@ Dispatcher.prototype.redo = function() {
 	if (this.ptr >= this.commands.length) return;
 	var command = this.commands[this.ptr++][0]; // Fetch command
 	command.func(command.args); // Execute the given function with args
-	overlap.refresh();
 	selection.undoRedo(command.args, false);
 };
 
@@ -415,14 +465,16 @@ Dispatcher.prototype.undo = function() {
 	if (this.ptr <= 0) return;
 	var command = this.commands[--this.ptr][1]; // Fetch command
 	command.func(command.args); // Execute the given function with args
-	overlap.refresh();
 	selection.undoRedo(command.args, true);
 };
 
 Dispatcher.prototype.keyHandler = function(event) {
 	if ((event.ctrlKey || event.metaKey) && !event.repeat) {
-		if (event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey == true)) this.redo();
-		else if (event.key == 'z') this.undo();
+		var toRedo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
+		var toUndo = event.key == 'z' && !event.shiftKey;
+		if (toRedo) this.redo();
+		if (toUndo) this.undo();
+		if (toUndo || toRedo) refreshBondCutouts();
 	}
 }
 
@@ -497,58 +549,60 @@ function pickMol(node, atoms=new Set(), bonds=new Set()) {
 }
 
 
-class Overlap {
-	constructor() {
-		this.sensors_b = document.getElementById('sensors_b');
-		this.old_masks = [];
-	}
-
-	detectIntersec(bond_group) {
-		this.new_masks = [];
-		bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
-		for (const [i, bond0] of Object.entries(bond_group)) {
-			var j = parseInt(i);
-			var bond1 = bond_group[++j];
-			while (j < bond_group.length && bond1.min_x < bond0.max_x) {
-				if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
-					checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
-				) this.new_masks.push([bond0.id, bond1.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
-				bond1 = bond_group[++j];
-			}
+function detectIntersec(exclude=[]) {
+	var intersections = [];
+	var bond_group = Array.from(document.getElementById('sensors_b').children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
+	bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
+	for (const [i, bond0] of Object.entries(bond_group)) {
+		var j = parseInt(i);
+		var bond1 = bond_group[++j];
+		while (j < bond_group.length && bond1.min_x < bond0.max_x) {
+			if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
+				checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
+			) intersections.push([bond0.id, bond1.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
+			bond1 = bond_group[++j];
 		}
 	}
-
-	refresh(exclude=[]) {
-		var bond_group = Array.from(this.sensors_b.children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
-		this.detectIntersec(bond_group);
-
-		// Add masks
-		var set_old = new Set(this.old_masks);
-		var masks_to_add = this.new_masks.filter(new_mask => !set_old.has(new_mask));
-		for (const mask of masks_to_add) {
-			var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
-			lower_bond.createSubmask(upper_bond);
-		}
-
-		// Remove masks
-		var set_new = new Set(this.new_masks);
-		var masks_to_remove = this.old_masks.filter(old_mask => !set_new.has(old_mask));
-		for (const mask of masks_to_remove) {
-			try {
-				var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
-			}
-			catch (error) { // Case of deleted bond
-				if (error instanceof TypeError) continue;
-				else throw error;
-			}
-			lower_bond.deleteSubmask(upper_bond);
-		}
-
-		this.old_masks = this.new_masks;
-	}
+	return intersections;
 }
 
-var overlap = new Overlap();
+function getCutouts() {
+	var old_masks = [];
+	for (const mask of [...document.getElementById('bondcutouts').children]) {
+		for (const polygon of [...mask.children]) {
+			if (polygon.tagName != 'polygon') continue;
+			old_masks.push(mask.id.slice(1) + '&' + polygon.classList[0].slice(1));
+		}
+	}
+	return old_masks;
+}
+
+function refreshBondCutouts(exclude=[]) {
+	var new_masks = detectIntersec(exclude);
+	var old_masks = getCutouts();
+
+	// Add masks
+	var set_old = new Set(old_masks);
+	var masks_to_add = new_masks.filter(new_mask => !set_old.has(new_mask));
+	for (const mask of masks_to_add) {
+		var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+		lower_bond.createSubmask(upper_bond);
+	}
+
+	// Remove masks
+	var set_new = new Set(new_masks);
+	var masks_to_remove = old_masks.filter(old_mask => !set_new.has(old_mask));
+	for (const mask of masks_to_remove) {
+		try {
+			var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+		}
+		catch (error) { // Case of deleted bond
+			if (error instanceof TypeError) continue;
+			else throw error;
+		}
+		lower_bond.deleteSubmask(upper_bond);
+	}
+}
 
 
 function chemNodeHandler(elbtn) {
@@ -626,7 +680,7 @@ function chemNodeHandler(elbtn) {
 		if (document.getElementById(new_bond_id) === null && node0_is_new) dispatcher.undo();
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
-		overlap.refresh();
+		refreshBondCutouts();
 		window.addEventListener('mousemove', movElem);
 	}
 }
@@ -647,7 +701,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				var focobj = event.target.objref;
 				var kwargs = {bonds_type: {[focobj.id]: focobj.getNextType(rotation_schema)}};
 				dispatcher.do(editStructure, kwargs);
-				overlap.refresh();
+				refreshBondCutouts();
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				[pt0, node0] = pickNodePoint(event);
@@ -681,7 +735,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				new_atoms_data: new_atoms_data,
 				new_bonds_data: {[new_bond_id]: [node0id, node1id, init_type]}
 			};
-			dispatcher.do(editStructure, kwargs)
+			dispatcher.do(editStructure, kwargs);
 		}
 	}
 
@@ -690,7 +744,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		window.removeEventListener('mousemove', movBond);
 		document.styleSheets[0].cssRules[0].selectorText = '#stub0';
 		document.styleSheets[0].cssRules[1].selectorText = '#stub1';
-		overlap.refresh();
+		refreshBondCutouts();
 	}
 }
 
@@ -724,7 +778,7 @@ function deleteHandler(delbtn) {
 			};
 			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.id])};
 			dispatcher.do(editStructure, kwargs);
-			overlap.refresh();
+			refreshBondCutouts();
 		}
 	}
 
@@ -846,7 +900,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
-				overlap.refresh(exclude=cur_bond_ids);
+				refreshBondCutouts(exclude=cur_bond_ids);
 			}
 		}
 		else { // Click outside the canvas
@@ -904,7 +958,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		window.removeEventListener('mousemove', flipPolygon);
 		window.removeEventListener('mousemove', rotatePolygon);
 		window.removeEventListener('mouseup', appendPolygon);
-		overlap.refresh();
+		refreshBondCutouts();
 		crPolygon(event);
 	}
 
@@ -1208,7 +1262,7 @@ class Selection {
 		this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
 		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
 		dispatcher.addCmd(editStructure, kwargs, editStructure, invertCmd(kwargs));
-		overlap.refresh();
+		refreshBondCutouts();
 		if (!this.highlights.hasChildNodes()) this.deselect(); // Picked atom or bond
 	}
 

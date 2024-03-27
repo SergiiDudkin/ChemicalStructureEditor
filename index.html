@@ -42,9 +42,14 @@
 						</g>
 					</svg>
 					<div class="dropdown-child">
-						<div class="dropdown-btn">New</div>
+						<div id="new-file" class="dropdown-btn">New</div>
 						<div id="download-svg" class="dropdown-btn">Save as .svg</div>
-						<div class="dropdown-btn">Save as .mol</div>						
+						<div id="download-json" class="dropdown-btn">Save as .json</div>
+						<div class="dropdown-btn">Save as .mol</div>
+						<div id="open-json" class="dropdown-btn">
+							<span>Open .json file</span>
+							<input type="file" accept=".json" id="file-input" class="dropdown-btn"/>
+						</div>						
 					</div>
 				</div>
 				<svg width="74" height="36" display="block">

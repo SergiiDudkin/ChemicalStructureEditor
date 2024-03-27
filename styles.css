@@ -176,3 +176,7 @@ body {
 .transformjig:hover, .jigforcehover {
 	fill: blue;
 }
+
+#file-input {
+	display: none;
+}
