@@ -32,16 +32,16 @@ function downloadSvg() { // Download .svg
 document.getElementById('download-svg').addEventListener('click', downloadSvg);
 
 
-function gatherAtomsBondsData(atom_ids, bond_ids) {
+function gatherAtomsBondsData(atom_ids=new Set(), bond_ids=new Set()) {
 	var kwargs = {};
-	if (atom_ids) {
+	if (atom_ids && atom_ids.size) {
 		kwargs.new_atoms_data = {};
 		atom_ids.forEach(id => {
 			var node = document.getElementById(id).objref;
 			kwargs.new_atoms_data[id] = [...node.xy, node.text];
 		});
 	}
-	if (bond_ids) {
+	if (bond_ids && bond_ids.size) {
 		kwargs.new_bonds_data = {};
 		bond_ids.forEach(id => {
 			var bond = document.getElementById(id).objref;
@@ -53,8 +53,8 @@ function gatherAtomsBondsData(atom_ids, bond_ids) {
 
 
 function downloadJson() { // Download .svg
-	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
-	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
+	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
+	var bond_ids = new Set([...document.getElementById('sensors_b').children].map(el => el.objref.id));
 	var json_content = JSON.stringify(gatherAtomsBondsData(atom_ids, bond_ids), null, '\t');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
@@ -578,28 +578,20 @@ function getCutouts() {
 }
 
 function refreshBondCutouts(exclude=[]) {
-	var new_masks = detectIntersec(exclude);
-	var old_masks = getCutouts();
+	var set_new = new Set(detectIntersec(exclude));
+	var set_old = new Set(getCutouts());
 
 	// Add masks
-	var set_old = new Set(old_masks);
-	var masks_to_add = new_masks.filter(new_mask => !set_old.has(new_mask));
+	var masks_to_add = [...set_new].filter(new_mask => !set_old.has(new_mask));
 	for (const mask of masks_to_add) {
 		var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
 		lower_bond.createSubmask(upper_bond);
 	}
 
 	// Remove masks
-	var set_new = new Set(new_masks);
-	var masks_to_remove = old_masks.filter(old_mask => !set_new.has(old_mask));
+	var masks_to_remove = [...set_old].filter(old_mask => !set_new.has(old_mask));
 	for (const mask of masks_to_remove) {
-		try {
-			var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
-		}
-		catch (error) { // Case of deleted bond
-			if (error instanceof TypeError) continue;
-			else throw error;
-		}
+		var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
 		lower_bond.deleteSubmask(upper_bond);
 	}
 }
@@ -1146,7 +1138,13 @@ class Selection {
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.bottom_ptr = Infinity;
-		['startMoving', 'moving', 'finishMoving'].forEach(method => this[method] = this[method].bind(this));
+		this.clipboard = {mol: null};
+		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyHandler'].forEach(method => this[method] = this[method].bind(this));
+
+		document.addEventListener('keydown', event => this.keyHandler(event));
+		document.addEventListener('copy', this.copy);
+		document.addEventListener('cut', this.cut);
+		document.addEventListener('paste', this.paste);
 	}
 
 	static parent_map = {
@@ -1264,6 +1262,74 @@ class Selection {
 		dispatcher.addCmd(editStructure, kwargs, editStructure, invertCmd(kwargs));
 		refreshBondCutouts();
 		if (!this.highlights.hasChildNodes()) this.deselect(); // Picked atom or bond
+	}
+
+	keyHandler(event) {
+		if (['Delete', 'Backspace'].includes(event.key)) this.delItems();
+	}
+
+	delItems() {
+		for (const atom of this.atoms) {
+			for (const connection of document.getElementById(atom).objref.connections) {
+				this.bonds.add(connection.id);
+			}
+		}
+		var kwargs = {del_atoms: new Set(this.atoms), del_bonds: new Set(this.bonds)};
+
+		dispatcher.do(editStructure, kwargs);
+		refreshBondCutouts();
+		this.deactivate();
+	}
+
+	copy(event) {
+		event.preventDefault();
+		if (!this.atoms.size) {
+			this.clipboard.mol = null;
+			return;
+		}
+		var kwargs = gatherAtomsBondsData(this.atoms, this.bonds);
+		if (this.bonds.size) {
+			for (const [id, data] of Object.entries(kwargs.new_bonds_data)) {
+				if (data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data) continue;
+				delete kwargs.new_bonds_data[id];
+			}
+		}
+		this.clipboard.mol = {kwargs: kwargs, pt0: getSvgPoint(event), cnt: 0};
+	}
+
+	cut(event) {
+		this.copy(event);
+		this.delItems();
+	}
+
+	paste(event) {
+		event.preventDefault();
+		if (!this.clipboard.mol) return;
+
+		// Replase ids with the new ones, move atoms
+		var kwargs = {};
+		var keymap = {};
+		var moving_vec = vecMul([15, 15], ++this.clipboard.mol.cnt);
+		kwargs.new_atoms_data = Object.fromEntries(
+			Object.entries(this.clipboard.mol.kwargs.new_atoms_data).map(([key, value]) => {
+					const new_id = ChemNode.prototype.getNewId();
+					keymap[key] = new_id;
+					return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
+				}
+		 	)
+		)
+		kwargs.new_bonds_data = Object.fromEntries(
+			Object.entries(this.clipboard.mol.kwargs.new_bonds_data)
+				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
+					return [ChemBond.prototype.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
+				}
+		 	)
+		)
+
+		dispatcher.do(editStructure, kwargs);
+		refreshBondCutouts();
+		this.deactivate();
+		this.activateFromIds(new Set(Object.keys(kwargs.new_atoms_data)), new Set(Object.keys(kwargs.new_bonds_data)));
 	}
 
 	undoRedo(cmd, is_undo) {
