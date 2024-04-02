@@ -121,6 +121,20 @@ ChemNode.prototype.eventsOff = function() {
 	this.backcircle.classList.add('sympoi');
 };
 
+ChemNode.prototype.promoteMaskSel = function() {
+	this.eventsOff();
+	this.masksel_circ.remove();
+	this.masksel_circ.setAttribute('fill', 'black');
+	document.getElementById('selectmask').appendChild(this.masksel_circ);
+}
+
+ChemNode.prototype.demoteMaskSel = function() {
+	this.eventsOn();
+	this.masksel_circ.remove();
+	this.masksel_circ.removeAttribute('fill');
+	document.getElementById('selectholes').appendChild(this.masksel_circ);
+}
+
 ChemNode.prototype.renderText = function() {
 	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old text
 	this.locateHydr();

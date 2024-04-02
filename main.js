@@ -538,12 +538,16 @@ function getBondEnd(event, pt0) {
 	return [pt1, node1];
 }
 
-function pickMol(node, atoms=new Set(), bonds=new Set()) {
+function pickMol(chemobj) {
+	return iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
+}
+
+function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
 	atoms.add(node.id);
 	for (const bond of node.connections) {
 		var next_node = bond.nodes.filter(item => item != node)[0];
 		bonds.add(bond.id);
-		if (!atoms.has(next_node.id)) pickMol(next_node, atoms, bonds);
+		if (!atoms.has(next_node.id)) iterMolDft(next_node, atoms, bonds);
 	}
 	return [atoms, bonds];
 }
@@ -1016,8 +1020,8 @@ function transformHandler(btn, SelectTool=null) {
 	function selectInit(event) {
 		btn.selectCond();
 		canvas.addEventListener('mousedown', selectAct);
-		sensors_a.addEventListener('mousedown', pickAtom);
-		sensors_b.addEventListener('mousedown', pickBond);
+		sensors_a.addEventListener('mousedown', pick);
+		sensors_b.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
 
@@ -1027,30 +1031,23 @@ function transformHandler(btn, SelectTool=null) {
 		if (SelectTool) new SelectTool('utils');
 	}
 
-	function pickAtom(event) {
-		pick(event, [event.target.objref.id]);
-	}
-
-	function pickBond(event) {
-		pick(event, event.target.objref.nodes.map(node => node.id));
-	}
-
-	function pick(event, node_ids) {
+	function pick(event) {
 		event.stopPropagation();
 		selection.deactivate();
+		var chemobj = event.target.objref;
 		if (SelectTool) {
-			selection.setSelectedAtoms(node_ids);
+			selection.setSelectedChemObj(chemobj);
 		}
 		else {
-			selection.activateFromIds(...pickMol(document.getElementById(node_ids[0]).objref));
+			selection.activateFromIds(...pickMol(chemobj));
 		}
 		selection.startMoving(event);
 	}
 
 	function exit(event) {
 		canvas.removeEventListener('mousedown', selectAct);
-		sensors_a.removeEventListener('mousedown', pickAtom);
-		sensors_b.removeEventListener('mousedown', pickBond);
+		sensors_a.removeEventListener('mousedown', pick);
+		sensors_b.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
 		btn.deselectCond(event);
@@ -1137,11 +1134,14 @@ class Selection {
 		this.bonds = new Set(); // Selected bonds
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
+		this.pointed_atom = null;
+		this.shift_key = false;
 		this.bottom_ptr = Infinity;
 		this.clipboard = {mol: null};
-		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyHandler'].forEach(method => this[method] = this[method].bind(this));
+		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyDownHandler', 'keyUpHandler'].forEach(method => this[method] = this[method].bind(this));
 
-		document.addEventListener('keydown', event => this.keyHandler(event));
+		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener('keyup', this.keyUpHandler);
 		document.addEventListener('copy', this.copy);
 		document.addEventListener('cut', this.cut);
 		document.addEventListener('paste', this.paste);
@@ -1193,8 +1193,15 @@ class Selection {
 		}
 	}
 
-	setSelectedAtoms(atom_ids) {
-		this.atoms = new Set(atom_ids);
+	setSelectedChemObj(item) {
+		if (item instanceof ChemNode) {
+			this.atoms = new Set([item.id]);
+		}
+		else {
+			this.bonds =  new Set([item.id]);
+			this.atoms = new Set(item.nodes.map(node => node.id));
+		}
+		this.highlight();
 	}
 
 	selectFromShape(covering_shape) {
@@ -1230,6 +1237,12 @@ class Selection {
 		event.stopPropagation();
 		this.indicator = new Indicator('utils');
 		this.mo_st = getSvgPoint(event);
+
+		this.eventsOff();
+		this.pointed_atom = pickNode(this.mo_st);
+		this.eventsOn();
+		if (this.shift_key) this.focusElement();
+
 		this.accum_vec = [0, 0];
 		window.addEventListener('mousemove', this.moving);
 		window.addEventListener('mouseup', this.finishMoving);
@@ -1245,9 +1258,14 @@ class Selection {
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
 
-	finishMoving() {
+	finishMoving(event) {
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
+
+		this.blurElement();
+		if (event.shiftKey) this.shift_key = true;
+		this.pointed_atom = null;
+		
 		this.finishRelocatingAtoms('moving', {moving_vec: this.accum_vec});
 	}
 
@@ -1261,11 +1279,37 @@ class Selection {
 		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
 		dispatcher.addCmd(editStructure, kwargs, editStructure, invertCmd(kwargs));
 		refreshBondCutouts();
-		if (!this.highlights.hasChildNodes()) this.deselect(); // Picked atom or bond
+		if (!this.transform_tool) this.deactivate();
 	}
 
-	keyHandler(event) {
+	keyDownHandler(event) {
 		if (['Delete', 'Backspace'].includes(event.key)) this.delItems();
+		if (event.shiftKey) this.focusElement();
+	}
+
+	keyUpHandler(event) {
+		if (!event.shiftKey) {
+			this.blurElement();
+			this.shift_key = false;
+		}
+	}
+
+	focusElement() {
+		if (this.pointed_atom) {
+			this.pointed_atom.promoteMaskSel();
+			this.highlights.classList.add('sympoi');
+			document.getElementById('selectholes').setAttribute('visibility', 'hidden');
+			this.shift_key = false;
+		}
+		else {
+			this.shift_key = true;
+		}
+	}
+
+	blurElement() {
+		if (this.pointed_atom) this.pointed_atom.demoteMaskSel();
+		this.highlights.classList.remove('sympoi');
+		document.getElementById('selectholes').setAttribute('visibility', 'visible');
 	}
 
 	delItems() {
@@ -1359,6 +1403,7 @@ class Selection {
 		this.bottom_ptr = Infinity;
 		this.dehighlight();
 		this.deselect();
+		// this.highlights.setAttribute('visibility', 'visible');
 		ChemNode.delSel.clear();
 		ChemBond.delSel.clear();
 	}
