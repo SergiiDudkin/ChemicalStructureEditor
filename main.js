@@ -420,7 +420,7 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
 
 	if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms); 
-	if (kwargs_dir.rot_angle) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
+	if (kwargs_dir.rot_angle !== undefined) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
 	if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
 
 	if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms); 
@@ -429,7 +429,7 @@ function invertCmd(kwargs_dir) {
 
 	if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms); 
 	if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
-	if (kwargs_dir.dir_angle) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
+	if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
 	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
 
 	return kwargs_rev;
@@ -1136,6 +1136,7 @@ class Selection {
 		this.transform_tool = null;
 		this.pointed_atom = null;
 		this.shift_key = false;
+		// this.is_joined = false;
 		this.bottom_ptr = Infinity;
 		this.clipboard = {mol: null};
 		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyDownHandler', 'keyUpHandler'].forEach(method => this[method] = this[method].bind(this));
@@ -1241,6 +1242,12 @@ class Selection {
 		this.eventsOff();
 		this.pointed_atom = pickNode(this.mo_st);
 		this.eventsOn();
+		this.init_ctr_pt_error = this.pointed_atom ? vecDif(this.pointed_atom.xy, this.mo_st) : [0, 0];
+		if (this.pointed_atom) {
+			this.mo_st = this.pointed_atom.xy;
+			this.pointed_atom_xy = this.pointed_atom.xy;
+			this.pointed_atom_id = this.pointed_atom.id;
+		}
 		if (this.shift_key) this.focusElement();
 
 		this.accum_vec = [0, 0];
@@ -1249,16 +1256,42 @@ class Selection {
 	}
 
 	moving(event) { // Active moving
-		var pt = getSvgPoint(event);
-		var moving_vec = vecDif(this.mo_st, pt);
+		var kwargs = {};
+		var to_join = event.shiftKey && event.target.is_atom && this.pointed_atom;
+		var corrected_point = to_join ? event.target.objref.xy : vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		var moving_vec = vecDif(this.mo_st, corrected_point);
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
+			
+		if (to_join) {
+			var target_node_id = event.target.objref.id;
+			var bonds_data = gatherAtomsBondsData(new Set(), new Set(this.pointed_atom.connections.map(bond => bond.id))).new_bonds_data;
+			kwargs.del_atoms = new Set([this.pointed_atom.id]);
+			var bond_ids = Object.keys(bonds_data);
+			if (bond_ids.length) {
+				kwargs.del_bonds = new Set(bond_ids);
+				kwargs.new_bonds_data = {};
+				for (const [id, data] of Object.entries(bonds_data)) {
+					if (data[0] == this.pointed_atom.id) data[0] = target_node_id;
+					if (data[1] == this.pointed_atom.id) data[1] = target_node_id;
+					if (data[0] == data[1]) continue;
+					kwargs.new_bonds_data[id] = data;
+				}
+			}
+			this.pointed_atom.xy = this.pointed_atom_xy;
+			this.atoms.delete(this.pointed_atom.id);
+			this.pointed_atom = null;
+			this.finishMoving(event, kwargs);
+			kwargs = Object.assign({}, kwargs);
+		}
 		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`, event);
-		this.mo_st = pt;
-		this.relocatingAtoms('moving', {moving_vec: moving_vec});
+		this.mo_st = corrected_point;
+		kwargs.moving_vec = moving_vec;
+		this.relocatingAtoms('moving', kwargs);
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
+		if (to_join) this.transform_tool ? this.atoms.add(this.pointed_atom_id) : ChemNode.delSel.clear();
 	}
 
-	finishMoving(event) {
+	finishMoving(event, kwargs={}) {
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
 
@@ -1266,7 +1299,8 @@ class Selection {
 		if (event.shiftKey) this.shift_key = true;
 		this.pointed_atom = null;
 		
-		this.finishRelocatingAtoms('moving', {moving_vec: this.accum_vec});
+		kwargs.moving_vec = this.accum_vec;
+		this.finishRelocatingAtoms('moving', kwargs);
 	}
 
 	relocatingAtoms(action_type, kwargs) {
@@ -1403,7 +1437,6 @@ class Selection {
 		this.bottom_ptr = Infinity;
 		this.dehighlight();
 		this.deselect();
-		// this.highlights.setAttribute('visibility', 'visible');
 		ChemNode.delSel.clear();
 		ChemBond.delSel.clear();
 	}
