@@ -1135,8 +1135,7 @@ class Selection {
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.pointed_atom = null;
-		this.shift_key = false;
-		// this.is_joined = false;
+		this.join_cmd = null;
 		this.bottom_ptr = Infinity;
 		this.clipboard = {mol: null};
 		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyDownHandler', 'keyUpHandler'].forEach(method => this[method] = this[method].bind(this));
@@ -1237,70 +1236,77 @@ class Selection {
 	startMoving(event) { // Click on selection
 		event.stopPropagation();
 		this.indicator = new Indicator('utils');
-		this.mo_st = getSvgPoint(event);
+		this.accum_vec = [0, 0];
+		var pt = getSvgPoint(event);
 
 		this.eventsOff();
-		this.pointed_atom = pickNode(this.mo_st);
+		this.pointed_atom = pickNode(pt);
 		this.eventsOn();
-		this.init_ctr_pt_error = this.pointed_atom ? vecDif(this.pointed_atom.xy, this.mo_st) : [0, 0];
-		if (this.pointed_atom) {
-			this.mo_st = this.pointed_atom.xy;
-			this.pointed_atom_xy = this.pointed_atom.xy;
-			this.pointed_atom_id = this.pointed_atom.id;
-		}
-		if (this.shift_key) this.focusElement();
+		if (event.shiftKey) this.focusElement();
 
-		this.accum_vec = [0, 0];
+		this.init_ctr_pt_error = this.pointed_atom ? vecDif(this.pointed_atom.xy, pt) : [0, 0];
+		this.mo_st = this.pointed_atom ? this.pointed_atom.xy : pt;
+
 		window.addEventListener('mousemove', this.moving);
 		window.addEventListener('mouseup', this.finishMoving);
 	}
 
 	moving(event) { // Active moving
-		var kwargs = {};
 		var to_join = event.shiftKey && event.target.is_atom && this.pointed_atom;
 		var corrected_point = to_join ? event.target.objref.xy : vecDif(this.init_ctr_pt_error, getSvgPoint(event));
 		var moving_vec = vecDif(this.mo_st, corrected_point);
-		this.accum_vec = vecSum(this.accum_vec, moving_vec);
-			
-		if (to_join) {
-			var target_node_id = event.target.objref.id;
-			var bonds_data = gatherAtomsBondsData(new Set(), new Set(this.pointed_atom.connections.map(bond => bond.id))).new_bonds_data;
-			kwargs.del_atoms = new Set([this.pointed_atom.id]);
-			var bond_ids = Object.keys(bonds_data);
-			if (bond_ids.length) {
-				kwargs.del_bonds = new Set(bond_ids);
-				kwargs.new_bonds_data = {};
-				for (const [id, data] of Object.entries(bonds_data)) {
-					if (data[0] == this.pointed_atom.id) data[0] = target_node_id;
-					if (data[1] == this.pointed_atom.id) data[1] = target_node_id;
-					if (data[0] == data[1]) continue;
-					kwargs.new_bonds_data[id] = data;
-				}
-			}
-			this.pointed_atom.xy = this.pointed_atom_xy;
-			this.atoms.delete(this.pointed_atom.id);
-			this.pointed_atom = null;
-			this.finishMoving(event, kwargs);
-			kwargs = Object.assign({}, kwargs);
-		}
 		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`, event);
+		var kwargs = {};
+
+		if (this.join_cmd) {
+			if (event.target.id == this.pointed_atom.id) return;
+			kwargs = this.join_cmd.rev;
+			this.join_cmd = null;
+			this.pointed_atom.eventsOff();
+		}
+
+		if (to_join) {
+			var target_node = event.target.objref;
+			var bonds_data = gatherAtomsBondsData(new Set(), new Set(target_node.connections.map(bond => bond.id))).new_bonds_data;
+			kwargs.del_atoms = new Set([target_node.id]);
+			kwargs.atoms_text = {[this.pointed_atom.id]: target_node.text};
+			kwargs.del_bonds = new Set(Object.keys(bonds_data));
+			kwargs.new_bonds_data = {};
+			for (const [id, data] of Object.entries(bonds_data)) {
+				if (data[0] == target_node.id) data[0] = this.pointed_atom.id;
+				if (data[1] == target_node.id) data[1] = this.pointed_atom.id;
+				if (data[0] == data[1]) continue;
+				kwargs.new_bonds_data[id] = data;
+			}
+			kwargs.moving_atoms = new Set(excludeNonExisting(this.atoms));
+			kwargs.moving_vec = moving_vec;
+			this.join_cmd = {dir: kwargs, rev: invertCmd(kwargs)};
+			this.pointed_atom.eventsOn();
+		}
+
+		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = corrected_point;
 		kwargs.moving_vec = moving_vec;
 		this.relocatingAtoms('moving', kwargs);
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
-		if (to_join) this.transform_tool ? this.atoms.add(this.pointed_atom_id) : ChemNode.delSel.clear();
 	}
 
-	finishMoving(event, kwargs={}) {
+	finishMoving(event) {
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
 
 		this.blurElement();
-		if (event.shiftKey) this.shift_key = true;
 		this.pointed_atom = null;
 		
-		kwargs.moving_vec = this.accum_vec;
-		this.finishRelocatingAtoms('moving', kwargs);
+		if (this.join_cmd) {
+			this.join_cmd.dir.moving_vec = this.accum_vec;
+			this.join_cmd.rev.moving_vec = vecMul(this.accum_vec, -1)
+			this.finishAction(this.join_cmd.dir, this.join_cmd.rev);
+			this.join_cmd = null;
+		}
+		else {
+			this.finishRelocatingAtoms('moving', {moving_vec: this.accum_vec});
+		}
 	}
 
 	relocatingAtoms(action_type, kwargs) {
@@ -1308,10 +1314,14 @@ class Selection {
 		editStructure(kwargs);
 	}
 
-	finishRelocatingAtoms(action_type, kwargs) {
-		this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
+	finishRelocatingAtoms(action_type, kwargs) {	
 		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
-		dispatcher.addCmd(editStructure, kwargs, editStructure, invertCmd(kwargs));
+		this.finishAction(kwargs, invertCmd(kwargs));
+	}
+
+	finishAction(kwargs, kwargs_rev) {
+		this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
 		refreshBondCutouts();
 		if (!this.transform_tool) this.deactivate();
 	}
@@ -1322,26 +1332,21 @@ class Selection {
 	}
 
 	keyUpHandler(event) {
-		if (!event.shiftKey) {
-			this.blurElement();
-			this.shift_key = false;
-		}
+		if (!event.shiftKey) this.blurElement();
 	}
 
 	focusElement() {
 		if (this.pointed_atom) {
 			this.pointed_atom.promoteMaskSel();
+			ChemBond.prototype.eventsOffAll();
 			this.highlights.classList.add('sympoi');
 			document.getElementById('selectholes').setAttribute('visibility', 'hidden');
-			this.shift_key = false;
-		}
-		else {
-			this.shift_key = true;
 		}
 	}
 
 	blurElement() {
 		if (this.pointed_atom) this.pointed_atom.demoteMaskSel();
+		ChemBond.prototype.eventsOnAll();
 		this.highlights.classList.remove('sympoi');
 		document.getElementById('selectholes').setAttribute('visibility', 'visible');
 	}

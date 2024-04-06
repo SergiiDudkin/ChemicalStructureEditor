@@ -2,7 +2,8 @@ function ChemNode(id, x, y, text) {
 	this.id = id;
 	this.highlights = document.getElementById('selecthighlight');
 
-	Object.assign(this, ChemNode.default_style);
+	this.style = {};
+	Object.assign(this.style, ChemNode.default_style);
 	this.text = text.toString(); // ??? maybe .toString() is not needed
 	this.connections = [];
 	this.select_circ = null;
@@ -24,9 +25,9 @@ function ChemNode(id, x, y, text) {
 ChemNode.counter = 0;
 
 ChemNode.default_style = {
-	color: 'black',
-	default_font_family: 'Arial',
-	default_size: 16
+	fill: 'black',
+	'font-family': 'Arial',
+	'font-size': '16px'
 };
 ChemNode.sel_r = 12; // Selection circle radius
 
@@ -138,7 +139,7 @@ ChemNode.prototype.demoteMaskSel = function() {
 ChemNode.prototype.renderText = function() {
 	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old text
 	this.locateHydr();
-	textTermBuilder(this.bracket_tree, this.g, this.position_idx, styledict, this.xy)
+	textTermBuilder(this.bracket_tree, this.g, this.position_idx, this.style, this.xy)
 }
 
 ChemNode.prototype.locateHydr = function() { 

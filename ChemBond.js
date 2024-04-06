@@ -73,6 +73,14 @@ ChemBond.prototype.getNewId = function() {
 	return 'b' + ChemBond.counter++;
 };
 
+ChemBond.prototype.eventsOnAll = function() {
+	document.getElementById('sensors_b').classList.remove('sympoi');
+};
+
+ChemBond.prototype.eventsOffAll = function() {
+	document.getElementById('sensors_b').classList.add('sympoi');
+};
+
 ChemBond.prototype.recalcDims = function() {
 	this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 	this.len = vecLen(this.difxy); // Distance between nodes
