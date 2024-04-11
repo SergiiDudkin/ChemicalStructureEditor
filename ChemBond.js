@@ -53,7 +53,7 @@ ChemBond.delSel = new Set(); // Bonds deleted while selected
 14 - double auto undef
 15 - triple 
 */
-//								  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+//					   Bond type: 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
 ChemBond.mult =					[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.linecnt =				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.ctrline =				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];

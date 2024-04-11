@@ -62,7 +62,7 @@ function buildBracketTree(tokens) {
 		}
 		else {
 			if (item == '(' || item == '[') group_obj = {brackets: [item], count: null};
-			else if (item == ')' || item == ']') throw new Error(`Closing bracket before the opening one!`);
+			else if (item == ')' || item == ']') throw new Error('Closing bracket before the opening one!');
 			else if (/^\d+$/.test(item)) bracket_tree.slice(-1)[0].count = parseInt(item);
 			else bracket_tree.push({content: item, brackets: [], count: null});
 		}
@@ -189,10 +189,77 @@ function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 	}
 }
 
-var bracket_pairs = {')': '(', ']': '['};
 
-var atoms = new Set(['Mg', 'I', 'Br', 'Cl', 'F', 'S', 'N', 'O', 'C', 'H', 'P', 'B', 'Al', 'Na']);
-var residues = new Set(['Me', 'Et', 'Pr', 'Bu', 'Ph', 'Bn', 'Ac', 'Bz', 'Ts']);
+// MolInfo helpers
+function sumFormula(formula_a, formula_b) {
+	var merged = {...formula_a};
+	for (const [atom, count] of Object.entries(formula_b)) {
+		if (!(atom in merged)) merged[atom] = 0;
+		merged[atom] += count;
+	}
+	return merged;
+}
+
+function mulFormula(formula, factor) {
+	return Object.fromEntries(Object.entries(formula).map(([atom, count]) => [atom, count * factor]));
+}
+
+function tokenToFormula(token) {
+	return token in residue_formulae ? residue_formulae[token] : {[token]: 1};
+}
+
+function treeToFormula(bracket_tree, formula={}) {
+	for (const group_obj of bracket_tree) {
+		formula = sumFormula(formula, 
+			mulFormula(
+				group_obj.content instanceof Array ?
+				treeToFormula(group_obj.content) : 
+				tokenToFormula(group_obj.content), 
+				group_obj.count === null ? 1 : group_obj.count
+			)
+		);
+	}
+	return formula;
+}
+
+function separateUnrecognized(formula) {
+	var recognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => el in std_atomic_weights));
+	var unrecognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => !(el in std_atomic_weights)));
+	return [recognized, unrecognized];
+}
+
+function formulaToFw(formula) {
+	return Math.round(Object.entries(formula)
+	.map(([el, cnt]) => std_atomic_weights[el] * cnt)
+	.reduce((acc, val) => acc + val, 0) * 1e12) / 1e12;
+}
+
+function toHillSystem(formula) {
+	var hill_arr = [];
+	el_set = new Set(Object.keys(formula));
+	if ('C' in formula) {
+		hill_arr.push(['C', formula.C]);
+		el_set.delete('C');
+		if ('H' in formula) {
+			hill_arr.push(['H', formula.H]);
+			el_set.delete('H');
+		}
+	}
+	[...el_set].toSorted().forEach(el => hill_arr.push([el, formula[el]]));
+	return hill_arr;
+}
+
+function hillToStr(hill_arr) {
+	return hill_arr.map(([el, cnt]) => el + (cnt > 1 ? cnt : '')).join('');
+}
+
+function computeElementalComposition(formula) {
+	var fw = formulaToFw(formula);
+	return toHillSystem(formula).map(([el, cnt]) => [el, std_atomic_weights[el] * cnt / fw]);
+}
+
+
+var bracket_pairs = {')': '(', ']': '['};
 var punctuation = new Set(['-', ',']);
 var brackets = new Set(['(', ')', '[', ']']);
 var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
@@ -203,9 +270,10 @@ styledict = {
 	'font-size': '16px'
 }
 
+
 prefix_tree = {};
-buildPrefixTree(prefix_tree, atoms, 1);
-buildPrefixTree(prefix_tree, residues, 2);
+buildPrefixTree(prefix_tree, Object.keys(std_atomic_weights), 1);
+buildPrefixTree(prefix_tree, Object.keys(residue_formulae), 2);
 buildPrefixTree(prefix_tree, punctuation, 3);
 buildPrefixTree(prefix_tree, brackets, 4);
 buildPrefixTree(prefix_tree, digits, 5);

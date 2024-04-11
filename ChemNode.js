@@ -73,10 +73,11 @@ ChemNode.prototype.parse = function() {
 	}
 	else {
 		target_text = this.isMethane() ? 'C' : this.text; // Convert floating C atoms into CH4
-		this.bracket_tree = [{content: target_text, brackets: [], count: null}]
+		this.bracket_tree = [{content: target_text, brackets: [], count: null}];
 		var h_cnt = target_text in ChemNode.hmaxtab ? Math.max(ChemNode.hmaxtab[target_text] - used_valency, 0) : 0;
 		if (h_cnt) this.bracket_tree.push({content: 'H', brackets: [], count: h_cnt > 1 ? h_cnt : null});
 	}
+	this.formula = target_text ? treeToFormula(this.bracket_tree) : {C: 1, H: Math.max(4 - used_valency, 0)};
 };
 
 ChemNode.prototype.translate = function(moving_vec) {

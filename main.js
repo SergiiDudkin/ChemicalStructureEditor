@@ -1415,6 +1415,31 @@ class Selection {
 		this.activateFromIds(new Set(Object.keys(kwargs.new_atoms_data)), new Set(Object.keys(kwargs.new_bonds_data)));
 	}
 
+	computeFormula() {
+		var atoms = this.atoms.size ? [...this.atoms] : [...document.getElementById('sensors_a').children].map(el => el.objref.id);
+		return atoms.reduce(
+			(acc, atom_id) => sumFormula(acc, document.getElementById(atom_id).objref.formula), {}
+		);
+	}
+
+	computeMolInfo() {
+		var [formula, unrecognized] = separateUnrecognized(this.computeFormula());
+		var hill_string = hillToStr(toHillSystem(formula));
+		var hill_unrecognized = hillToStr(toHillSystem(unrecognized));
+		var fw = formulaToFw(formula);
+		var el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`).join(', ');
+		var str_output = 
+`	Brutto formula 
+	${hill_string}
+
+	Fw
+	${fw}
+
+	Elemental composition
+	${el_comp}${hill_unrecognized.length ? '\n\t\n\tUnrecognized part\n\t' + hill_unrecognized : ''}`;
+		return str_output;
+	}
+
 	undoRedo(cmd, is_undo) {
 		if (this.highlights.hasChildNodes()) {
 			if (dispatcher.ptr + is_undo <= this.bottom_ptr) {
