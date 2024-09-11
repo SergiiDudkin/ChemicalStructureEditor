@@ -80,7 +80,8 @@ If blank space is clicked,
 it sets the corresponding hydride, e.g. CH<sub>4</sub>, NH<sub>3</sub>. Clicking on blank space and dragging attaches
 the second group to the first one, so the molecules like H<sub>2</sub>O<sub>2</sub> and N<sub>2</sub>H<sub>4</sub> can
 be drawn in one go. If a standalone chemical group is clicked with the corresponding tool (for example, you selected 
-__N__ tool, and clicked on NH<sub>3</sub>), the chemical bond will be deleted.
+__N__ tool, and clicked on NH<sub>3</sub>), the molecule will be deleted. In other words, in the specific case the tool
+acts like an eraser.
 
 # ![Bond menu](assets/images/bond.png) Bond dropdown menu 
 
