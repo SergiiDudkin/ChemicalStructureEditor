@@ -1737,7 +1737,7 @@ transformHandler(selrebtn, SelectRect);
 transformHandler(sellabtn, SelectLasso);
 transformHandler(selmobtn);
 chemBondHandler(bondbtn, 1, 0); // Normal bond
-chemBondHandler(dbondbtn, 8, 2); // Upper bond
+chemBondHandler(dbondbtn, 14, 2); // Upper bond
 chemBondHandler(upperbtn, 2, 1); // Upper bond
 chemBondHandler(lowerbtn, 5, 3); // Upper bond
 deleteHandler(delbtn);
