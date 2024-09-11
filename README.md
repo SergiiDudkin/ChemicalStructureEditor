@@ -4,7 +4,7 @@ This is yet another molecule editor. It is platform-independent, and runs in a w
 convenient drawing of publication quality structures, paying great attention to aesthetics. A nice looking structure 
 is achieved by the comprehensive logic behind atom and bond auto positioning, alignments and shape computations.
 
-![App, general view](CSE.png)
+![App, general view](assets/images/CSE.png)
 
 # Run
 The app is hosted on GitHub pages: [CSE](https://sergiidudkin.github.io/ChemicalStructureEditor/).
@@ -18,7 +18,7 @@ outline, augmented with the transform tool:
 ![Lasso button](assets/images/transform_tool.png)
 
 The selection can be moved to any direction. Just click on the selection, drag and drop. If the selection is pulled by
-some atom (i.e. the cursor is over the atom) while the __Shift__ key is pressed, gets sticky, and can be merged with 
+some atom (i.e. the cursor is over the atom) while the `Shift` key is pressed, gets sticky, and can be merged with 
 another, static atom. In other words, two molecules can be merged. If the static and dragged atoms have different 
 symbol, the static atom or group has precedence.
 
@@ -27,22 +27,22 @@ The transform tool consists of the circle, 8 corner squares, 8 side rectangles, 
 [figure](assets/images/transform_tool.png) above).
 
 ### Rotating
-Click on the circle, drag and drop. The selection will follow the direction of the cursor. If the __Shift__ key is 
-pressed, the rotation angle is forced to be discrete with 5 ° resolution.
+Click on the circle ![Circle](assets/images/circle.png), drag and drop. The selection will follow the direction of the cursor. If the 
+`Shift` key is pressed, the rotation angle is forced to be discrete with 5 ° resolution.
 
 ### Scaling
-Click on any corner square, drag and drop. Approaching the pivot results in scale-down, and vice versa. If the __Shift__ 
-key is pressed, the scaling coefficient is forced to be discrete with 5 % resolution.
+Click on any corner square ![Corner square](assets/images/corner_square.png), drag and drop. Approaching the pivot results in scale-down, and vice 
+versa. If the `Shift` key is pressed, the scaling coefficient is forced to be discrete with 5 % resolution.
 
 ### Stretching
-Click on vertical or horizontal side rectangle (vertical or horizontal stretching respectively), drag and drop. 
-Approaching the pivot leads compression, and vice versa. If the __Shift__ 
-key is pressed, the stretching coefficient is forced to be discrete with 5 % resolution.
+Click on vertical ![Vertical rectangle](assets/images/ver_rect.png) or horizontal ![Horizontal rectangle](assets/images/hor_rect.png) side rectangle (vertical or 
+horizontal stretching respectively), drag and drop. Approaching the pivot leads compression, and vice versa. If the 
+`Shift` key is pressed, the stretching coefficient is forced to be discrete with 5 % resolution.
 
 ### Pivot
-The pivot defines the point of space that stays steady during any transform except translation. To move the pivot, click 
-on it, drag and drop. If the __Shift__ key is pressed, the pivot sticks to atoms and bonds, so the transform operation 
-can be executed precisely around the certain element.
+The pivot ![Pivot](assets/images/pivot.png) defines the point of space that stays steady during any affine transform 
+except translation. To move the pivot, click on it, drag and drop. If the `Shift` key is pressed, the pivot sticks to 
+atoms and bonds, so the transform operation can be executed precisely around the certain element.
 
 ## Hotkeys
 * Copy: `Ctrl + C`
@@ -153,3 +153,17 @@ Saves the drawings in the custom JSON format. Later the file can be opened by th
 
 ## Open .json file
 Open previously saved JSON file.
+
+# MacOS
+Please use `Cmd` key instead of `Ctrl`.
+
+# Roadmap
+* Arrows, lines and simple SVG shapes
+* Text and its formatting
+* Molecule style menu (font, color bond thickness, etc.)
+* Image metadata for SVG images to store the molecular graph and style info
+* Proper clipboard support
+
+# References
+[Graphical Representation of Stereochemical Configuration (IUPAC Recommendations 2006)
+](https://iupac.qmul.ac.uk/drawing/stereo.html)
