@@ -56,7 +56,7 @@ function buildBracketTree(tokens) {
 				group_obj.content = buildBracketTree(bracket_content);
 				bracket_tree.push(group_obj);
 				bracket_content = [];
-				continue
+				continue;
 			}
 			bracket_content.push(item);
 		}
@@ -103,7 +103,7 @@ function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 
 function dockText(anchor, satelite, dir) {
 	// Stack satelite text to the anchor one
-	var x = parseFloat(anchor.getAttribute('x')); 
+	var x = parseFloat(anchor.getAttribute('x'));
 	var y = parseFloat(anchor.getAttribute('y'));
 	var dy = parseFloat(anchor.style.fontSize) * 0.8;
 
@@ -132,7 +132,7 @@ function flattenBracketTree(bracket_tree, rev=false) {
 		if (content instanceof Array) {
 			var nested_text_arr = flattenBracketTree(content, rev);
 			if (rev) nested_text_arr.reverse();
-			appendix.push(...nested_text_arr)
+			appendix.push(...nested_text_arr);
 		}
 		else appendix.push(content);
 		if (brackets.length) appendix.push(brackets[1]);
@@ -140,7 +140,7 @@ function flattenBracketTree(bracket_tree, rev=false) {
 		if (rev) appendix.reverse();
 		text_arr.push(...appendix);
 	}
-	return text_arr
+	return text_arr;
 }
 
 function firstElemIdx(bracket_tree) {
@@ -210,11 +210,11 @@ function tokenToFormula(token) {
 
 function treeToFormula(bracket_tree, formula={}) {
 	for (const group_obj of bracket_tree) {
-		formula = sumFormula(formula, 
+		formula = sumFormula(formula,
 			mulFormula(
 				group_obj.content instanceof Array ?
-				treeToFormula(group_obj.content) : 
-				tokenToFormula(group_obj.content), 
+					treeToFormula(group_obj.content) :
+					tokenToFormula(group_obj.content),
 				group_obj.count === null ? 1 : group_obj.count
 			)
 		);
@@ -230,8 +230,8 @@ function separateUnrecognized(formula) {
 
 function formulaToFw(formula) {
 	return Math.round(Object.entries(formula)
-	.map(([el, cnt]) => std_atomic_weights[el] * cnt)
-	.reduce((acc, val) => acc + val, 0) * 1e12) / 1e12;
+		.map(([el, cnt]) => std_atomic_weights[el] * cnt)
+		.reduce((acc, val) => acc + val, 0) * 1e12) / 1e12;
 }
 
 function toHillSystem(formula) {
@@ -268,7 +268,7 @@ styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
 	'font-size': '16px'
-}
+};
 
 
 prefix_tree = {};

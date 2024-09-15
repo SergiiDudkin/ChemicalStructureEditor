@@ -6,7 +6,8 @@ var matrixrf, wmax; // Variables
 
 function indentHtml(el) {
 	if (el.childElementCount) {
-		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n').replaceAll(/^/gm, '\t') + '\n';
+		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n')
+			.replaceAll(/^/gm, '\t') + '\n';
 	}
 	return el.outerHTML;
 }
@@ -23,7 +24,8 @@ function downloadSvg() { // Download .svg
 	<!ENTITY ns_xlink "http://www.w3.org/1999/xlink">
 ]>
 `;
-	svg_content = header + indentHtml(svg_el).replaceAll(/class=".*?"/gm, '').replaceAll(/ mask="null"/gm, '').replaceAll(/ >/gm, '>');
+	svg_content = header + indentHtml(svg_el).replaceAll(/class=".*?"/gm, '').replaceAll(/ mask="null"/gm, '')
+		.replaceAll(/ >/gm, '>');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(svg_content));
 	element.setAttribute('download', 'molecule.svg');
@@ -115,7 +117,9 @@ class BaseButton {
 	}
 
 	static btn_num = 0;
+
 	static id_prefix = 'fb';
+
 	static btn_corners = '0,0 30,0 30,30 0,30';
 
 	static getBtnNum() {
@@ -204,7 +208,7 @@ class SubButton extends RegularButton {
 
 	createSvg() {
 		super.createSvg();
-		this.focline = attachSvg(this.mask_g, 'line', 
+		this.focline = attachSvg(this.mask_g, 'line',
 			{class: 'invisible', x1: 2, y1: 30, x2: 28, y2: 30, stroke: 'blue', 'stroke-width': 2}
 		);
 	}
@@ -229,8 +233,11 @@ class DropButton extends BaseButton {
 	}
 
 	static id_prefix = 'db';
+
 	static margin = 2;
+
 	static hflex_term = 6 - this.margin;
+
 	static btn_corners = '0,0 30,0 30,25 25,30 0,30';
 
 	createHtml() {
@@ -305,7 +312,8 @@ class DropButton extends BaseButton {
 
 
 function toBtnText(text) {
-	return `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' text-anchor='middle'>${text}</text>`;
+	return `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' 
+	text-anchor='middle'>${text}</text>`;
 }
 
 var flex_container = document.getElementsByClassName('flex-container')[0];
@@ -330,16 +338,19 @@ var dropelbtn = new DropButton(flex_container, `
 	<line x1="15.0" y1="28.0" x2="15.0" y2="19.0" stroke="black" stroke-width="2" />
 	<line x1="2.0" y1="5.5" x2="9.8" y2="10.0" stroke="black" stroke-width="2" />
 	<line x1="28.0" y1="5.5" x2="20.2" y2="10.0" stroke="black" stroke-width="2" />
-	<text x="15" y="15" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="16px">A</text>
+	<text x="15" y="15" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
+	font-size="16px">A</text>
 `);
 var elbtns = elbtnseq.map(atom => new SubButton(dropelbtn, toBtnText(atom)));
 dropelbtn.focusSubbtn(elbtns[0]);
 var dropbondbtn = new DropButton(flex_container, `
 	<line x1="11.0" y1="19.0" x2="19.4" y2="10.6" stroke="black" stroke-width="2" />
-	<text x="6.5" y="24.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="12px">C</text>
-	<text x="23.5" y="7.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="12px">C</text>
+	<text x="6.5" y="24.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
+	font-size="12px">C</text>
+	<text x="23.5" y="7.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
+	font-size="12px">C</text>
 `);
-var bondbtn = new SubButton(dropbondbtn, 
+var bondbtn = new SubButton(dropbondbtn,
 	'<line x1="4.4" y1="25.6" x2="25.6" y2="4.4" stroke="black" stroke-width="2" />'
 );
 dropbondbtn.focusSubbtn(bondbtn);
@@ -347,44 +358,51 @@ var dbondbtn = new SubButton(dropbondbtn, `
 	<line x1="5.8" y1="27.0" x2="27.0" y2="5.8" stroke="black" stroke-width="2" />
 	<line x1="3.0" y1="24.2" x2="24.2" y2="3.0" stroke="black" stroke-width="2" />
 `);
-var upperbtn = new SubButton(dropbondbtn, 
+var upperbtn = new SubButton(dropbondbtn,
 	'<polygon points="4.7,26.0 27.7,6.5 23.5,2.3 4.0,25.3" fill="black" />'
 );
 var lowerbtn = new SubButton(dropbondbtn, `
 	<defs>
-		<pattern id="low_btn_pattern" x="25.6" y="4.4" width="4" height="1" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
+		<pattern id="low_btn_pattern" x="25.6" y="4.4" width="4" height="1" patternUnits="userSpaceOnUse" 
+		patternTransform="rotate(135)">
 			<rect x="0" y="0" width="2" height="1" fill="black" />
 		</pattern>
 	</defs>
 	<polygon points="4.7,26.0 27.7,6.5 23.5,2.3 4.0,25.3" fill="url(#low_btn_pattern)" />
 `);
 var delbtn = new RegularButton(flex_container, `
-	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
+	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,
+	1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
 	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
 `);
 var textbtn = new RegularButton(flex_container, `
-	<path d=" M 22 6.8 V 23.2 M 18 5 H 20 A 2 2 0 0 1 22 7 A 2 2 0 0 1 24 5 H 26 M 18 25 H 20 A 2 2 0 0 0 22 23 A 2 2 0 0 0 24 25 H 26" stroke="black" stroke-width="1.5" />
-	<text x="12" y="17.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Serif" font-size="20px">T</text>
+	<path d=" M 22 6.8 V 23.2 M 18 5 H 20 A 2 2 0 0 1 22 7 A 2 2 0 0 1 24 5 H 26 M 18 25 H 20 A 2 2 0 0 0 22 23 A 2 2 
+	0 0 0 24 25 H 26" stroke="black" stroke-width="1.5" />
+	<text x="12" y="17.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Serif" 
+	font-size="20px">T</text>
 `);
 var dropcycbtn = new DropButton(flex_container, `
 	<polygon points="28.8,15.0 23.6,25.8 11.9,28.5 2.5,21.0 2.5,9.0 11.9,1.5 23.6,4.2" fill="black" />
 	<polygon points="15.0,25.2 5.3,18.2 9.0,6.7 21.0,6.7 24.7,18.2" fill="white" />
 `);
 var benzenebtn = new SubButton(dropcycbtn, `
-	<polygon points="15.0,26.0 5.5,20.5 5.5,9.5 15.0,4.0 24.5,9.5 24.5,20.5" stroke="black" stroke-width="2" fill="none" />
+	<polygon points="15.0,26.0 5.5,20.5 5.5,9.5 15.0,4.0 24.5,9.5 24.5,20.5" stroke="black" stroke-width="2" 
+	fill="none" />
 	<line x1="15.0" y1="22.0" x2="8.9" y2="18.5" stroke="black" stroke-width="2" />
 	<line x1="8.9" y1="11.5" x2="15.0" y2="8.0" stroke="black" stroke-width="2" />
 	<line x1="21.1" y1="11.5" x2="21.1" y2="18.5" stroke="black" stroke-width="2" />
 `);
 dropcycbtn.focusSubbtn(benzenebtn);
-var pentagonbtn = new SubButton(dropcycbtn, 
+var pentagonbtn = new SubButton(dropcycbtn,
 	'<polygon points="15.0,24.4 6.1,17.9 9.5,7.4 20.5,7.4 23.9,17.9" stroke="black" stroke-width="2" fill="none" />'
 );
-var hexagonbtn = new SubButton(dropcycbtn, 
-	'<polygon points="15.0,26.0 5.5,20.5 5.5,9.5 15.0,4.0 24.5,9.5 24.5,20.5" stroke="black" stroke-width="2" fill="none" />'
+var hexagonbtn = new SubButton(dropcycbtn,
+	`<polygon points="15.0,26.0 5.5,20.5 5.5,9.5 15.0,4.0 24.5,9.5 24.5,20.5" stroke="black" stroke-width="2" 
+	fill="none" />`
 );
 var heptagonbtn = new SubButton(dropcycbtn,
-	'<polygon points="15.0,27.7 5.1,22.9 2.6,12.2 9.5,3.6 20.5,3.6 27.4,12.2 24.9,22.9" stroke="black" stroke-width="2" fill="none" />'
+	`<polygon points="15.0,27.7 5.1,22.9 2.6,12.2 9.5,3.6 20.5,3.6 27.4,12.2 24.9,22.9" stroke="black" stroke-width="2"
+	fill="none" />`
 );
 
 
@@ -393,7 +411,7 @@ function clipCnv(extra='') {
 	cnvclippath.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
 }
 
-// Resize the canvas     
+// Resize the canvas
 function svgWidth(event) {
 	wmax = mainframe.offsetWidth - 36;
 	canvbckgrnd.setAttribute("width", wmax);
@@ -403,7 +421,7 @@ function svgWidth(event) {
 }
 svgWidth();
 window.addEventListener('resize', svgWidth);
-window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse())
+window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse());
 
 
 function invertCmd(kwargs_dir) {
@@ -416,18 +434,18 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.bonds_type) kwargs_rev.bonds_type = Object.fromEntries(Object.keys(kwargs_dir.bonds_type).map(
 		id => [id, document.getElementById(id).objref.type]
 	));
-	if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms); 
+	if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms);
 	if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
 
-	if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms); 
+	if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms);
 	if (kwargs_dir.rot_angle !== undefined) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
 	if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
 
-	if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms); 
+	if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms);
 	if (kwargs_dir.scale_factor) kwargs_rev.scale_factor = 1 / kwargs_dir.scale_factor;
 	if (kwargs_dir.scale_ctr) kwargs_rev.scale_ctr = kwargs_dir.scale_ctr.slice();
 
-	if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms); 
+	if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms);
 	if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
 	if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
 	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
@@ -444,15 +462,16 @@ function Dispatcher() { // Dispatcher provides undo-redo mechanism
 
 Dispatcher.prototype.addCmd = function(func_dir, args_dir, func_rev, args_rev) {
 	this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
-	this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); // Add new command to the history
+	this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); /* Add new command to the
+	history */
 	this.ptr++;
-}
+};
 
 Dispatcher.prototype.do = function(func_dir, kwargs_dir) {
 	kwargs_rev = invertCmd(kwargs_dir);
 	func_dir(kwargs_dir);
 	this.addCmd(func_dir, kwargs_dir, func_dir, kwargs_rev);
-}
+};
 
 Dispatcher.prototype.redo = function() {
 	if (this.ptr >= this.commands.length) return;
@@ -476,7 +495,7 @@ Dispatcher.prototype.keyHandler = function(event) {
 		if (toUndo) this.undo();
 		if (toUndo || toRedo) refreshBondCutouts();
 	}
-}
+};
 
 var dispatcher = new Dispatcher();
 
@@ -555,15 +574,17 @@ function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
 
 function detectIntersec(exclude=[]) {
 	var intersections = [];
-	var bond_group = Array.from(document.getElementById('sensors_b').children).map(el => el.objref).filter(bond => !exclude.includes(bond.id));
+	var bond_group = Array.from(document.getElementById('sensors_b').children).map(el => el.objref).filter(bond =>
+		!exclude.includes(bond.id));
 	bond_group.sort((a, b) => a.min_x < b.min_x ? -1 : 1);
 	for (const [i, bond0] of Object.entries(bond_group)) {
 		var j = parseInt(i);
 		var bond1 = bond_group[++j];
 		while (j < bond_group.length && bond1.min_x < bond0.max_x) {
-			if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y && 
+			if (bond1.min_y < bond0.max_y && bond0.min_y < bond1.max_y &&
 				checkIntersec(...[...bond0.nodes, ...bond1.nodes].map(node => node.xy))
-			) intersections.push([bond0.id, bond1.id].sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))).join('&'));
+			) intersections.push([bond0.id, bond1.id].sort((a, b) => parseInt(a.slice(1)) -
+				parseInt(b.slice(1))).join('&'));
 			bond1 = bond_group[++j];
 		}
 	}
@@ -602,7 +623,8 @@ function refreshBondCutouts(exclude=[]) {
 
 
 function chemNodeHandler(elbtn) {
-	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id, node0_is_new, node0_id;
+	var node0, pt0, cursoratom, atomtext, old_atomtext, new_atomtext, new_node0id, new_node1id, new_bond_id,
+		node0_is_new, node0_id;
 	elbtn.mask_g.addEventListener('click', crElem);
 
 	function crElem(event) { // Turn on creating of a new atom. Called when a chemical element button is clicked.
@@ -624,7 +646,8 @@ function chemNodeHandler(elbtn) {
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
-				if (node0.connections.length == 0 && (node0.text == atomtext || (node0.text == '' && atomtext == 'C'))) {
+				if (node0.connections.length == 0 && (node0.text == atomtext ||
+					(node0.text == '' && atomtext == 'C'))) {
 					var kwargs = {del_atoms: new Set([node0.id])};
 					dispatcher.do(editStructure, kwargs);
 					return;
@@ -667,7 +690,7 @@ function chemNodeHandler(elbtn) {
 			if (!node0_is_new) kwargs.atoms_text = {[node0_id]: old_atomtext};
 		}
 		else kwargs.atoms_text = {[node0_id]: new_atomtext};
-		dispatcher.do(editStructure, kwargs)
+		dispatcher.do(editStructure, kwargs);
 	}
 
 	function finNode(event) { // Finish to set node
@@ -769,7 +792,7 @@ function deleteHandler(delbtn) {
 		if (event.target.is_atom || event.target.is_bond) {
 			var focobj = event.target.objref;
 			if (focobj.constructor == ChemNode) var kwargs = {
-				del_atoms: new Set([focobj.id]), 
+				del_atoms: new Set([focobj.id]),
 				del_bonds: new Set(focobj.connections.map(bond => bond.id))
 			};
 			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.id])};
@@ -843,7 +866,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	function generateIds() {
 		var node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
 		var bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
-		return [node_ids, bond_ids]
+		return [node_ids, bond_ids];
 	}
 
 	var [cur_node_ids, cur_bond_ids] = generateIds();
@@ -876,7 +899,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			var [pt, node] = pickNodePoint(event);
 			if (node) {
-				stopCursor()
+				stopCursor();
 				common_node = node;
 				dispatcher.do(editStructure, {});
 				rotatePolygon(event);
@@ -884,7 +907,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				window.addEventListener('mouseup', appendPolygon);
 			}
 			else if (event.target.is_bond) { // Some bond was clicked
-				stopCursor()
+				stopCursor();
 				common_bond = event.target.objref;
 				dispatcher.do(editStructure, {});
 				flipPolygon(event);
@@ -908,7 +931,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	function flipPolygon(event) {
 		dispatcher.undo();
 
-		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, getSvgPoint(event)))
+		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, getSvgPoint(event)));
 		var dir = Math.sign(ortho_proj);
 		dir = dir ? dir : 1;
 
@@ -919,7 +942,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		delete new_atoms_data[new_node_ids[0]];
 		delete new_atoms_data[new_node_ids[1]];
 
-		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id)
+		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id);
 		new_bonds_data[new_bond_ids[1]][0] = node1_id;
 		new_bonds_data[new_bond_ids[num-1]][1] = node0_id;
 		new_bonds_data[new_bond_ids[0]][0] = node0_id;
@@ -929,7 +952,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
 		dispatcher.do(editStructure, kwargs);
-		// ToDo: Instead of dispatcher.do, memorize dir (or its absence), and then conditionally undo. It will also supress the cursor blinking when over new node.
+		/* ToDo: Instead of dispatcher.do, memorize dir (or its absence), and then conditionally undo. It will also
+		supress the cursor blinking when over new node. */
 	}
 
 	function rotatePolygon(event) {
@@ -999,7 +1023,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				if (old_bonds.length > 0) {
 					delete new_bonds_data[id];
 					var old_bond = old_bonds[0];
-					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2))
+					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
 					var new_type_casted = data[0] != old_bond.nodes[0].id ? ChemBond.rev_type[data[2]] : data[2];
 					if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
 						bonds_type[old_bond.id] = new_type_casted;
@@ -1066,7 +1090,7 @@ class SelectShape extends DeletableAbortable {
 		this.recalc = this.recalc.bind(this);
 		this.selectStop = this.selectStop.bind(this);
 		window.addEventListener('mousemove', this.recalc, this.signal_opt);
-		window.addEventListener('mouseup', this.selectStop, this.signal_opt)
+		window.addEventListener('mouseup', this.selectStop, this.signal_opt);
 	}
 
 	static tag; // Abstract attribute
@@ -1138,7 +1162,8 @@ class Selection {
 		this.join_cmd = null;
 		this.bottom_ptr = Infinity;
 		this.clipboard = {mol: null};
-		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyDownHandler', 'keyUpHandler'].forEach(method => this[method] = this[method].bind(this));
+		['startMoving', 'moving', 'finishMoving', 'copy', 'cut', 'paste', 'keyDownHandler', 'keyUpHandler']
+			.forEach(method => this[method] = this[method].bind(this));
 
 		document.addEventListener('keydown', this.keyDownHandler);
 		document.addEventListener('keyup', this.keyUpHandler);
@@ -1150,7 +1175,7 @@ class Selection {
 	static parent_map = {
 		'atoms': 'sensors_a',
 		'bonds': 'sensors_b'
-	}
+	};
 
 	static objsUnderShape(parent_id, covering_shape) {
 		return [...document.getElementById(parent_id).children].map(el => el.objref)
@@ -1220,17 +1245,20 @@ class Selection {
 	}
 
 	dehighlight() {
-		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.deselect());
+		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id)
+			.objref.deselect());
 	}
 
 	eventsOn() {
 		this.highlights.classList.remove('sympoi');
-		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.eventsOff());
+		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id)
+			.objref.eventsOff());
 	};
 
 	eventsOff() {
 		this.highlights.classList.add('sympoi');
-		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id).objref.eventsOn());
+		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id)
+			.objref.eventsOn());
 	};
 
 	startMoving(event) { // Click on selection
@@ -1255,7 +1283,8 @@ class Selection {
 		var to_join = event.shiftKey && event.target.is_atom && this.pointed_atom;
 		var corrected_point = to_join ? event.target.objref.xy : vecDif(this.init_ctr_pt_error, getSvgPoint(event));
 		var moving_vec = vecDif(this.mo_st, corrected_point);
-		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`, event);
+		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`,
+			event);
 		var kwargs = {};
 
 		if (this.join_cmd) {
@@ -1267,7 +1296,8 @@ class Selection {
 
 		if (to_join) {
 			var target_node = event.target.objref;
-			var bonds_data = gatherAtomsBondsData(new Set(), new Set(target_node.connections.map(bond => bond.id))).new_bonds_data;
+			var bonds_data = gatherAtomsBondsData(new Set(), new Set(target_node.connections.map(bond => bond.id)))
+				.new_bonds_data;
 			kwargs.del_atoms = new Set([target_node.id]);
 			kwargs.atoms_text = {[this.pointed_atom.id]: target_node.text};
 			kwargs.del_bonds = new Set(Object.keys(bonds_data));
@@ -1297,10 +1327,10 @@ class Selection {
 
 		this.blurElement();
 		this.pointed_atom = null;
-		
+
 		if (this.join_cmd) {
 			this.join_cmd.dir.moving_vec = this.accum_vec;
-			this.join_cmd.rev.moving_vec = vecMul(this.accum_vec, -1)
+			this.join_cmd.rev.moving_vec = vecMul(this.accum_vec, -1);
 			this.finishAction(this.join_cmd.dir, this.join_cmd.rev);
 			this.join_cmd = null;
 		}
@@ -1314,7 +1344,7 @@ class Selection {
 		editStructure(kwargs);
 	}
 
-	finishRelocatingAtoms(action_type, kwargs) {	
+	finishRelocatingAtoms(action_type, kwargs) {
 		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
 		this.finishAction(kwargs, invertCmd(kwargs));
 	}
@@ -1395,19 +1425,19 @@ class Selection {
 		var moving_vec = vecMul([15, 15], ++this.clipboard.mol.cnt);
 		kwargs.new_atoms_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_atoms_data).map(([key, value]) => {
-					const new_id = ChemNode.prototype.getNewId();
-					keymap[key] = new_id;
-					return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
-				}
-		 	)
-		)
+				const new_id = ChemNode.prototype.getNewId();
+				keymap[key] = new_id;
+				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
+			}
+			)
+		);
 		kwargs.new_bonds_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_bonds_data)
 				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
 					return [ChemBond.prototype.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
 				}
-		 	)
-		)
+				)
+		);
 
 		dispatcher.do(editStructure, kwargs);
 		refreshBondCutouts();
@@ -1416,7 +1446,8 @@ class Selection {
 	}
 
 	computeFormula() {
-		var atoms = this.atoms.size ? [...this.atoms] : [...document.getElementById('sensors_a').children].map(el => el.objref.id);
+		var atoms = this.atoms.size ? [...this.atoms] : [...document.getElementById('sensors_a').children]
+			.map(el => el.objref.id);
 		return atoms.reduce(
 			(acc, atom_id) => sumFormula(acc, document.getElementById(atom_id).objref.formula), {}
 		);
@@ -1427,8 +1458,9 @@ class Selection {
 		var hill_string = hillToStr(toHillSystem(formula));
 		var hill_unrecognized = hillToStr(toHillSystem(unrecognized));
 		var fw = formulaToFw(formula);
-		var el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`).join(', ');
-		var str_output = 
+		var el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`)
+			.join(', ');
+		var str_output =
 `	Brutto formula 
 	${hill_string}
 
@@ -1450,7 +1482,8 @@ class Selection {
 				if (cmd.moving_atoms) this.transform_tool.translate(cmd.moving_vec);
 				if (cmd.rotating_atoms) this.transform_tool.rotate(cmd.rot_angle, cmd.rot_ctr);
 				if (cmd.scaling_atoms) this.transform_tool.scale(cmd.scale_factor, cmd.scale_ctr);
-				if (cmd.stretching_atoms) this.transform_tool.stretch(cmd.stretch_factor, cmd.dir_angle, cmd.stretch_ctr);
+				if (cmd.stretching_atoms) this.transform_tool.stretch(cmd.stretch_factor, cmd.dir_angle,
+					cmd.stretch_ctr);
 			}
 			else {
 				this.addTransformTool();
@@ -1479,7 +1512,7 @@ class TransformTool extends DeletableAbortable {
 	constructor(parent_id, cx, cy, width, height) {
 		super();
 		[
-			'movingPivot', 'finishMovingPivot', 'startMovingPivot', 'startRotating', 'rotating', 'finishRotating', 
+			'movingPivot', 'finishMovingPivot', 'startMovingPivot', 'startRotating', 'rotating', 'finishRotating',
 			'startScaling', 'scaling', 'finishScaling', 'startStretching', 'stretching', 'finishStretching'
 		].forEach(method => this[method] = this[method].bind(this));
 
@@ -1499,7 +1532,7 @@ class TransformTool extends DeletableAbortable {
 		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
 		var pivot_pts = [
-			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl], 
+			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl],
 			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
 		].map(pt => pt.join()).join(' ');
 
@@ -1516,7 +1549,7 @@ class TransformTool extends DeletableAbortable {
 			[CtrRect, cx, cy - hh, {width: sh, height: sw}, this.startStretching] // Top rectangle
 		];
 		vals.forEach(item => item[3].class = 'transformjig');
-		this.jigs = vals.map(([ShapeClass, cx, cy, svg_args, callback]) => 
+		this.jigs = vals.map(([ShapeClass, cx, cy, svg_args, callback]) =>
 			new ShapeClass('transform-tool', cx, cy, svg_args).render()
 				.addEventListener('mousedown', callback, this.signal_opt)
 		);
@@ -1547,7 +1580,8 @@ class TransformTool extends DeletableAbortable {
 			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? new_accum_rot_angle - this.accum_rot_angle : 0;
 		}
 		this.accum_rot_angle += rot_angle;
-		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180).toFixed(1)} \u00B0`, event);
+		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180)
+			.toFixed(1)} \u00B0`, event);
 		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
 		selection.relocatingAtoms('rotating', {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
@@ -1561,7 +1595,7 @@ class TransformTool extends DeletableAbortable {
 
 	rotate(rot_angle, rot_ctr) {
 		this.pivot.setCtr(rot_ctr).render();
-		this.xy = rotateAroundCtr(this.xy, rot_angle, rot_ctr)
+		this.xy = rotateAroundCtr(this.xy, rot_angle, rot_ctr);
 		this.jigs.slice(1).forEach(jig => {
 			jig.setCtr(rotateAroundCtr(jig.xy, rot_angle, rot_ctr)).rotate(rot_angle).render();
 		});
@@ -1616,13 +1650,15 @@ class TransformTool extends DeletableAbortable {
 		var factor = this.getFactor();
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
-		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
+		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle,
+			stretch_ctr: [...this.pivot.xy]});
 	}
 
 	finishStretching() {
 		window.removeEventListener('mousemove', this.stretching);
 		window.removeEventListener('mouseup', this.finishStretching);
-		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_factor, dir_angle: this.dir_angle, stretch_ctr: [...this.pivot.xy]});
+		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
+			stretch_ctr: [...this.pivot.xy]});
 	}
 
 	stretch(stretch_factor, dir_angle, stretch_ctr) {
@@ -1643,7 +1679,7 @@ class TransformTool extends DeletableAbortable {
 		window.addEventListener('mousemove', this.movingPivot, this.signal_opt);
 		window.addEventListener('mouseup', this.finishMovingPivot, this.signal_opt);
 	}
-		
+
 	movingPivot(event) {
 		var corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
 		if (event.shiftKey) {
@@ -1701,7 +1737,8 @@ class Indicator extends DeletableAbortable {
 	constructor(parent_id) {
 		super();
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
-		this.text = attachSvg(document.getElementById(parent_id), 'text', {style: styleToString(this.constructor.textstyle), id: 'indicator'});
+		this.text = attachSvg(document.getElementById(parent_id), 'text',
+			{style: styleToString(this.constructor.textstyle), id: 'indicator'});
 		this.delete = this.delete.bind(this);
 		window.addEventListener('mouseup', this.delete, this.signal_opt);
 	}
@@ -1711,13 +1748,14 @@ class Indicator extends DeletableAbortable {
 		'font-family': 'Arial',
 		'font-size': '12px',
 		'font-weight': 'bold'
-	}
+	};
 
 	setText(text, event) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
 		var pt = getSvgPoint(event);
 		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
-		text.split('\n').toReversed().forEach((line, idx) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`}).appendChild(document.createTextNode(line)));
+		text.split('\n').toReversed().forEach((line, idx) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
+			.appendChild(document.createTextNode(line)));
 		var bbox = this.text.getBBox();
 		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));
 		bbox = this.text.getBBox();

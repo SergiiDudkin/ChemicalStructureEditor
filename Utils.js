@@ -33,7 +33,7 @@ class DeletableAbortable extends Deletable {
 	delete() {
 		this.controller.abort();
 		super.delete();
-	}	
+	}
 }
 
 

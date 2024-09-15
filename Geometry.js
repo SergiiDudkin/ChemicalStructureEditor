@@ -8,7 +8,7 @@ function lineIntersec([x1, y1], [x2, y2], [x3, y3], [x4, y4]) { // Find intersec
 	var f = y1 - y2;
 	var g = c * e - f * b;
 	if (g == 0) {
-		throw new Error('Non-intersecting lines!')
+		throw new Error('Non-intersecting lines!');
 	};
 	var ipoi_y = (a * e - f * d) / g; // Intersection point, x value
 	var ipoi_x = (a * b - c * d) / g; // Intersection point, y value
@@ -28,7 +28,7 @@ function findDist(xy0, xy1) { // Find distance between two points
 }
 
 function unitVec(xy) { // Find unit vector
-	return vecDiv(xy, vecLen(xy))
+	return vecDiv(xy, vecLen(xy));
 }
 
 function vecSum([x0, y0], [x1, y1]) { // Add vectors

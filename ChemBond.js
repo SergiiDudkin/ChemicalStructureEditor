@@ -3,7 +3,7 @@ function ChemBond(id, node0, node1, type) {
 
 	this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
 
-	this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: ChemBond.sel_h})
+	this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: ChemBond.sel_h});
 	this.backrect.shape.is_bond = true;
 	this.backrect.shape.objref = this;
 
@@ -51,17 +51,21 @@ ChemBond.delSel = new Set(); // Bonds deleted while selected
 12 - double auto 0
 13 - double auto +
 14 - double auto undef
-15 - triple 
+15 - triple
 */
 //					   Bond type: 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
 ChemBond.mult =					[ 0,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.linecnt =				[ 1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  3];
 ChemBond.ctrline =				[ 0,  0,  0,  0,  0,  0,  0,  0,  1,   ,  0,  1,   ,  0,   ,  1];
 ChemBond.next_type =		   [[ 1, 14,  1,  1,  1,  1,  1,  1, 15, 15, 15, 15, 15, 15, 15,  1],  // Simpe
+	// eslint-disable-next-line @stylistic/js/indent
 								[ 2,  2,  4,  2,  3,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2],  // Up
+	// eslint-disable-next-line @stylistic/js/indent
 								[ 8,  8,  8,  8,  8,  8,  8,  8,  9, 10, 14,  8,  8,  8,  8,  8],  // Double
+	// eslint-disable-next-line @stylistic/js/indent
 								[ 5,  5,  5,  5,  5,  7,  5,  6,  5,  5,  5,  5,  5,  5,  5,  5]]; // Down
 ChemBond.tip_type =			   [[ 0,  0,  1,  2,  3,  1,  2,  3,  0,  0,  0,  0,  0,  0,  0,  0],
+	// eslint-disable-next-line @stylistic/js/indent
 								[ 0,  0,  2,  1,  3,  2,  1,  3,  0,  0,  0,  0,  0,  0,  0,  0]];
 ChemBond.type_to_pdshift = 		[ 0,  0,  0,  0,  0,  0,  0,  0, -1,  0,  1, -1,  0,  1,   ,  0];
 ChemBond.rev_type =				[ 0,  1,  3,  2,  4,  6,  5,  7, 10,  9,  8, 13, 12, 11, 14, 15];
@@ -105,18 +109,18 @@ ChemBond.prototype.getNodeVec = function(node) {
 
 ChemBond.prototype.getNextType = function(map_idx) {
 	return ChemBond.next_type[map_idx][this.type];
-}
+};
 
 ChemBond.prototype.setType = function(type) {
 	this.type = type;
 	this.multiplicity = ChemBond.mult[type];
 	this.pdshift = ChemBond.type_to_pdshift[type];
-	this.linecnt = ChemBond.linecnt[type]
+	this.linecnt = ChemBond.linecnt[type];
 
 	// Start and end half width of the bond line (determined by bond type)
 	var tip_thickness = [this.normal, this.thin, this.thick, this.bold];
 	this.hw = [0, 1].map(idx => tip_thickness[ChemBond.tip_type[idx][type]] / 2);
-	this.hws = this.normal / 2; // Side line half width 
+	this.hws = this.normal / 2; // Side line half width
 	this.hsp = this.bond_spacing / 2; // Half of space between lines in multiple bonds
 
 	this.terms = new Array(2);
@@ -162,7 +166,8 @@ ChemBond.prototype.posDouble = function() {
 		for (const bond of node.connections) {
 			if (this != bond) {
 				var sin = sinVec(this.difxy, bond.difxy);
-				if (bond.nodes[0] != node) sin *= -1; // Invert sin if the bond starts not from the node, but ends it (i.e. has opposit direction)
+				if (bond.nodes[0] != node) sin *= -1; /* Invert sin if the bond starts not from the node, but ends it
+				(i.e. has opposit direction) */
 				if (sin > 0.1305) sinflags[node_idx][0] = 1;
 				else if (sin < -0.1305) sinflags[node_idx][1] = -1;
 			}
@@ -176,7 +181,7 @@ ChemBond.prototype.posDouble = function() {
 ChemBond.prototype.updateTip = function(node) {
 	this.adjustLength(node);
 	this.setSideTip(node);
-}
+};
 
 ChemBond.prototype.updateConvTip = function(node) {
 	var node_idx = this.getNodeIdx(node);
@@ -184,15 +189,15 @@ ChemBond.prototype.updateConvTip = function(node) {
 	this.offsets[node_idx] = 0;
 	this.hwt = this.hw.slice();
 	this.setSideTip(node);
-}
+};
 
 ChemBond.prototype.setButtTip = function(node, line_idx, term_xy) {
 	var node_idx = this.getNodeIdx(node);
 	var hw_vec = vecMul(this.ouva, this.hwt[node_idx]);
 	var dir = this.getNodeSign(node);
 	this.lines[line_idx][node_idx] = [
-		vecSum(term_xy, vecMul(hw_vec, dir)), 
-		, 
+		vecSum(term_xy, vecMul(hw_vec, dir)),
+		,
 		vecSum(term_xy, vecMul(hw_vec, -dir))
 	];
 };
@@ -201,11 +206,11 @@ ChemBond.prototype.setHalfButt = function(node, acw) {
 	var node_idx = this.getNodeIdx(node);
 	var hw_len = this.hw[node_idx] * this.getNodeSign(node, acw);
 	this.juncs[node_idx][+acw] = vecSum(node.xy, vecMul(this.ouva, hw_len));
-}
+};
 
 ChemBond.prototype.getShiftFactors = function() {
 	return [...Array(this.linecnt).keys()].map(idx => [idx, idx * 2 - this.linecnt + 1 + this.pdshift]);
-}
+};
 
 ChemBond.prototype.setSideTip = function(node) {
 	var node_idx = this.getNodeIdx(node);
@@ -220,7 +225,7 @@ ChemBond.prototype.setSideTip = function(node) {
 			var term_xy = this.terms[node_idx];
 			var xy = vecSum(term_xy, vecMul(this.ouva, shift_val));
 			if (node.connections.length > 1 && this.linecnt == 2 && !node.text) {
-				var step = this.getNodeSign(node, shift_factor > 0)
+				var step = this.getNodeSign(node, shift_factor > 0);
 
 				var adj_bond = node.goToBond(this, step);
 
@@ -251,14 +256,14 @@ ChemBond.prototype.setSideTip = function(node) {
 			this.setButtTip(node, line_idx, xy);
 		}
 	}
-}
+};
 
 ChemBond.prototype.createPattern = function() {
-	this.pattern = attachSvg(document.getElementById('bondpatterns'), 'pattern', 
+	this.pattern = attachSvg(document.getElementById('bondpatterns'), 'pattern',
 		{id: 'p' + this.id, x: 0, y: 0, width: 4, height: 1, patternUnits: 'userSpaceOnUse'}
 	);
 	attachSvg(this.pattern, 'rect', {x: 0, y: 0, width: 2, height: 1});
-}
+};
 
 ChemBond.prototype.deletePattern = function() {
 	if (this.pattern) {
@@ -276,12 +281,13 @@ ChemBond.prototype.createMask = function() {
 
 	document.getElementById('bondcutouts').appendChild(this.mask);
 	this.renderBond(); // ToDo: Do not render bond! Set the mask for <g> instead.
-}
+};
 
 ChemBond.prototype.createSubmask = function(upper_bond) {
 	if (!this.mask) this.createMask();
-	upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${upper_bond.id}`});
-}
+	upper_bond.drawLines(this.mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4,
+		'class': `u${upper_bond.id}`});
+};
 
 ChemBond.prototype.deleteMask = function() {
 	if (this.mask) {
@@ -319,20 +325,20 @@ ChemBond.prototype.renderBond = function() {
 		this.pattern.firstChild.setAttribute('fill', this.color);
 	}
 	this.drawLines(this.g, {
-		'fill': (this.pattern ? `url(#p${this.id})` : this.color), 
+		'fill': (this.pattern ? `url(#p${this.id})` : this.color),
 		'mask': (this.mask ? `url(#m${this.id})`: null),
 		'class': 'sympoi'
 	});
-	ChemBond.prototype.deleteMaskLines(this, document, del_mask=false).forEach(mask => 
+	ChemBond.prototype.deleteMaskLines(this, document, del_mask=false).forEach(mask =>
 		this.drawLines(mask, {'fill': 'black', 'stroke': 'black', 'stroke-width': 4, 'class': `u${this.id} sympoi`})
 	);
-}
+};
 
 ChemBond.prototype.updateAllRects = function() {
-	var offsets = this.offsets.map(offset => Math.max(offset, ChemBond.min_offset))
+	var offsets = this.offsets.map(offset => Math.max(offset, ChemBond.min_offset));
 	this.backrect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
 	this.refreshSelectRect();
-}
+};
 
 ChemBond.prototype.getNodeCenters = function() {
 	return [this.nodes[0].xy.slice(), this.nodes[1].xy.slice()];
@@ -343,11 +349,11 @@ ChemBond.prototype.getNodeIdx = function(node) {
 	if (this.nodes[0] == node) return 0;
 	else if (this.nodes[1] == node) return 1;
 	else throw new Error('The bond does not have this node!');
-}
+};
 
 ChemBond.prototype.getNodeSign = function(node, invert=false) {
 	return (this.nodes[0] == node) != invert ? -1 : 1;
-}
+};
 
 ChemBond.prototype.getBorder = function(node, acw) {
 	var side = this.getNodeSign(node, !acw);
@@ -373,11 +379,11 @@ ChemBond.prototype.adjustLength = function(node) {
 	var [difx, dify] = this.difxy;
 	var tan = Math.abs(dify / difx);
 	var dirtab = [ // 0: R, 1: U, 2: L, 3: D
-					[[2, 2],
-					 [0, 0]],
-					[[3, 1],
-					 [3, 1]]
-				 ];
+		[[2, 2],
+			[0, 0]],
+		[[3, 1],
+			[3, 1]]
+	];
 	var dir = dirtab[+(tan > threshold)][+(node_idx == 0 == difx > 0)][+(node_idx == 0 == dify < 0)];
 
 	// Compute intersection point
@@ -389,13 +395,13 @@ ChemBond.prototype.adjustLength = function(node) {
 	];
 	var [fx0, fy0, fx1, fy1] = multab[dir];
 	this.terms[node_idx] = lineIntersec(
-		...node_centers, 
+		...node_centers,
 		vecSum(curxy, [fx0 * tb_w, fy0 * tb_h]),
 		vecSum(curxy, [fx1 * tb_w, fy1 * tb_h])
 	);
 
 	// Compute offsets
-	this.offsets[node_idx] = vecLen(vecDif(curxy, this.terms[node_idx]))
+	this.offsets[node_idx] = vecLen(vecDif(curxy, this.terms[node_idx]));
 
 	// Compute halw width of the actual bond terminals
 	prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
@@ -429,8 +435,11 @@ ChemBond.prototype.eventsOff = function() {
 
 ChemBond.prototype.refreshSelectRect = function() {
 	if (this.select_rect && !this.offsets.includes(undefined)) {
-		var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(offset, ChemBond.min_offset));
+		var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(
+			offset, ChemBond.min_offset
+		));
 		this.select_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
-		this.masksel_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets.map(item => item + 1.5)).setAbsRotAng(this.rotang).render();
+		this.masksel_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets.map(item => item + 1.5))
+			.setAbsRotAng(this.rotang).render();
 	}
 };

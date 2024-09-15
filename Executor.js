@@ -1,22 +1,22 @@
 function editStructure({
-	new_atoms_data={}, new_bonds_data={}, 
-	del_atoms=new Set(), del_bonds=new Set(), 
-	atoms_text={}, bonds_type={}, 
-	moving_atoms=new Set(), moving_vec=[0, 0], 
+	new_atoms_data={}, new_bonds_data={},
+	del_atoms=new Set(), del_bonds=new Set(),
+	atoms_text={}, bonds_type={},
+	moving_atoms=new Set(), moving_vec=[0, 0],
 	rotating_atoms=new Set(), rot_angle=0, rot_ctr=[0, 0],
 	scaling_atoms=new Set(), scale_factor=0, scale_ctr=[0, 0],
 	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0]
 }) {
-	var atoms_parse = new Set(), 
-		atoms_render = new Set(), 
-		atoms_auto_d_bond = new Set(), 
-		atoms_refresh_tips = new Set(), 
+	var atoms_parse = new Set(),
+		atoms_render = new Set(),
+		atoms_auto_d_bond = new Set(),
+		atoms_refresh_tips = new Set(),
 		atoms_text_me = {},
-		tips_update = new Set(), 
-		bonds_d_adjust = new Set(), 
-		bonds_to_render = new Set(), 
-		bonds_transl = new Set(), 
-		bonds_update_rect = new Set(), 
+		tips_update = new Set(),
+		bonds_d_adjust = new Set(),
+		bonds_to_render = new Set(),
+		bonds_transl = new Set(),
+		bonds_update_rect = new Set(),
 		bonds_scewed = new Set();
 
 	// Delete bonds
@@ -41,7 +41,7 @@ function editStructure({
 
 	// Create atoms
 	for (const [id, data] of Object.entries(new_atoms_data)) {
-		atoms_parse.add(new ChemNode(id, ...data)); // data: [x, y, text]	
+		atoms_parse.add(new ChemNode(id, ...data)); // data: [x, y, text]
 	}
 
 	// Create bonds

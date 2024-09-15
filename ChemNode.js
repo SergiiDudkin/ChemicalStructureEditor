@@ -10,7 +10,8 @@ function ChemNode(id, x, y, text) {
 
 	this.g = attachSvg(document.getElementById('atomsall'), 'g', {class: 'ag'});
 
-	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle', {id: id, class: 'anode', r: ChemNode.sel_r, cx: x, cy: y});
+	this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle',
+		{id: id, class: 'anode', r: ChemNode.sel_r, cx: x, cy: y});
 	this.backcircle.is_atom = true;
 	this.backcircle.objref = this;
 
@@ -52,12 +53,12 @@ ChemNode.prototype.delete = function() {
 ChemNode.prototype.isImplicit = function() {
 	// Is it implicit carbon (line terminal, no explicit atom symbol)
 	return this.connections.length > 0 && this.text == '';
-}
+};
 
 ChemNode.prototype.isMethane = function() {
 	// Is is lonely implicit carbon (should be displayed as CH4)
 	return this.connections.length == 0 && this.text == '';
-}
+};
 
 ChemNode.prototype.parse = function() {
 	var target_text;
@@ -68,7 +69,7 @@ ChemNode.prototype.parse = function() {
 			this.bracket_tree = buildBracketTree(tokenize(target_text));
 		}
 		catch {
-			this.bracket_tree = [{content: target_text, brackets: [], count: null}]
+			this.bracket_tree = [{content: target_text, brackets: [], count: null}];
 		}
 	}
 	else {
@@ -104,7 +105,8 @@ ChemNode.prototype.translate = function(moving_vec) {
 ChemNode.prototype.select = function() {
 	this.eventsOff();
 	this.select_circ = attachSvg(this.highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r});
-	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle', {'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
+	this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle',
+		{'cx': this.xy[0], 'cy': this.xy[1], 'r': ChemNode.sel_r - 1.5});
 };
 
 ChemNode.prototype.deselect = function() {
@@ -128,26 +130,27 @@ ChemNode.prototype.promoteMaskSel = function() {
 	this.masksel_circ.remove();
 	this.masksel_circ.setAttribute('fill', 'black');
 	document.getElementById('selectmask').appendChild(this.masksel_circ);
-}
+};
 
 ChemNode.prototype.demoteMaskSel = function() {
 	this.eventsOn();
 	this.masksel_circ.remove();
 	this.masksel_circ.removeAttribute('fill');
 	document.getElementById('selectholes').appendChild(this.masksel_circ);
-}
+};
 
 ChemNode.prototype.renderText = function() {
 	while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old text
 	this.locateHydr();
-	textTermBuilder(this.bracket_tree, this.g, this.position_idx, this.style, this.xy)
-}
+	textTermBuilder(this.bracket_tree, this.g, this.position_idx, this.style, this.xy);
+};
 
-ChemNode.prototype.locateHydr = function() { 
-	// Find the least ocupied direction in terms of the most interfearing bond angle (or to be exect, unit vector projection)
+ChemNode.prototype.locateHydr = function() {
+	/* Find the least ocupied direction in terms of the most interfearing bond angle
+	(or to be exect, unit vector projection) */
 	var proj_rldu = [0, 0, 0, 0];
 	for (const bond of this.connections) {
-		var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len)
+		var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len);
 		proj_rldu = [bondcos, -bondcos, bondsin, -bondsin].map((item, idx) => Math.max(item, proj_rldu[idx]));
 	}
 	proj_rldu = [0, 1e-6, 2e-6, 3e-6].map((item, idx) => item + proj_rldu[idx]); // Set micro priority
@@ -178,7 +181,7 @@ ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
 		bond0.juncs[bond0.getNodeIdx(this)][1] = junc;
 		bond1.juncs[bond1.getNodeIdx(this)][0] = junc;
 	}
-}
+};
 
 ChemNode.prototype.calcLineTips = function() {
 	this.sortConnections();

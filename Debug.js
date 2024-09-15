@@ -1,5 +1,5 @@
 colors = ['Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'DarkViolet', 'Silver', 'Gray', 'Teal'];
-color_idx = 0
+color_idx = 0;
 
 
 function getColor() {
