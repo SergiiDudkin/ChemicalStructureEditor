@@ -142,7 +142,7 @@ ChemBond.prototype.delete = function() {
 		this.deselect();
 	}
 	ChemBond.prototype.deleteMaskLines(this, document, del_mask=true);
-	for (node of this.nodes) node.connections = node.connections.filter(item => item !== this);
+	for (const node of this.nodes) node.connections = node.connections.filter(item => item !== this);
 	this.g.remove();
 	this.backrect.delete();
 	delete this.nodes;
@@ -151,8 +151,8 @@ ChemBond.prototype.delete = function() {
 };
 
 ChemBond.prototype.translate = function(moving_vec) {
-	for (line of this.lines) {
-		for (tip of line) {
+	for (const line of this.lines) {
+		for (const tip of line) {
 			tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec)); // Move poligon corners
 		}
 	}
@@ -173,7 +173,7 @@ ChemBond.prototype.posDouble = function() {
 			}
 		}
 	}
-	pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
+	var pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
 	this.setType(ChemBond.pdshift1p_to_type[pdshift + 1]);
 	return pdshift;
 };
@@ -241,12 +241,12 @@ ChemBond.prototype.setSideTip = function(node) {
 				}
 				else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
 					var adj_bond_border = adj_bond.getBorder(node, step > 0);
-					side_shift = vecMul(this.ouva, this.hws * this.getNodeSign(node));
+					var side_shift = vecMul(this.ouva, this.hws * this.getNodeSign(node));
 
-					t0 = vecSum(xy, side_shift);
-					t1 = vecSum(t0, this_vec);
-					t2 = vecSum(xy, vecMul(side_shift, -1));
-					t3 = vecSum(t2, this_vec);
+					var t0 = vecSum(xy, side_shift);
+					var t1 = vecSum(t0, this_vec);
+					var t2 = vecSum(xy, vecMul(side_shift, -1));
+					var t3 = vecSum(t2, this_vec);
 
 					this.lines[line_idx][node_idx][0] = lineIntersec(t0, t1, ...adj_bond_border);
 					this.lines[line_idx][node_idx][2] = lineIntersec(t2, t3, ...adj_bond_border);
@@ -305,7 +305,7 @@ ChemBond.prototype.deleteMaskLines = function(upper_bond, root, del_mask=false) 
 	var masks = new Set(u_mask_lines.map(m_line => m_line.parentNode));
 	u_mask_lines.forEach(u_mask_line => u_mask_line.remove());
 	if (del_mask) {
-		for (mask of masks) {
+		for (const mask of masks) {
 			if (mask.children.length <= 1) mask.objref.deleteMask();
 		}
 	}
@@ -404,7 +404,7 @@ ChemBond.prototype.adjustLength = function(node) {
 	this.offsets[node_idx] = vecLen(vecDif(curxy, this.terms[node_idx]));
 
 	// Compute halw width of the actual bond terminals
-	prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
+	var prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
 	this.hwt[node_idx] = this.hw[node_idx] * (1 - prop) + this.hw[1 - node_idx] * prop;
 
 	return this.terms[node_idx];

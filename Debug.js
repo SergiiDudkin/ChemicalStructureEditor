@@ -1,9 +1,9 @@
-colors = ['Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'DarkViolet', 'Silver', 'Gray', 'Teal'];
-color_idx = 0;
+var colors = ['Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'DarkViolet', 'Silver', 'Gray', 'Teal'];
+var color_idx = 0;
 
 
 function getColor() {
-	color = colors[color_idx];
+	var  color = colors[color_idx];
 	color_idx = (color_idx + 1) % 10;
 	return color;
 }
@@ -34,5 +34,5 @@ function drawBBox(text_el) {
 	bbox_rect.setAttribute('y', text_bbox.y);
 	bbox_rect.setAttribute('width', text_bbox.width);
 	bbox_rect.setAttribute('height', text_bbox.height);
-	document.getElementById('utils').appendChild(g).appendChild(bbox_rect);
+	document.getElementById('utils').appendChild(bbox_rect);
 }

@@ -162,23 +162,24 @@ function centering(text) {
 }
 
 function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
+	var anch;
 	var rev = dir == 1;
 	var text_arr = flattenBracketTree(bracket_tree, rev);
 	var [brackets_cnt, subscript_cnt, has_1st_subscript] = firstElemIdx(bracket_tree);
 
 	if (dir == 0) { // R
-		var anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
+		anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
 		attachTextArr(anch, 1, text_arr.slice(0, brackets_cnt), parent, styledict); // l_sat
 		attachTextArr(anch, 0, text_arr.slice(brackets_cnt + 1), parent, styledict); // r_sat
 	}
 	else if (dir == 1) { // L
 		var both_cnt = brackets_cnt + subscript_cnt;
-		var anch = styleText([text_arr[both_cnt]], parent, styledict, [x, y], true);
+		anch = styleText([text_arr[both_cnt]], parent, styledict, [x, y], true);
 		attachTextArr(anch, 0, text_arr.slice(0, both_cnt).reverse(), parent, styledict); // r_sat
 		attachTextArr(anch, 1, text_arr.slice(both_cnt + 1).reverse(), parent, styledict); // l_sat
 	}
 	else if (dir == 2 || dir == 3) { // D, U
-		var anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
+		anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
 		attachTextArr(anch, 1, text_arr.slice(0, brackets_cnt), parent, styledict); // l_sat
 		if (has_1st_subscript) attachTextArr(anch, 0, [text_arr[brackets_cnt + 1]], parent, styledict); // r_sat
 		var vl_brackets = [];
@@ -236,7 +237,7 @@ function formulaToFw(formula) {
 
 function toHillSystem(formula) {
 	var hill_arr = [];
-	el_set = new Set(Object.keys(formula));
+	var el_set = new Set(Object.keys(formula));
 	if ('C' in formula) {
 		hill_arr.push(['C', formula.C]);
 		el_set.delete('C');
@@ -264,18 +265,18 @@ var punctuation = new Set(['-', ',']);
 var brackets = new Set(['(', ')', '[', ']']);
 var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 
-styledict = {
+var styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
 	'font-size': '16px'
 };
 
 
-prefix_tree = {};
+var prefix_tree = {};
 buildPrefixTree(prefix_tree, Object.keys(std_atomic_weights), 1);
 buildPrefixTree(prefix_tree, Object.keys(residue_formulae), 2);
 buildPrefixTree(prefix_tree, punctuation, 3);
 buildPrefixTree(prefix_tree, brackets, 4);
 buildPrefixTree(prefix_tree, digits, 5);
-digit_children = Object.fromEntries([...digits].map(digit => [digit, prefix_tree[digit]]));
+var digit_children = Object.fromEntries([...digits].map(digit => [digit, prefix_tree[digit]]));
 digits.forEach(digit => prefix_tree[digit].children = digit_children);

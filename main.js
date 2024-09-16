@@ -18,13 +18,13 @@ function downloadSvg() { // Download .svg
 	svg_el.appendChild(document.getElementById('atomsall').cloneNode(true));
 	svg_el.appendChild(document.getElementById('bondcutouts').cloneNode(true));
 	svg_el.appendChild(document.getElementById('bondpatterns').cloneNode(true));
-	header =
+	var header =
 `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
 	<!ENTITY ns_svg "http://www.w3.org/2000/svg">
 	<!ENTITY ns_xlink "http://www.w3.org/1999/xlink">
 ]>
 `;
-	svg_content = header + indentHtml(svg_el).replaceAll(/class=".*?"/gm, '').replaceAll(/ mask="null"/gm, '')
+	var svg_content = header + indentHtml(svg_el).replaceAll(/class=".*?"/gm, '').replaceAll(/ mask="null"/gm, '')
 		.replaceAll(/ >/gm, '>');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(svg_content));
@@ -468,7 +468,7 @@ Dispatcher.prototype.addCmd = function(func_dir, args_dir, func_rev, args_rev) {
 };
 
 Dispatcher.prototype.do = function(func_dir, kwargs_dir) {
-	kwargs_rev = invertCmd(kwargs_dir);
+	var kwargs_rev = invertCmd(kwargs_dir);
 	func_dir(kwargs_dir);
 	this.addCmd(func_dir, kwargs_dir, func_dir, kwargs_rev);
 };
@@ -529,9 +529,9 @@ function discreteAngle(angle, discr_deg) {
 	return Math.round(angle / discr_rad) * discr_rad;
 }
 
-function getDiscreteBondEnd(pt0, [x, y], length=standard_bondlength) {
+function getDiscreteBondEnd(pt0, [x, y], len=standard_bondlength) {
 	var angle = discreteAngle(Math.atan2(y, x), 15);
-	return vecSum(pt0, vecMul([Math.cos(angle), Math.sin(angle)], length));
+	return vecSum(pt0, vecMul([Math.cos(angle), Math.sin(angle)], len));
 }
 
 function pickNodePoint(event) {
@@ -603,20 +603,21 @@ function getCutouts() {
 }
 
 function refreshBondCutouts(exclude=[]) {
+	var lower_bond, upper_bond;
 	var set_new = new Set(detectIntersec(exclude));
 	var set_old = new Set(getCutouts());
 
 	// Add masks
 	var masks_to_add = [...set_new].filter(new_mask => !set_old.has(new_mask));
 	for (const mask of masks_to_add) {
-		var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+		[lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
 		lower_bond.createSubmask(upper_bond);
 	}
 
 	// Remove masks
 	var masks_to_remove = [...set_old].filter(old_mask => !set_new.has(old_mask));
 	for (const mask of masks_to_remove) {
-		var [lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
+		[lower_bond, upper_bond] = mask.split('&').map(id => document.getElementById(id).objref);
 		lower_bond.deleteSubmask(upper_bond);
 	}
 }
@@ -640,6 +641,7 @@ function chemNodeHandler(elbtn) {
 	}
 
 	function setElem(event) { // Create a new atom
+		var kwargs;
 		new_node0id = ChemNode.prototype.getNewId();
 		new_node1id = ChemNode.prototype.getNewId();
 		new_bond_id = ChemBond.prototype.getNewId();
@@ -648,7 +650,7 @@ function chemNodeHandler(elbtn) {
 			if (node0) { // If some atom was clicked
 				if (node0.connections.length == 0 && (node0.text == atomtext ||
 					(node0.text == '' && atomtext == 'C'))) {
-					var kwargs = {del_atoms: new Set([node0.id])};
+					kwargs = {del_atoms: new Set([node0.id])};
 					dispatcher.do(editStructure, kwargs);
 					return;
 				}
@@ -662,7 +664,7 @@ function chemNodeHandler(elbtn) {
 				new_atomtext = atomtext;
 				node0_is_new = true;
 				node0_id = new_node0id;
-				var kwargs = {new_atoms_data: {[new_node0id]: [...pt0, new_atomtext]}};
+				kwargs = {new_atoms_data: {[new_node0id]: [...pt0, new_atomtext]}};
 				dispatcher.do(editStructure, kwargs);
 			}
 			dispatcher.do(editStructure, {});
@@ -789,13 +791,14 @@ function deleteHandler(delbtn) {
 	}
 
 	function erase(event) { // Active eraser
+		var kwargs;
 		if (event.target.is_atom || event.target.is_bond) {
 			var focobj = event.target.objref;
-			if (focobj.constructor == ChemNode) var kwargs = {
+			if (focobj.constructor == ChemNode) kwargs = {
 				del_atoms: new Set([focobj.id]),
 				del_bonds: new Set(focobj.connections.map(bond => bond.id))
 			};
-			else if (focobj.constructor == ChemBond) var kwargs = {del_bonds: new Set([focobj.id])};
+			else if (focobj.constructor == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
 			dispatcher.do(editStructure, kwargs);
 			refreshBondCutouts();
 		}
@@ -870,7 +873,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 
 	var [cur_node_ids, cur_bond_ids] = generateIds();
-	var node, mo_st, node_ids, bond_ids, common_bond, common_node, new_node_ids, new_bond_ids;
+	var node, mo_st, common_bond, common_node, new_node_ids, new_bond_ids;
 	var vertex_angle = polygonAngle(num);
 	var rot_angle = Math.PI * 2 / num;
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
@@ -915,7 +918,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				window.addEventListener('mouseup', appendPolygon);
 			}
 			else { // Neither node nor bond was clicked
-				vec0 = vecDif(pt, document.getElementById(cur_node_ids[0]).objref.xy);
+				var vec0 = vecDif(pt, document.getElementById(cur_node_ids[0]).objref.xy);
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
@@ -948,6 +951,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		new_bonds_data[new_bond_ids[0]][0] = node0_id;
 		new_bonds_data[new_bond_ids[0]][1] = node1_id;
 
+		var bonds_type;
 		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
@@ -961,13 +965,15 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		var difxy = vecDif(common_node.xy, getSvgPoint(event));
 
-		var ctr = getDiscreteBondEnd(common_node.xy, difxy, length=pvcd);
+		var ctr = getDiscreteBondEnd(common_node.xy, difxy, len=pvcd);
 		var vec0 = vecDif(ctr, common_node.xy);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
 		delete new_atoms_data[new_node_ids[0]];
 		new_bonds_data[new_bond_ids[0]][0] = common_node.id;
 		new_bonds_data[new_bond_ids[num-1]][1] = common_node.id;
+
+		var bonds_type;
 		[new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
@@ -1002,7 +1008,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 	function excludeRedundant(new_atoms_data, new_bonds_data, bonds_type) {
 		// ToDo: Place it in the global scope.
-		node_pairs = {};
+		var node_pairs = {};
 		for (const [id, data] of Object.entries(new_atoms_data)) {
 			node = pickNode(data.slice(0, 2));
 			if (node) { // ToDo: Consider extra condition in case of new heteroatom.
@@ -1014,8 +1020,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			for (var i = 0; i < 2; i++) {
 				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
-			node0_el = document.getElementById(data[0]);
-			node1_el = document.getElementById(data[1]);
+			var node0_el = document.getElementById(data[0]);
+			var node1_el = document.getElementById(data[1]);
 			if (node0_el !== null && node1_el !== null) {
 				var bonds0 = node0_el.objref.connections;
 				var bonds1 = node1_el.objref.connections;
@@ -1152,7 +1158,7 @@ class SelectLasso extends SelectShape {
 }
 
 
-class Selection {
+class UserSelection {
 	constructor() {
 		this.atoms = new Set(); // Selected atoms
 		this.bonds = new Set(); // Selected bonds
@@ -1505,7 +1511,7 @@ class Selection {
 	}
 }
 
-var selection = new Selection();
+var selection = new UserSelection();
 
 
 class TransformTool extends DeletableAbortable {
@@ -1692,7 +1698,7 @@ class TransformTool extends DeletableAbortable {
 			this.pivot.shape.classList.remove('sympoi', 'jigforcehover');
 			selection.eventsOn();
 		}
-		this.indicator.setText(`x: ${corrected_point[0].toFixed(0)}\n\y: ${corrected_point[1].toFixed(0)}`, event);
+		this.indicator.setText(`x: ${corrected_point[0].toFixed(0)}\ny: ${corrected_point[1].toFixed(0)}`, event);
 		this.pivot.setCtr(corrected_point).render();
 	}
 
@@ -1754,7 +1760,7 @@ class Indicator extends DeletableAbortable {
 		while (this.text.childElementCount) this.text.lastChild.remove();
 		var pt = getSvgPoint(event);
 		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
-		text.split('\n').toReversed().forEach((line, idx) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
+		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
 			.appendChild(document.createTextNode(line)));
 		var bbox = this.text.getBBox();
 		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));

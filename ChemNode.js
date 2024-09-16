@@ -171,7 +171,7 @@ ChemNode.prototype.goToBond = function(bond, step) {
 };
 
 ChemNode.prototype.computeBondsJunc = function(bond0, bond1) {
-	cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
+	var cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
 	if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
 		bond0.setHalfButt(this, true);
 		bond1.setHalfButt(this, false);
