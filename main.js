@@ -454,48 +454,50 @@ function invertCmd(kwargs_dir) {
 }
 
 
-function Dispatcher() { // Dispatcher provides undo-redo mechanism
-	this.commands = [];
-	this.ptr = 0;
-	document.addEventListener('keydown', event => this.keyHandler(event));
-}
-
-Dispatcher.prototype.addCmd = function(func_dir, args_dir, func_rev, args_rev) {
-	this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
-	this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); /* Add new command to the
-	history */
-	this.ptr++;
-};
-
-Dispatcher.prototype.do = function(func_dir, kwargs_dir) {
-	var kwargs_rev = invertCmd(kwargs_dir);
-	func_dir(kwargs_dir);
-	this.addCmd(func_dir, kwargs_dir, func_dir, kwargs_rev);
-};
-
-Dispatcher.prototype.redo = function() {
-	if (this.ptr >= this.commands.length) return;
-	var command = this.commands[this.ptr++][0]; // Fetch command
-	command.func(command.args); // Execute the given function with args
-	selection.undoRedo(command.args, false);
-};
-
-Dispatcher.prototype.undo = function() {
-	if (this.ptr <= 0) return;
-	var command = this.commands[--this.ptr][1]; // Fetch command
-	command.func(command.args); // Execute the given function with args
-	selection.undoRedo(command.args, true);
-};
-
-Dispatcher.prototype.keyHandler = function(event) {
-	if ((event.ctrlKey || event.metaKey) && !event.repeat) {
-		var toRedo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
-		var toUndo = event.key == 'z' && !event.shiftKey;
-		if (toRedo) this.redo();
-		if (toUndo) this.undo();
-		if (toUndo || toRedo) refreshBondCutouts();
+class Dispatcher {
+	constructor() {
+		this.commands = [];
+		this.ptr = 0;
+		document.addEventListener('keydown', event => this.keyHandler(event));
 	}
-};
+
+	addCmd(func_dir, args_dir, func_rev, args_rev) {
+		this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
+		this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); /* Add new command to
+		the history */
+		this.ptr++;
+	}
+
+	do(func_dir, kwargs_dir) {
+		var kwargs_rev = invertCmd(kwargs_dir);
+		func_dir(kwargs_dir);
+		this.addCmd(func_dir, kwargs_dir, func_dir, kwargs_rev);
+	}
+
+	redo() {
+		if (this.ptr >= this.commands.length) return;
+		var command = this.commands[this.ptr++][0]; // Fetch command
+		command.func(command.args); // Execute the given function with args
+		selection.undoRedo(command.args, false);
+	}
+
+	undo() {
+		if (this.ptr <= 0) return;
+		var command = this.commands[--this.ptr][1]; // Fetch command
+		command.func(command.args); // Execute the given function with args
+		selection.undoRedo(command.args, true);
+	}
+
+	keyHandler(event) {
+		if ((event.ctrlKey || event.metaKey) && !event.repeat) {
+			var toRedo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
+			var toUndo = event.key == 'z' && !event.shiftKey;
+			if (toRedo) this.redo();
+			if (toUndo) this.undo();
+			if (toUndo || toRedo) refreshBondCutouts();
+		}
+	}
+}
 
 var dispatcher = new Dispatcher();
 
@@ -642,9 +644,9 @@ function chemNodeHandler(elbtn) {
 
 	function setElem(event) { // Create a new atom
 		var kwargs;
-		new_node0id = ChemNode.prototype.getNewId();
-		new_node1id = ChemNode.prototype.getNewId();
-		new_bond_id = ChemBond.prototype.getNewId();
+		new_node0id = ChemNode.getNewId();
+		new_node1id = ChemNode.getNewId();
+		new_bond_id = ChemBond.getNewId();
 		if (canvas.contains(event.target)) { // Click inside the canvas
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
@@ -726,9 +728,9 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
 				[pt0, node0] = pickNodePoint(event);
-				new_node0id = ChemNode.prototype.getNewId();
-				new_node1id = ChemNode.prototype.getNewId();
-				new_bond_id = ChemBond.prototype.getNewId();
+				new_node0id = ChemNode.getNewId();
+				new_node1id = ChemNode.getNewId();
+				new_bond_id = ChemBond.getNewId();
 				node0id = node0 ? node0.id : new_node0id;
 				var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
 				document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover`;
@@ -867,8 +869,8 @@ function textHandler(textbtn) {
 
 function polygonHandler(polygonbtn, num, alternate=false) {
 	function generateIds() {
-		var node_ids = Array.from({length: num}, () => ChemNode.prototype.getNewId());
-		var bond_ids = Array.from({length: num}, () => ChemBond.prototype.getNewId());
+		var node_ids = Array.from({length: num}, () => ChemNode.getNewId());
+		var bond_ids = Array.from({length: num}, () => ChemBond.getNewId());
 		return [node_ids, bond_ids];
 	}
 
@@ -1374,7 +1376,7 @@ class UserSelection {
 	focusElement() {
 		if (this.pointed_atom) {
 			this.pointed_atom.promoteMaskSel();
-			ChemBond.prototype.eventsOffAll();
+			ChemBond.eventsOffAll();
 			this.highlights.classList.add('sympoi');
 			document.getElementById('selectholes').setAttribute('visibility', 'hidden');
 		}
@@ -1382,7 +1384,7 @@ class UserSelection {
 
 	blurElement() {
 		if (this.pointed_atom) this.pointed_atom.demoteMaskSel();
-		ChemBond.prototype.eventsOnAll();
+		ChemBond.eventsOnAll();
 		this.highlights.classList.remove('sympoi');
 		document.getElementById('selectholes').setAttribute('visibility', 'visible');
 	}
@@ -1431,7 +1433,7 @@ class UserSelection {
 		var moving_vec = vecMul([15, 15], ++this.clipboard.mol.cnt);
 		kwargs.new_atoms_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_atoms_data).map(([key, value]) => {
-				const new_id = ChemNode.prototype.getNewId();
+				const new_id = ChemNode.getNewId();
 				keymap[key] = new_id;
 				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
 			}
@@ -1440,7 +1442,7 @@ class UserSelection {
 		kwargs.new_bonds_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_bonds_data)
 				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
-					return [ChemBond.prototype.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
+					return [ChemBond.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
 				}
 				)
 		);
