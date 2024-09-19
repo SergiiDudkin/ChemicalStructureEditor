@@ -1,19 +1,21 @@
-function setAttrsSvg(el, attrs={}) {
+import {vecSum} from './Geometry.js';
+
+
+export function setAttrsSvg(el, attrs={}) {
 	Object.entries(attrs).forEach(([key, val]) => el.setAttribute(key, val));
 }
 
-function makeSvg(tag, attrs={}) {
+export function makeSvg(tag, attrs={}) {
 	var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
 	setAttrsSvg(el, attrs);
 	return el;
 }
 
-function attachSvg(parent, tag, attrs={}) {
+export function attachSvg(parent, tag, attrs={}) {
 	var el = makeSvg(tag, attrs);
 	parent.appendChild(el);
 	return el;
 }
-
 
 
 class Deletable {
@@ -23,7 +25,7 @@ class Deletable {
 }
 
 
-class DeletableAbortable extends Deletable {
+export class DeletableAbortable extends Deletable {
 	constructor() {
 		super();
 		this.controller = new AbortController();
@@ -88,7 +90,7 @@ class CtrShape extends Deletable {
 }
 
 
-class CtrRect extends CtrShape {
+export class CtrRect extends CtrShape {
 	static tag = 'rect';
 
 	render() {
@@ -99,7 +101,7 @@ class CtrRect extends CtrShape {
 }
 
 
-class OffsetRect extends CtrShape {
+export class OffsetRect extends CtrShape {
 	static tag = 'rect';
 
 	setOffsets(offsets) {
@@ -121,16 +123,16 @@ class OffsetRect extends CtrShape {
 }
 
 
-class CtrCircle extends CtrShape {
+export class CtrCircle extends CtrShape {
 	static tag = 'circle';
 }
 
 
-class CtrPolygon extends CtrShape {
+export class CtrPolygon extends CtrShape {
 	static tag = 'polygon';
 }
 
 
-function excludeNonExisting(el_ids) {
+export function excludeNonExisting(el_ids) {
 	return [...el_ids].filter(el_id => document.getElementById(el_id));
 }

@@ -1,3 +1,7 @@
+import {std_atomic_weights, residue_formulae} from './ChemData.js';
+import {attachSvg} from './Utils.js';
+
+
 function buildPrefixTree(prefix_tree, words, leaf_type) {
 	for (const word of words) {
 		var parent;
@@ -11,7 +15,7 @@ function buildPrefixTree(prefix_tree, words, leaf_type) {
 	}
 }
 
-function tokenize(formula) {
+export function tokenize(formula) {
 	var tokens = [];
 	var branch = prefix_tree;
 	var accum = ''; // Char container to assemble a token
@@ -40,7 +44,7 @@ function tokenize(formula) {
 	return tokens;
 }
 
-function buildBracketTree(tokens) {
+export function buildBracketTree(tokens) {
 	var bracket_tree = [];
 	var bracket_stack = [];
 	var bracket_content = [];
@@ -71,7 +75,7 @@ function buildBracketTree(tokens) {
 	return bracket_tree;
 }
 
-function styleToString(styledict, extras={}) {
+export function styleToString(styledict, extras={}) {
 	var aug_styledict = Object.assign({...styledict}, extras);
 	return Object.entries(aug_styledict).map(entry => entry.join(':')).join(';');
 }
@@ -161,7 +165,7 @@ function centering(text) {
 	text.setAttribute('y', parseFloat(text.getAttribute('y')) + parseFloat(text.style.fontSize) * 0.34);
 }
 
-function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
+export function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 	var anch;
 	var rev = dir == 1;
 	var text_arr = flattenBracketTree(bracket_tree, rev);
@@ -192,7 +196,7 @@ function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 
 
 // MolInfo helpers
-function sumFormula(formula_a, formula_b) {
+export function sumFormula(formula_a, formula_b) {
 	var merged = {...formula_a};
 	for (const [atom, count] of Object.entries(formula_b)) {
 		if (!(atom in merged)) merged[atom] = 0;
@@ -209,7 +213,7 @@ function tokenToFormula(token) {
 	return token in residue_formulae ? residue_formulae[token] : {[token]: 1};
 }
 
-function treeToFormula(bracket_tree, formula={}) {
+export function treeToFormula(bracket_tree, formula={}) {
 	for (const group_obj of bracket_tree) {
 		formula = sumFormula(formula,
 			mulFormula(
@@ -223,19 +227,19 @@ function treeToFormula(bracket_tree, formula={}) {
 	return formula;
 }
 
-function separateUnrecognized(formula) {
+export function separateUnrecognized(formula) {
 	var recognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => el in std_atomic_weights));
 	var unrecognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => !(el in std_atomic_weights)));
 	return [recognized, unrecognized];
 }
 
-function formulaToFw(formula) {
+export function formulaToFw(formula) {
 	return Math.round(Object.entries(formula)
 		.map(([el, cnt]) => std_atomic_weights[el] * cnt)
 		.reduce((acc, val) => acc + val, 0) * 1e12) / 1e12;
 }
 
-function toHillSystem(formula) {
+export function toHillSystem(formula) {
 	var hill_arr = [];
 	var el_set = new Set(Object.keys(formula));
 	if ('C' in formula) {
@@ -250,11 +254,11 @@ function toHillSystem(formula) {
 	return hill_arr;
 }
 
-function hillToStr(hill_arr) {
+export function hillToStr(hill_arr) {
 	return hill_arr.map(([el, cnt]) => el + (cnt > 1 ? cnt : '')).join('');
 }
 
-function computeElementalComposition(formula) {
+export function computeElementalComposition(formula) {
 	var fw = formulaToFw(formula);
 	return toHillSystem(formula).map(([el, cnt]) => [el, std_atomic_weights[el] * cnt / fw]);
 }
@@ -265,7 +269,7 @@ var punctuation = new Set(['-', ',']);
 var brackets = new Set(['(', ')', '[', ']']);
 var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 
-var styledict = {
+export var styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
 	'font-size': '16px'

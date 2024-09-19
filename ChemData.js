@@ -1,4 +1,4 @@
-const std_atomic_weights = {
+export const std_atomic_weights = {
 	H: 1.007975,
 	He: 4.002602,
 	Li: 6.9675,
@@ -119,7 +119,7 @@ const std_atomic_weights = {
 	Og: 294
 };
 
-const residue_formulae = {
+export const residue_formulae = {
 	Me: {C: 1, H: 3},
 	Et: {C: 2, H: 5},
 	Pr: {C: 3, H: 7},

@@ -1,4 +1,10 @@
-class ChemNode {
+import {ChemBond} from './ChemBond.js';
+import {textTermBuilder, treeToFormula, buildBracketTree, tokenize} from './ChemParser.js';
+import {attachSvg} from './Utils.js';
+import {lineIntersec, vecSum, cosVec, angleVec} from './Geometry.js';
+
+
+export class ChemNode {
 	constructor(id, x, y, text) {
 		this.id = id;
 		this.highlights = document.getElementById('selecthighlight');

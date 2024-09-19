@@ -1,3 +1,19 @@
+import {ChemBond} from './ChemBond.js';
+import {ChemNode} from './ChemNode.js';
+import {editStructure} from './Executor.js';
+import {
+	styledict, styleToString, separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
+	computeElementalComposition
+} from './ChemParser.js';
+import {
+	setAttrsSvg, makeSvg, attachSvg, DeletableAbortable, CtrRect, CtrCircle, CtrPolygon, excludeNonExisting
+} from './Utils.js';
+import {
+	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
+	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
+} from './Geometry.js';
+
+
 var canvas = document.getElementById('canvas');
 var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');
@@ -924,7 +940,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
 				dispatcher.do(editStructure, kwargs);
-				refreshBondCutouts(exclude=cur_bond_ids);
+				refreshBondCutouts(cur_bond_ids);
 			}
 		}
 		else { // Click outside the canvas
@@ -967,7 +983,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		var difxy = vecDif(common_node.xy, getSvgPoint(event));
 
-		var ctr = getDiscreteBondEnd(common_node.xy, difxy, len=pvcd);
+		var ctr = getDiscreteBondEnd(common_node.xy, difxy, pvcd);
 		var vec0 = vecDif(ctr, common_node.xy);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
@@ -1514,6 +1530,7 @@ class UserSelection {
 }
 
 var selection = new UserSelection();
+window.selection = selection;
 
 
 class TransformTool extends DeletableAbortable {

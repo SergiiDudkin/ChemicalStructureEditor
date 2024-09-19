@@ -1,4 +1,9 @@
-function editStructure({
+import {ChemBond} from './ChemBond.js';
+import {ChemNode} from './ChemNode.js';
+import {vecDif, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
+
+
+export function editStructure({
 	new_atoms_data={}, new_bonds_data={},
 	del_atoms=new Set(), del_bonds=new Set(),
 	atoms_text={}, bonds_type={},

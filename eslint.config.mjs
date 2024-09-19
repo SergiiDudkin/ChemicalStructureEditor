@@ -1,6 +1,7 @@
 import globals from 'globals';
 import pluginJs from '@eslint/js';
 import stylisticJs from '@stylistic/eslint-plugin-js';
+import babelParser from '@babel/eslint-parser';
 
 
 export default [
@@ -85,6 +86,23 @@ export default [
     },
     ignores: ['eslint.config.mjs', 'Backup/**/*'],
     files: ['**/*.js'],
-    languageOptions: { globals: globals.browser, sourceType: 'script' }
-  }
+    languageOptions: {
+      globals: globals.browser, 
+      sourceType: 'script', 
+      parser: babelParser,
+      parserOptions: {
+        ecmaVersion: 6,
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+        requireConfigFile: false,
+        babelOptions: {
+          babelrc: false,
+          configFile: false,
+          presets: ['@babel/preset-env']
+        },
+      },
+    },
+  },
 ];

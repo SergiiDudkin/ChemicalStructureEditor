@@ -1,4 +1,10 @@
-class ChemBond {
+import {attachSvg, OffsetRect} from './Utils.js';
+import {
+	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector
+} from './Geometry.js';
+
+
+export class ChemBond {
 	constructor(id, node0, node1, type) {
 		this.id = id;
 
