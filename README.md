@@ -161,6 +161,7 @@ Please use `Cmd` key instead of `Ctrl`.
 # Roadmap
 * Arrows, lines and simple SVG shapes
 * Text and its formatting
+* Charges and radicals
 * Molecule style menu (font, color bond thickness, etc.)
 * Image metadata for SVG images to store the molecular graph and style info
 * Proper clipboard support
