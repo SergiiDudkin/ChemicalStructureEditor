@@ -165,12 +165,14 @@ class BaseButton {
 		this.img.insertAdjacentHTML('beforeend', thml_text);
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
 		this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
 		window.addEventListener('mouseup', this.animateBtnUp);
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	animateBtnUp(event) { // Reset appearance of fancy buttons
 		window.removeEventListener('mouseup', this.animateBtnUp);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
@@ -268,13 +270,13 @@ class DropButton extends BaseButton {
 		this.drop_container.appendChild(this.hflex);
 	}
 
-	expand(event) {
+	expand(event) { // eslint-disable-line no-unused-vars
 		clipCnv(`M 0 ${this.cut_top} H ${Math.min(this.cut_right, wmax - 2)} V ${this.cut_bottom} H 0 Z`);
 		this.collapsed = false;
 		if (this.active) this.deselect();
 	}
 
-	collapse(event) {
+	collapse(event) { // eslint-disable-line no-unused-vars
 		clipCnv();
 		this.collapsed = true;
 		if (this.active) this.select();
@@ -428,7 +430,7 @@ function clipCnv(extra='') {
 }
 
 // Resize the canvas
-function svgWidth(event) {
+function svgWidth(event) { // eslint-disable-line no-unused-vars
 	wmax = mainframe.offsetWidth - 36;
 	canvbckgrnd.setAttribute("width", wmax);
 	canvas.setAttribute("width", wmax + 4);
@@ -713,6 +715,7 @@ function chemNodeHandler(elbtn) {
 		dispatcher.do(editStructure, kwargs);
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	function finNode(event) { // Finish to set node
 		window.removeEventListener('mouseup', finNode);
 		window.removeEventListener('mousemove', movBoundNode);
@@ -729,6 +732,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	var node0, pt0, new_node0id, new_node1id, new_bond_id, node0id;
 	btn.mask_g.addEventListener('click', crBond);
 
+	// eslint-disable-next-line no-unused-vars
 	function crBond(event) { // Create bond. Called when the bond button is cklicked.
 		btn.selectCond();
 		window.addEventListener('mousedown', stBond);
@@ -778,6 +782,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 		}
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	function enBond(event) { // Finish drawing bond
 		window.removeEventListener('mouseup', enBond);
 		window.removeEventListener('mousemove', movBond);
@@ -791,6 +796,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 function deleteHandler(delbtn) {
 	delbtn.mask_g.addEventListener('click', delNodeOrBond);
 
+	// eslint-disable-next-line no-unused-vars
 	function delNodeOrBond(event) { // Delete atom or bond. Called when del button is pressed.
 		delbtn.selectCond();
 		window.addEventListener('mousedown', delAct);
@@ -837,7 +843,7 @@ function textHandler(textbtn) {
 		if (event.key == 'Enter') setNodeText(event);
 	}
 
-	function crText(event) {
+	function crText(event) { // eslint-disable-line no-unused-vars
 		textbtn.selectCond();
 		window.addEventListener('mousedown', addInput);
 		document.addEventListener('keydown', pressEnter);
@@ -1065,7 +1071,7 @@ function transformHandler(btn, SelectTool=null) {
 	var sensors_b = document.getElementById('sensors_b');
 	btn.mask_g.addEventListener('click', selectInit);
 
-	function selectInit(event) {
+	function selectInit(event) { // eslint-disable-line no-unused-vars
 		btn.selectCond();
 		canvas.addEventListener('mousedown', selectAct);
 		sensors_a.addEventListener('mousedown', pick);
@@ -1119,6 +1125,7 @@ class SelectShape extends DeletableAbortable {
 
 	static tag; // Abstract attribute
 
+	// eslint-disable-next-line no-unused-vars
 	recalc(event) {} // Abstract method
 
 	selectStop() {

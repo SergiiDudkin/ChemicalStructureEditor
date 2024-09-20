@@ -228,7 +228,9 @@ export function treeToFormula(bracket_tree, formula={}) {
 }
 
 export function separateUnrecognized(formula) {
+	// eslint-disable-next-line no-unused-vars
 	var recognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => el in std_atomic_weights));
+	// eslint-disable-next-line no-unused-vars
 	var unrecognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => !(el in std_atomic_weights)));
 	return [recognized, unrecognized];
 }

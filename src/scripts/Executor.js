@@ -26,8 +26,8 @@ export function editStructure({
 
 	// Delete bonds
 	for (const bond_id of del_bonds) {
-		var bond = document.getElementById(bond_id).objref;
-		var bond_nodes = bond.nodes;
+		let bond = document.getElementById(bond_id).objref;
+		let bond_nodes = bond.nodes;
 		bond.delete();
 		for (const node of bond_nodes) {
 			if (!del_atoms.has(node.id)) {
@@ -51,11 +51,11 @@ export function editStructure({
 
 	// Create bonds
 	for (const [id, data] of Object.entries(new_bonds_data)) {
-		var bond = new ChemBond(id, ...data); // data: [node0, node1, type]
+		let bond = new ChemBond(id, ...data); // data: [node0, node1, type]
 		bonds_update_rect.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
-			var no_text = atoms_text[node.id] == '' || !(atoms_text[node.id] || node.text);
+			let no_text = atoms_text[node.id] == '' || !(atoms_text[node.id] || node.text);
 			if (no_text && node.connections.length == 1) atoms_text_me[node.id] = node.text;
 			atoms_auto_d_bond.add(node);
 			if (no_text) atoms_refresh_tips.add(node);
@@ -66,7 +66,7 @@ export function editStructure({
 	// Edit atoms
 	Object.assign(atoms_text_me, atoms_text);
 	for (const [node_id, text] of Object.entries(atoms_text_me)) {
-		var node = document.getElementById(node_id).objref;
+		let node = document.getElementById(node_id).objref;
 		node.text = text;
 		atoms_parse.add(node);
 		if (node.text == '') atoms_refresh_tips.add(node);
@@ -78,7 +78,7 @@ export function editStructure({
 
 	// Edit bonds
 	for (const [bond_id, type] of Object.entries(bonds_type)) {
-		var bond = document.getElementById(bond_id).objref;
+		let bond = document.getElementById(bond_id).objref;
 		bond.setType(type);
 		bonds_d_adjust.add(bond);
 		for (const node of bond.nodes) {
@@ -90,7 +90,7 @@ export function editStructure({
 
 	// Find translated and scewed bonds and move atoms
 	for (const atom_id of moving_atoms) {
-		var atom = document.getElementById(atom_id).objref;
+		let atom = document.getElementById(atom_id).objref;
 		atom.translate(moving_vec);
 		atoms_render.add(atom);
 		for (const bond of atom.connections) {
@@ -106,7 +106,7 @@ export function editStructure({
 
 	// Rotate
 	for (const atom_id of rotating_atoms) {
-		var atom = document.getElementById(atom_id).objref;
+		let atom = document.getElementById(atom_id).objref;
 		atom.translate(vecDif(atom.xy, rotateAroundCtr(atom.xy, rot_angle, rot_ctr)));
 		atoms_render.add(atom);
 		for (const bond of atom.connections) bonds_scewed.add(bond);
@@ -114,7 +114,7 @@ export function editStructure({
 
 	// Scale
 	for (const atom_id of scaling_atoms) {
-		var atom = document.getElementById(atom_id).objref;
+		let atom = document.getElementById(atom_id).objref;
 		atom.translate(vecDif(atom.xy, scaleAroundCtr(atom.xy, scale_factor, scale_ctr)));
 		atoms_render.add(atom);
 		for (const bond of atom.connections) bonds_scewed.add(bond);
@@ -123,7 +123,7 @@ export function editStructure({
 	// Stretch
 	var mirrored = new Set();
 	for (const atom_id of stretching_atoms) {
-		var atom = document.getElementById(atom_id).objref;
+		let atom = document.getElementById(atom_id).objref;
 		atom.translate(vecDif(atom.xy, stretchAlongDir(atom.xy, stretch_factor, dir_angle, stretch_ctr)));
 		atoms_render.add(atom);
 		for (const bond of atom.connections) {
@@ -193,7 +193,7 @@ export function editStructure({
 
 	// Reshape floating tips (some symbol is present)
 	for (const node_bond of tips_update) {
-		var [node, bond] = node_bond.split('&').map(id => document.getElementById(id).objref);
+		let [node, bond] = node_bond.split('&').map(id => document.getElementById(id).objref);
 		bond.updateTip(node);
 		bonds_to_render.add(bond);
 	}

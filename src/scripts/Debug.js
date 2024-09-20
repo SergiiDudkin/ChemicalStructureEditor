@@ -9,7 +9,7 @@ function getColor() {
 }
 
 
-function drawPoint(x, y, r=1) {
+function drawPoint(x, y, r=1) { // eslint-disable-line no-unused-vars
 	var point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	point.setAttribute('fill', getColor());
 	point.setAttribute('r', r);
@@ -19,13 +19,13 @@ function drawPoint(x, y, r=1) {
 }
 
 
-function clearDebug() {
+function clearDebug() { // eslint-disable-line no-unused-vars
 	document.getElementById('debug').innerHTML = '';
 	color_idx = 0;
 }
 
 
-function drawBBox(text_el) {
+function drawBBox(text_el) { // eslint-disable-line no-unused-vars
 	var text_bbox = text_el.getBBox();
 	var bbox_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 	bbox_rect.setAttribute('fill', 'blue');
