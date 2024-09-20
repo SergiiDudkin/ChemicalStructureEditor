@@ -1345,7 +1345,7 @@ class UserSelection {
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
 
-	finishMoving(event) {
+	finishMoving(event) { // eslint-disable-line no-unused-vars
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
 
@@ -1457,6 +1457,7 @@ class UserSelection {
 		);
 		kwargs.new_bonds_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_bonds_data)
+				// eslint-disable-next-line no-unused-vars
 				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
 					return [ChemBond.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
 				}
