@@ -100,5 +100,21 @@
 	<script type="module" src="scripts/ChemBond.js"></script>
 	<script type="module" src="scripts/Executor.js"></script>
 	<script type="module" src="scripts/main.js"></script>
+	<script type="text/javascript">
+		try {
+			fetch('./scripts/aaa.svg').then((response) => response.text()).then((data) => {
+				var new_el = document.createElement('html');
+				new_el.innerHTML = data;
+				new_el.getElementsByTagName('script')[0].remove();
+				var mysvg = new_el.getElementsByTagName('svg')[0].innerHTML.replace(/<\!--.*?-->/g, '').trimEnd();
+				console.log(mysvg);
+				new_el.remove();
+				new_el.remove();
+				new_el.remove();
+			});
+		} catch (error) {
+			console.log(error);
+		}
+	</script>
 </body>
 </html>
