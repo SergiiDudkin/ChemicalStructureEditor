@@ -6,6 +6,9 @@ is achieved by the comprehensive logic behind atom and bond auto positioning, al
 
 ![App, general view](assets/images/CSE.png)
 
+# Browser compatibility
+Tested on **Google Chrome** and **Mozilla Firefox**.
+
 # Run
 The app is hosted on GitHub pages: [CSE](https://sergiidudkin.github.io/ChemicalStructureEditor/).
 Alternatively, you can run it locally. Clone the repository, or download it as archive and unzip. After that run the 
