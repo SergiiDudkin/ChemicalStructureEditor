@@ -8,8 +8,13 @@ is achieved by the comprehensive logic behind atom and bond auto positioning, al
 
 # Run
 The app is hosted on GitHub pages: [CSE](https://sergiidudkin.github.io/ChemicalStructureEditor/).
-Alternatively, clone the repository, or download it as archive and unzip. After that run the `index.html` file in your 
-__Google Chrome Browser__.
+Alternatively, you can run it locally. Clone the repository, or download it as archive and unzip. After that run the 
+`src` directory with a local server, e.g. __live-server__:
+1. Install __Node.js__ and __npm__ if not installed.
+2. Install __live-server__: `npm install -g live-server` if not installed.
+3. Go to the `src` directory in your console or terminal.
+4. Run `live-server` or `npx live-server`. The app will be opened automatically in your default browser.
+
 
 # ![Selection menu](assets/images/transforms.png) Selection dropdown menu 
 The menu contains a set of tools to select whole molecules or their specific parts. Every selection is marked with blue
