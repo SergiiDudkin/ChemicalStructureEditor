@@ -14,6 +14,8 @@ import {
 } from './Geometry.js';
 
 
+window.DEBUG = false;
+
 var canvas = document.getElementById('canvas');
 var mainframe = document.getElementById('mainframe');
 var canvbckgrnd = document.getElementById('canvbckgrnd');

@@ -1,15 +1,14 @@
-var colors = ['Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'DarkViolet', 'Silver', 'Gray', 'Teal'];
-var color_idx = 0;
-
-
-function getColor() {
-	var  color = colors[color_idx];
-	color_idx = (color_idx + 1) % 10;
-	return color;
+function randInt(min_incl, max_excl) {
+	return Math.floor(Math.random() * (max_excl - min_incl) + min_incl);
 }
 
 
-function drawPoint(x, y, r=1) { // eslint-disable-line no-unused-vars
+export function getColor() {
+	return `rgb(${randInt(0, 224)},${randInt(0, 224)},${randInt(0, 224)})`;
+}
+
+
+export function drawPoint(x, y, r=1) {
 	var point = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 	point.setAttribute('fill', getColor());
 	point.setAttribute('r', r);
@@ -19,13 +18,12 @@ function drawPoint(x, y, r=1) { // eslint-disable-line no-unused-vars
 }
 
 
-function clearDebug() { // eslint-disable-line no-unused-vars
+export function clearDebug() {
 	document.getElementById('debug').innerHTML = '';
-	color_idx = 0;
 }
 
 
-function drawBBox(text_el) { // eslint-disable-line no-unused-vars
+export function drawBBox(text_el) {
 	var text_bbox = text_el.getBBox();
 	var bbox_rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 	bbox_rect.setAttribute('fill', 'blue');
@@ -34,5 +32,5 @@ function drawBBox(text_el) { // eslint-disable-line no-unused-vars
 	bbox_rect.setAttribute('y', text_bbox.y);
 	bbox_rect.setAttribute('width', text_bbox.width);
 	bbox_rect.setAttribute('height', text_bbox.height);
-	document.getElementById('utils').appendChild(bbox_rect);
+	document.getElementById('debug').appendChild(bbox_rect);
 }

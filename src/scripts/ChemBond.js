@@ -2,6 +2,7 @@ import {attachSvg, OffsetRect} from './Utils.js';
 import {
 	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector
 } from './Geometry.js';
+import {getColor} from './Debug.js';
 
 
 export class ChemBond {
@@ -338,12 +339,13 @@ export class ChemBond {
 
 	renderBond() {
 		while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old lines
+		var color = window.DEBUG ? getColor() : this.color;
 		if (this.pattern) {
 			this.pattern.setAttribute('patternTransform', `rotate(${this.rotang * 180 / Math.PI})`);
-			this.pattern.firstChild.setAttribute('fill', this.color);
+			this.pattern.firstChild.setAttribute('fill', color);
 		}
 		this.drawLines(this.g, {
-			'fill': (this.pattern ? `url(#p${this.id})` : this.color),
+			'fill': (this.pattern ? `url(#p${this.id})` : color),
 			'mask': (this.mask ? `url(#m${this.id})`: null),
 			'class': 'sympoi'
 		});
