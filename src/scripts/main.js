@@ -1046,17 +1046,15 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			for (var i = 0; i < 2; i++) {
 				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
-			var node0_el = document.getElementById(data[0]);
-			var node1_el = document.getElementById(data[1]);
-			if (node0_el !== null && node1_el !== null) {
-				var bonds0 = node0_el.objref.connections;
-				var bonds1 = node1_el.objref.connections;
-				var old_bonds = bonds0.filter(bond => bonds1.includes(bond)); // Find common bonds
+			var node_els = data.slice(0, 2).map(node_id => document.getElementById(node_id));
+			if (node_els.every(Boolean)) {
+				var nodes = node_els.map(node_el => node_el.objref);
+				var old_bonds = nodes[0].getBondsBetween(nodes[1]);
 				if (old_bonds.length > 0) {
 					delete new_bonds_data[id];
 					var old_bond = old_bonds[0];
-					var is_sp3 = !(bonds0.concat(bonds1).some(bond => bond.multiplicity >= 2));
-					var new_type_casted = data[0] != old_bond.nodes[0].id ? ChemBond.rev_type[data[2]] : data[2];
+					var is_sp3 = nodes.every(node => node.hasNoMultBonds());
+					var new_type_casted = old_bond.getNodeIdx(nodes[0]) ? ChemBond.rev_type[data[2]] : data[2];
 					if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
 						bonds_type[old_bond.id] = new_type_casted;
 					}

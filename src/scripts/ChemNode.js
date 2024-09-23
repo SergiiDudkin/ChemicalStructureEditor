@@ -68,6 +68,14 @@ export class ChemNode {
 		return this.connections.length == 0 && this.text == '';
 	};
 
+	hasNoMultBonds() {
+		return !(this.connections.some(bond => bond.multiplicity >= 2));
+	}
+
+	getBondsBetween(other_node) {
+		return this.connections.filter(bond => other_node.connections.includes(bond));
+	}
+
 	parse() {
 		var target_text;
 		var used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
