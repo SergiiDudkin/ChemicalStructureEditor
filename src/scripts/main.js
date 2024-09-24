@@ -1147,15 +1147,25 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		for (var j = 0; j < num; j++) { // Consume free non_sp3 nodes for double bonds
 			let j1p = (j + 1) % num;
 			let bond_id = new_bond_ids[j];
-			if (node_map[j].non_sp3 && node_map[j1p].non_sp3) { // If double bond
+			let is_double = node_map[j].non_sp3 && node_map[j1p].non_sp3;
+			if (is_double) {
 				node_map[j].non_sp3 = false;
 				node_map[j1p].non_sp3 = false;
-				new_bonds_data[bond_id][2] = 10;
 			}
-			else if (bond_id in new_bonds_data) {
-				// console.log('2!', new_bonds_data);
-				new_bonds_data[bond_id][2] = 1;
-			}
+			// node_map[j].non_sp3 &&= !is_double; // Reset if double
+			// node_map[j1p].non_sp3 &&= !is_double; // Reset if double
+			if (bond_id in new_bonds_data) new_bonds_data[bond_id][2] = is_double ? 10 : 1;
+
+
+			// if (node_map[j].non_sp3 && node_map[j1p].non_sp3) { // If double bond
+			// 	node_map[j].non_sp3 = false;
+			// 	node_map[j1p].non_sp3 = false;
+			// 	if (bond_id in new_bonds_data) new_bonds_data[bond_id][2] = 10;
+			// }
+			// else if (bond_id in new_bonds_data) {
+			// 	// console.log('2!', new_bonds_data);
+			// 	new_bonds_data[bond_id][2] = 1;
+			// }
 		}
 
 
