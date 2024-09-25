@@ -900,6 +900,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 	var [cur_node_ids, cur_bond_ids] = generateIds();
 	var node, mo_st, common_bond, common_node, new_node_ids, new_bond_ids;
+	var prev_ctr = [,,];
 	var vertex_angle = polygonAngle(num);
 	var rot_angle = Math.PI * 2 / num;
 	var pvcd = polygonVertexCtrDist(vertex_angle, standard_bondlength);
@@ -958,13 +959,15 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 
 	function flipPolygon(event) {
-		dispatcher.undo();
-
 		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, getSvgPoint(event)));
 		var dir = Math.sign(ortho_proj);
 		dir = dir ? dir : 1;
-
 		var ctr = vecSum(common_bond.xy, vecMul(common_bond.ouva, pecd * dir));
+
+		if (ctr[0] == prev_ctr[0] && ctr[1] == prev_ctr[1]) return; // Compare old and current
+		prev_ctr = ctr.slice();
+		dispatcher.undo();
+
 		var vec0 = rotateVec(vecMul(common_bond.ouva, -pvcd * dir), -rot_angle / 2);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
@@ -973,17 +976,16 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		node_map[0].orig_id = node0_id;
 		node_map[1].orig_id = node1_id;
 		mountRing(new_atoms_data, new_bonds_data, node_map);
-
-		/* ToDo: Instead of dispatcher.do, memorize dir (or its absence), and then conditionally undo. It will also
-		supress the cursor blinking when over new node. */
 	}
 
 	function rotatePolygon(event) {
+		var difxy = vecDif(common_node.xy, getSvgPoint(event));
+		var ctr = getDiscreteBondEnd(common_node.xy, difxy, pvcd);
+
+		if (ctr[0] == prev_ctr[0] && ctr[1] == prev_ctr[1]) return; // Compare old and current
+		prev_ctr = ctr.slice();
 		dispatcher.undo();
 
-		var difxy = vecDif(common_node.xy, getSvgPoint(event));
-
-		var ctr = getDiscreteBondEnd(common_node.xy, difxy, pvcd);
 		var vec0 = vecDif(ctr, common_node.xy);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
@@ -998,6 +1000,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		window.removeEventListener('mouseup', appendPolygon);
 		refreshBondCutouts();
 		crPolygon(event);
+		prev_ctr = [,,];
 	}
 
 	function stopCursor() {
@@ -1039,14 +1042,18 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			}
 		}
 
-		var bonds_type = {};
 		var non_sp3_ring = new Set();
-		var casted_types = {};
 		for (const [id, data] of Object.entries(new_bonds_data)) {
 			if (ChemBond.mult[data[2]] >= 2) {
 				non_sp3_ring.add(data[0]);
 				non_sp3_ring.add(data[1]);
 			}
+		}
+
+		var bonds_type = {};
+		var casted_types = {};
+		for (const [id, data] of Object.entries(new_bonds_data)) {
+			let is_pseudo_double = non_sp3_ring.has(data[0]) && non_sp3_ring.has(data[1])
 			for (let i = 0; i < 2; i++) {
 				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
@@ -1057,14 +1064,13 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var old_bond = node0.getBondsBetween(node1)[0];
 				if (old_bond) {
 					delete new_bonds_data[id];
-					var rev = old_bond.getNodeIdx(node0);
-					var new_type_casted = rev ? ChemBond.rev_type[data[2]] : data[2];
-					if (ChemBond.mult[data[2]] == 2 && 
+					var new_type_casted = old_bond.getNodeIdx(node0) ? 8 : 10;
+					if (is_pseudo_double && 
 						old_bond.type != new_type_casted && 
 						ChemBond.auto_d_bonds.includes(old_bond.type)
 					) bonds_type[old_bond.id] = new_type_casted;
 					var both_sp3 = nodes.every(node => node.hasNoMultBonds());
-					if (both_sp3) casted_types[id] = {old_bond_id: old_bond.id, rev: rev};
+					if (both_sp3) casted_types[id] = {old_bond_id: old_bond.id, new_type: new_type_casted};
 				}
 			}
 		}
@@ -1090,8 +1096,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				node_map[j].non_sp3 = false;
 				node_map[j1p].non_sp3 = false;
 				if (bond_id in casted_types) {
-					let {old_bond_id, rev} = casted_types[bond_id];
-					bonds_type[old_bond_id] = rev ? 8 : 10;
+					let {old_bond_id, new_type} = casted_types[bond_id];
+					bonds_type[old_bond_id] = new_type;
 				}
 			}
 			if (bond_id in new_bonds_data) {
