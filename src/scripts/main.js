@@ -968,30 +968,11 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var vec0 = rotateVec(vecMul(common_bond.ouva, -pvcd * dir), -rot_angle / 2);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
-		// delete new_atoms_data[new_node_ids[0]];
-		// delete new_atoms_data[new_node_ids[1]];
-
-		// var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id);
-		// new_bonds_data[new_bond_ids[1]][0] = node1_id;
-		// new_bonds_data[new_bond_ids[num-1]][1] = node0_id;
-		// new_bonds_data[new_bond_ids[0]][0] = node0_id;
-		// new_bonds_data[new_bond_ids[0]][1] = node1_id;
-
-		// var bonds_type;
-		// [new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
-
-
 		var node_map = nodeMapInit(new_node_ids);
 		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id);
-		console.log('node0_id, node1_id', node0_id, node1_id);
 		node_map[0].orig_id = node0_id;
 		node_map[1].orig_id = node1_id;
 		mountRing(new_atoms_data, new_bonds_data, node_map);
-
-
-
-		// var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
-		// dispatcher.do(editStructure, kwargs);
 
 		/* ToDo: Instead of dispatcher.do, memorize dir (or its absence), and then conditionally undo. It will also
 		supress the cursor blinking when over new node. */
@@ -1006,21 +987,9 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var vec0 = vecDif(ctr, common_node.xy);
 		var [new_atoms_data, new_bonds_data] = generatePolygon(ctr, vec0, new_node_ids, new_bond_ids);
 
-		// delete new_atoms_data[new_node_ids[0]];
-		// new_bonds_data[new_bond_ids[0]][0] = common_node.id;
-		// new_bonds_data[new_bond_ids[num-1]][1] = common_node.id;
-
-		// var bonds_type;
-		// [new_atoms_data, new_bonds_data, bonds_type] = excludeRedundant(new_atoms_data, new_bonds_data, {});
-
-
 		var node_map = nodeMapInit(new_node_ids);
 		node_map[0].orig_id = common_node.id;
 		mountRing(new_atoms_data, new_bonds_data, node_map);
-
-
-		// var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
-		// dispatcher.do(editStructure, kwargs);
 	}
 
 	function appendPolygon(event) {
@@ -1049,43 +1018,16 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 	// ToDo: Create check-up of empty (no effect) kwargs. Do not save it in the stack.
 
-
 	function nodeMapInit(new_node_ids) {
 		return new_node_ids.map(node_id => ({ring_id: node_id, orig_id: node_id, non_sp3: false}));
 	}
 
 	function mountRing(new_atoms_data, new_bonds_data, node_map={}) {
-		console.log('<');
-
-		// var node_pairs = {};
-		// for (const pair of node_map) {
-		// 	const {ring_id, orig_id} = pair;
-		// 	if (ring_id == orig_id) {
-		// 		node = pickNode(new_atoms_data[ring_id].slice(0, 2));
-		// 		if (node) { // ToDo: Consider extra condition in case of new heteroatom.
-		// 			pair.orig_id = node.id;
-		// 			node_pairs.ring_id = orig_id;
-		// 		}
-		// 	}
-		// 	else {
-		// 		node_pairs.ring_id = orig_id;
-		// 	}
-		// }
-
-		// var node_pairs = Object.fromEntries(node_map
-		// 	.filter(({orig_id, old_id}) => orig_id != old_id)
-		// 	.map(({orig_id, old_id}) => [orig_id, old_id]
-		// );
-
-
 		for (const pair of node_map) {
 			const {ring_id, orig_id} = pair;
 			if (ring_id == orig_id) {
 				node = pickNode(new_atoms_data[ring_id].slice(0, 2));
-				if (node) {
-					pair.orig_id = node.id;
-					// console.log('orig_id', node.id, 'ring_id', ring_id);
-				} // ToDo: Consider extra condition in case of new heteroatom.
+				if (node) pair.orig_id = node.id; // ToDo: Consider extra condition in case of new heteroatom.
 			}
 		}
 
@@ -1094,13 +1036,9 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			if (ring_id != orig_id) {
 				node_pairs[ring_id] = orig_id;
 				delete new_atoms_data[ring_id];
-				console.log('del new atom', ring_id);
 			}
 		}
-		console.log('new atom len', Object.keys(new_atoms_data).length);
-		console.log(Object.keys(new_atoms_data));
 
-		// console.log('0!', new_bonds_data);
 		var non_sp3_ring = new Set();
 		var bonds_type = {};
 		for (const [id, data] of Object.entries(new_bonds_data)) {
@@ -1118,18 +1056,15 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var old_bond = node0.getBondsBetween(node1)[0];
 				if (old_bond) {
 					delete new_bonds_data[id];
-					console.log('del new bond', id);
 					var is_sp3 = nodes.every(node => node.hasNoMultBonds());
 					var new_type_casted = old_bond.getNodeIdx(node0) ? ChemBond.rev_type[data[2]] : data[2];
-					if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
-						bonds_type[old_bond.id] = new_type_casted;
-					}
+					if (ChemBond.mult[data[2]] > 1 && 
+						old_bond.type != new_type_casted && 
+						is_sp3
+					) bonds_type[old_bond.id] = new_type_casted;
 				}
 			}
 		}
-		console.log('new bond len', Object.keys(new_bonds_data).length);
-		console.log(Object.keys(new_bonds_data));
-		// console.log('1!', new_bonds_data);
 
 		for (const pair of node_map) {
 			const {ring_id, orig_id} = pair;
@@ -1152,79 +1087,12 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				node_map[j].non_sp3 = false;
 				node_map[j1p].non_sp3 = false;
 			}
-			// node_map[j].non_sp3 &&= !is_double; // Reset if double
-			// node_map[j1p].non_sp3 &&= !is_double; // Reset if double
 			if (bond_id in new_bonds_data) new_bonds_data[bond_id][2] = is_double ? 10 : 1;
-
-
-			// if (node_map[j].non_sp3 && node_map[j1p].non_sp3) { // If double bond
-			// 	node_map[j].non_sp3 = false;
-			// 	node_map[j1p].non_sp3 = false;
-			// 	if (bond_id in new_bonds_data) new_bonds_data[bond_id][2] = 10;
-			// }
-			// else if (bond_id in new_bonds_data) {
-			// 	// console.log('2!', new_bonds_data);
-			// 	new_bonds_data[bond_id][2] = 1;
-			// }
 		}
-
-
-		// node_map.unshift(node_map.pop());
-		// node_map.push(node_map.shift());
-
-
-
-		// for (const pair of node_map) {
-		// 	if (pair.ring_id == pair.orig_id) {
-		// 		pair.is_sp3 = !non_sp3.has(ring_id);
-		// 	}
-		// 	else {
-		// 		pair.is_sp3 = document.getElementById(pair.orig_id).objref.hasNoMultBonds();
-		// 	}
-		// }
-		// node_map.forEach(pair => pair.is_sp3 = (pair.ring_id == pair.orig_id) ? !non_sp3.has(pair.orig_id) : document.getElementById(pair.orig_id).objref.hasNoMultBonds());
-		// node_map.forEach(pair => pair.is_sp3 = !non_sp3.has(pair.orig_id) && document.getElementById(pair.orig_id).objref.hasNoMultBonds());
-
-
-
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
 		dispatcher.do(editStructure, kwargs);
-		console.log('>');
 	}
-
-
-	// function excludeRedundant(new_atoms_data, new_bonds_data, bonds_type) {
-	// 	// ToDo: Place it in the global scope.
-	// 	var node_pairs = {};
-	// 	for (const [id, data] of Object.entries(new_atoms_data)) {
-	// 		node = pickNode(data.slice(0, 2));
-	// 		if (node) { // ToDo: Consider extra condition in case of new heteroatom.
-	// 			node_pairs[id] = node.id;
-	// 			delete new_atoms_data[id];
-	// 		}
-	// 	}
-	// 	for (const [id, data] of Object.entries(new_bonds_data)) {
-	// 		for (var i = 0; i < 2; i++) {
-	// 			if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
-	// 		}
-	// 		var node_els = data.slice(0, 2).map(node_id => document.getElementById(node_id));
-	// 		if (node_els.every(Boolean)) {
-	// 			var nodes = node_els.map(node_el => node_el.objref);
-	// 			var old_bonds = nodes[0].getBondsBetween(nodes[1]);
-	// 			if (old_bonds.length > 0) {
-	// 				delete new_bonds_data[id];
-	// 				var old_bond = old_bonds[0];
-	// 				var is_sp3 = nodes.every(node => node.hasNoMultBonds());
-	// 				var new_type_casted = old_bond.getNodeIdx(nodes[0]) ? ChemBond.rev_type[data[2]] : data[2];
-	// 				if (ChemBond.mult[data[2]] > 1 && old_bond.type != new_type_casted && is_sp3) {
-	// 					bonds_type[old_bond.id] = new_type_casted;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	return [new_atoms_data, new_bonds_data, bonds_type];
-	// }
 }
 
 
