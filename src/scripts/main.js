@@ -1040,6 +1040,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		}
 
 		var non_sp3_ring = new Set();
+		// var sp3_orig = new Set();
+		var casted_types = {};
 		var bonds_type = {};
 		for (const [id, data] of Object.entries(new_bonds_data)) {
 			if (ChemBond.mult[data[2]] >= 2) {
@@ -1056,12 +1058,26 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var old_bond = node0.getBondsBetween(node1)[0];
 				if (old_bond) {
 					delete new_bonds_data[id];
-					var is_sp3 = nodes.every(node => node.hasNoMultBonds());
-					var new_type_casted = old_bond.getNodeIdx(node0) ? ChemBond.rev_type[data[2]] : data[2];
-					if (ChemBond.mult[data[2]] > 1 && 
+					// var is_sp3 = nodes.every(node => node.hasNoMultBonds());
+					var rev = old_bond.getNodeIdx(node0);
+					var new_type_casted = rev ? ChemBond.rev_type[data[2]] : data[2];
+					// if (ChemBond.mult[data[2]] > 1 && 
+					// 	old_bond.type != new_type_casted && 
+					// 	(is_sp3 || ChemBond.auto_d_bonds.includes(old_bond.type))
+					// ) bonds_type[old_bond.id] = new_type_casted;
+					if (ChemBond.mult[data[2]] == 2 && 
 						old_bond.type != new_type_casted && 
-						(is_sp3 || ChemBond.auto_d_bonds.includes(old_bond.type))
-					) bonds_type[old_bond.id] = new_type_casted;
+						ChemBond.auto_d_bonds.includes(old_bond.type)
+					) {
+						bonds_type[old_bond.id] = new_type_casted;
+					}
+					if (nodes.every(node => node.hasNoMultBonds())) {
+						// sp3_orig.add(node0);
+						// sp3_orig.add(node1);
+						// new_bond_ids[new_bond_ids.indexOf(id)] = old_bond.id;
+						// casted_types[old_bond.id] = new_type_casted;
+						casted_types[id] = {old_bond_id: old_bond.id, rev: rev};
+					}
 				}
 			}
 		}
@@ -1081,13 +1097,21 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		for (var j = 0; j < num; j++) { // Consume free non_sp3 nodes for double bonds
 			let j1p = (j + 1) % num;
-			let bond_id = new_bond_ids[j];
 			let is_double = node_map[j].non_sp3 && node_map[j1p].non_sp3;
 			if (is_double) {
 				node_map[j].non_sp3 = false;
 				node_map[j1p].non_sp3 = false;
 			}
-			if (bond_id in new_bonds_data) new_bonds_data[bond_id][2] = is_double ? 10 : 1;
+			let bond_id = new_bond_ids[j];
+			if (bond_id in new_bonds_data) {
+				new_bonds_data[bond_id][2] = is_double ? 10 : 1;
+			}
+			else if (bond_id in casted_types && is_double) {
+				// var old_bond = document.getElementById(orig_id).objref;
+				// var new_type_casted = old_bond.getNodeIdx(node0) ? ChemBond.rev_type[data[2]] : data[2];
+				let {old_bond_id, rev} = casted_types[bond_id];
+				bonds_type[old_bond_id] = rev ? 8 : 10;
+			}
 		}
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
