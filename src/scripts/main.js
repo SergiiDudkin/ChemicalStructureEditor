@@ -1060,7 +1060,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 					var new_type_casted = old_bond.getNodeIdx(node0) ? ChemBond.rev_type[data[2]] : data[2];
 					if (ChemBond.mult[data[2]] > 1 && 
 						old_bond.type != new_type_casted && 
-						is_sp3
+						(is_sp3 || ChemBond.auto_d_bonds.includes(old_bond.type))
 					) bonds_type[old_bond.id] = new_type_casted;
 				}
 			}
