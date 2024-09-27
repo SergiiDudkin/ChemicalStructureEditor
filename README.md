@@ -23,7 +23,7 @@ Alternatively, you can run it locally. Clone the repository, or download it as a
 The menu contains a set of tools to select whole molecules or their specific parts. Every selection is marked with blue
 outline, augmented with the transform tool:
 
-![Lasso button](assets/images/transform_tool.png)
+![Transform tool](assets/images/transform_tool.png)
 
 The selection can be moved to any direction. Just click on the selection, drag and drop. If the selection is pulled by
 some atom (i.e. the cursor is over the atom) while the `Shift` key is pressed, gets sticky, and can be merged with 
@@ -72,11 +72,11 @@ The tool selects the entire molecule. Just click on any atom or bond of the mole
 # ![Atom menu](assets/images/atom.png) Atom dropdown menu 
 The atom menu contains the five most frequently used elements:
 
-![Atom menu](assets/images/C.png)
-![Atom menu](assets/images/H.png) 
-![Atom menu](assets/images/O.png) 
-![Atom menu](assets/images/N.png) 
-![Atom menu](assets/images/S.png)
+![Carboon button](assets/images/C.png)
+![Hydrogen button](assets/images/H.png) 
+![Oxygen button](assets/images/O.png) 
+![Nitrogen button](assets/images/N.png) 
+![Sulfur button](assets/images/S.png)
 
 In general, clicking some atoms leads to setting the corresponding chemical element, augmented by hydrogens to fill up 
 the remaining valencies. If the same element is already set,
@@ -133,24 +133,23 @@ groups can be extended only programmatically, but the corresponding IU feature i
 # ![Carbocycle menu](assets/images/carbocycles.png) Carbocycle dropdown menu 
 The carbocycle menu contains the five most frequently used cycles:
 
-![Eraser button](assets/images/benzene.png)
-![Eraser button](assets/images/cyclopentane.png)
-![Eraser button](assets/images/cyclohexane.png)
-![Eraser button](assets/images/cycloheptane.png)
+![Benzene button](assets/images/benzene.png)
+![Cyclopentane button](assets/images/cyclopentane.png)
+![CYclohexane button](assets/images/cyclohexane.png)
+![Cycloheptane button](assets/images/cycloheptane.png)
 
 Carbocycles can be stacked by corners or by edges. To stack by corner, select the desired carbocycle from the dropdown 
 menu, then click on some already existing atom and drag to certain direction to specify the angle. The cycle will follow 
 the cursor. After that release the left mouse button. To stack by edge, click on some bond and drag the cursor towards
 the side where the cycle should be placed. Notice that the carbocycle atoms are sticky while drawing. It means that if 
-its atom overlaps or very close to an already existing atom, the atoms will be merged.
-One can fuse multiple benzene rings as well, however the correct double bond alternation is not always possible, and 
-depends on the drawing sequence.
+its atom overlaps or very close to an already existing one, they will be merged. Multiple benzene rings can be fused as 
+well.
 
 # Undo, redo
 The app fully supports this functionality. Use `Ctrl + Z` and `Ctrl + Y` (or `Ctrl + Shift + Z`) for undo and redo 
 respectively.
 
-# ![Eraser button](assets/images/file.png) File menu
+# ![File button](assets/images/file.png) File menu
 ## New
 Deletes all drawings on canvas.
 
@@ -170,6 +169,7 @@ Please use `Cmd` key instead of `Ctrl`.
 * Arrows, lines and simple SVG shapes
 * Text and its formatting
 * Charges and radicals
+* Templates, including the custom ones
 * Molecule style menu (font, color bond thickness, etc.)
 * Image metadata for SVG images to store the molecular graph and style info
 * Proper clipboard support
