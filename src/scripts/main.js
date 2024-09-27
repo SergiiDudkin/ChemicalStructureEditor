@@ -975,7 +975,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var [node0_id, node1_id] = (dir == 1 ? [0, 1] : [1, 0]).map(i => common_bond.nodes[i].id);
 		node_map[0].orig_id = node0_id;
 		node_map[1].orig_id = node1_id;
-		mountRing(new_atoms_data, new_bonds_data, node_map);
+		fuseRing(new_atoms_data, new_bonds_data, node_map);
 	}
 
 	function rotatePolygon(event) {
@@ -991,7 +991,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 		var node_map = nodeMapInit(new_node_ids);
 		node_map[0].orig_id = common_node.id;
-		mountRing(new_atoms_data, new_bonds_data, node_map);
+		fuseRing(new_atoms_data, new_bonds_data, node_map);
 	}
 
 	function appendPolygon(event) {
@@ -1025,7 +1025,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		return new_node_ids.map(node_id => ({ring_id: node_id, orig_id: node_id, non_sp3: false}));
 	}
 
-	function mountRing(new_atoms_data, new_bonds_data, node_map={}) {
+	function fuseRing(new_atoms_data, new_bonds_data, node_map={}) {
 		for (const pair of node_map) {
 			const {ring_id, orig_id} = pair;
 			if (ring_id == orig_id) {
