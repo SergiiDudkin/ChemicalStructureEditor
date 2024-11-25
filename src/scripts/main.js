@@ -32,6 +32,7 @@ function indentHtml(el) {
 
 function downloadSvg() { // Download .svg
 	var svg_el = document.getElementById('canvas').cloneNode();
+	svg_el.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 	svg_el.appendChild(document.getElementById('bondsall').cloneNode(true));
 	svg_el.appendChild(document.getElementById('atomsall').cloneNode(true));
 	svg_el.appendChild(document.getElementById('bondcutouts').cloneNode(true));
