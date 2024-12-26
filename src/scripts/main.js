@@ -12,6 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
+import {ControlPoint} from './ControlPoint.js'
 
 
 window.DEBUG = false;
@@ -1114,6 +1115,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 function transformHandler(btn, SelectTool=null) {
 	var sensors_a = document.getElementById('sensors_a');
 	var sensors_b = document.getElementById('sensors_b');
+	var control_points = document.getElementById('control_points');
 	btn.mask_g.addEventListener('click', selectInit);
 
 	function selectInit(event) { // eslint-disable-line no-unused-vars
@@ -1121,6 +1123,7 @@ function transformHandler(btn, SelectTool=null) {
 		canvas.addEventListener('mousedown', selectAct);
 		sensors_a.addEventListener('mousedown', pick);
 		sensors_b.addEventListener('mousedown', pick);
+		control_points.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
 
@@ -1133,20 +1136,23 @@ function transformHandler(btn, SelectTool=null) {
 	function pick(event) {
 		event.stopPropagation();
 		selection.deactivate();
-		var chemobj = event.target.objref;
+		var picked_obj = event.target.objref;
 		if (SelectTool) {
-			selection.setSelectedChemObj(chemobj);
+			selection.setSelectedChemObj(picked_obj);
 		}
 		else {
-			selection.activateFromIds(...pickMol(chemobj));
+			selection.activateFromIds(...pickMol(picked_obj));
 		}
 		selection.startMoving(event);
+		draw_selection.setSelectedDrawObj(picked_obj);
+		draw_selection.startMoving(event);
 	}
 
 	function exit(event) {
 		canvas.removeEventListener('mousedown', selectAct);
 		sensors_a.removeEventListener('mousedown', pick);
 		sensors_b.removeEventListener('mousedown', pick);
+		control_points.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
 		btn.deselectCond(event);
@@ -1228,10 +1234,88 @@ class SelectLasso extends SelectShape {
 }
 
 
+class DrawingSelection {
+	constructor() {
+		this.control_points = new Set([]); // Selected control points
+		this.bottom_ptr = Infinity;
+		['startMoving', 'moving', 'finishMoving']
+			.forEach(method => this[method] = this[method].bind(this));
+	}
+
+	setSelectedDrawObj(item) {
+		if (item instanceof ControlPoint) {
+			this.control_points = new Set([item.id]);
+		}
+	}
+
+	startMoving(event) {
+		if (this.control_points.size != 0) {
+			event.stopPropagation();
+			this.target_obj = event.target.objref;
+
+			this.indicator = new Indicator('utils');
+			this.accum_vec = [0, 0];
+			var pt = getSvgPoint(event);
+			this.mo_st = pt;
+			console.log('startMoving');
+
+			window.addEventListener('mousemove', this.moving);
+			window.addEventListener('mouseup', this.finishMoving);
+		}
+	}
+
+	moving(event) { // Active moving
+		// console.log(event);
+		var corrected_point = getSvgPoint(event);
+		var moving_vec = vecDif(this.mo_st, corrected_point);
+
+		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`,
+			event);
+		var kwargs = {};
+
+		this.accum_vec = vecSum(this.accum_vec, moving_vec);
+		this.mo_st = corrected_point;
+		kwargs.moving_vec_ctr_pts = moving_vec;
+		this.relocatingCtrPts('moving', kwargs);
+	}
+
+	finishMoving(event) { // eslint-disable-line no-unused-vars
+		window.removeEventListener('mousemove', this.moving);
+		window.removeEventListener('mouseup', this.finishMoving);
+	}
+
+	relocatingCtrPts(action_type, kwargs) {
+		kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+		editStructure(kwargs);
+	}
+
+	finishRelocatingCtrPts(action_type, kwargs) {
+		kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+		this.finishAction(kwargs, invertCmd(kwargs));
+	}
+
+	finishAction(kwargs, kwargs_rev) {
+		// this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
+		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
+		this.deactivate();
+	}
+
+	deselect() {
+		this.control_points.clear();
+	}
+
+	deactivate() {
+		// this.bottom_ptr = Infinity;
+		this.deselect();
+	}
+}
+
+
 class UserSelection {
 	constructor() {
 		this.atoms = new Set(); // Selected atoms
 		this.bonds = new Set(); // Selected bonds
+		// this.control_points = new Set([]); // Selected control points
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.pointed_atom = null;
@@ -1298,10 +1382,17 @@ class UserSelection {
 		if (item instanceof ChemNode) {
 			this.atoms = new Set([item.id]);
 		}
-		else {
+		// else {
+		// 	this.bonds =  new Set([item.id]);
+		// 	this.atoms = new Set(item.nodes.map(node => node.id));
+		// }
+		else if (item instanceof ChemBond) {
 			this.bonds =  new Set([item.id]);
 			this.atoms = new Set(item.nodes.map(node => node.id));
 		}
+		// else {
+		// 	this.control_points = new Set([item]);
+		// }
 		this.highlight();
 	}
 
@@ -1583,6 +1674,7 @@ class UserSelection {
 }
 
 var selection = new UserSelection();
+var draw_selection = new DrawingSelection();
 window.selection = selection;
 
 
@@ -1862,3 +1954,7 @@ polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
+
+
+new ControlPoint('cp0', 200, 200).render();
+

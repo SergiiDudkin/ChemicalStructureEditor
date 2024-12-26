@@ -10,7 +10,8 @@ export function editStructure({
 	moving_atoms=new Set(), moving_vec=[0, 0],
 	rotating_atoms=new Set(), rot_angle=0, rot_ctr=[0, 0],
 	scaling_atoms=new Set(), scale_factor=0, scale_ctr=[0, 0],
-	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0]
+	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0],
+	moving_ctr_pts=new Set(), moving_vec_ctr_pts=[0, 0]
 }) {
 	var atoms_parse = new Set(),
 		atoms_render = new Set(),
@@ -207,4 +208,20 @@ export function editStructure({
 	for (const bond of bonds_update_rect) {
 		bond.updateAllRects();
 	}
+
+
+//////////////////////////////////
+
+	var ctr_pts_render = new Set();
+
+	for (const ctr_pt_id of moving_ctr_pts) {
+		let ctr_pt = document.getElementById(ctr_pt_id).objref;
+		ctr_pt.translate(moving_vec_ctr_pts);
+		ctr_pts_render.add(ctr_pt);
+	}
+
+	for (const ctr_pt of ctr_pts_render) {
+		ctr_pt.render();
+	}
+
 }
