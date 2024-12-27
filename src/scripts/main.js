@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint} from './ControlPoint.js'
+import {ControlPoint, Line} from './ControlPoint.js'
 
 
 window.DEBUG = false;
@@ -425,6 +425,7 @@ var heptagonbtn = new SubButton(dropcycbtn,
 	`<polygon points="15.0,27.7 5.1,22.9 2.6,12.2 9.5,3.6 20.5,3.6 27.4,12.2 24.9,22.9" stroke="black" stroke-width="2"
 	fill="none" />`
 );
+var linebtn = new RegularButton(flex_container, toBtnText('li'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -470,6 +471,11 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
 	if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
 	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
+
+	//////////
+	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
+	if (kwargs_dir.moving_ctr_pts) kwargs_rev.moving_ctr_pts = new Set(kwargs_dir.moving_ctr_pts);
+	if (kwargs_dir.moving_vec_ctr_pts) kwargs_rev.moving_vec_ctr_pts = vecMul(kwargs_dir.moving_vec_ctr_pts, -1);
 
 	return kwargs_rev;
 }
@@ -1112,6 +1118,77 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 }
 
 
+function lineHandler(btn) {
+	// var node0, pt0, new_node0id, new_node1id, new_bond_id, node0id;
+	var pt0, new_line_id;
+	btn.mask_g.addEventListener('click', crLine);
+
+	// eslint-disable-next-line no-unused-vars
+	function crLine(event) { // Create line. Called when the line button is cklicked.
+		btn.selectCond();
+		window.addEventListener('mousedown', stLine);
+	}
+
+	function stLine(event) { // Start drawing line. Called when mouse button 1 is down.
+		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
+			// if (event.target.is_bond) { // If an existing bond was clicked, change its multiplicity
+			// 	var focobj = event.target.objref;
+			// 	var kwargs = {bonds_type: {[focobj.id]: focobj.getNextType(rotation_schema)}};
+			// 	dispatcher.do(editStructure, kwargs);
+			// 	refreshBondCutouts();
+			// }
+			// else { // If blank space or a chem node was clicked, start drawing a new bond
+			// 	[pt0, node0] = pickNodePoint(event);
+			// 	new_node0id = ChemNode.getNewId();
+			// 	new_node1id = ChemNode.getNewId();
+			//	new_bond_id = ChemBond.getNewId();
+			// 	node0id = node0 ? node0.id : new_node0id;
+			// 	var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
+			// 	document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover`;
+			// 	document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover`;
+			// 	window.addEventListener('mousemove', movLine);
+			// 	window.addEventListener('mouseup', enLine);
+			// }
+			pt0 = getSvgPoint(event);
+			new_line_id = Line.getNewId();
+			window.addEventListener('mousemove', movLine);
+			window.addEventListener('mouseup', enLine);
+		}
+		else { // Bond starts outside of canvas. Exit drawing.
+			window.removeEventListener('mousemove', movLine);
+			window.removeEventListener('mousedown', stLine);
+			btn.deselectCond(event);
+		}
+	}
+
+	function movLine(event) { // Move second end of the drawn bond
+		// if (document.getElementById(new_bond_id) !== null) dispatcher.undo();
+		// var [pt1, node1] = getBondEnd(event, pt0);
+		// var node1id = node1 ? node1.id : new_node1id;
+		// if (pt1 !== null) {
+		// 	var new_atoms_data = {};
+		// 	if (node0id == new_node0id) new_atoms_data[node0id] = [...pt0, ''];
+		// 	if (node1id == new_node1id) new_atoms_data[node1id] = [...pt1, ''];
+		// 	var kwargs = {
+		// 		new_atoms_data: new_atoms_data,
+		// 		new_bonds_data: {[new_bond_id]: [node0id, node1id, init_type]}
+		// 	};
+		// 	dispatcher.do(editStructure, kwargs);
+		// }
+		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
+		let pt1 = getSvgPoint(event);
+		let kwargs = {new_lines_data: {[new_line_id]: [...pt0, ...pt1]}};
+		dispatcher.do(editStructure, kwargs);
+	}
+
+	// eslint-disable-next-line no-unused-vars
+	function enLine(event) { // Finish drawing bond
+		window.removeEventListener('mouseup', enLine);
+		window.removeEventListener('mousemove', movLine);
+	}
+}
+
+
 function transformHandler(btn, SelectTool=null) {
 	var sensors_a = document.getElementById('sensors_a');
 	var sensors_b = document.getElementById('sensors_b');
@@ -1257,7 +1334,6 @@ class DrawingSelection {
 			this.accum_vec = [0, 0];
 			var pt = getSvgPoint(event);
 			this.mo_st = pt;
-			console.log('startMoving');
 
 			window.addEventListener('mousemove', this.moving);
 			window.addEventListener('mouseup', this.finishMoving);
@@ -1282,6 +1358,8 @@ class DrawingSelection {
 	finishMoving(event) { // eslint-disable-line no-unused-vars
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
+
+		this.finishRelocatingCtrPts('moving', {moving_vec_ctr_pts: this.accum_vec});
 	}
 
 	relocatingCtrPts(action_type, kwargs) {
@@ -1676,6 +1754,7 @@ class UserSelection {
 var selection = new UserSelection();
 var draw_selection = new DrawingSelection();
 window.selection = selection;
+window.dispatcher = dispatcher;
 
 
 class TransformTool extends DeletableAbortable {
@@ -1954,6 +2033,7 @@ polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
+lineHandler(linebtn);
 
 
 new ControlPoint('cp0', 200, 200).render();

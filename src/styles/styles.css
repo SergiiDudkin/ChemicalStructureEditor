@@ -176,7 +176,20 @@ body {
 .transformjig:hover, .jigforcehover {
 	fill: blue;
 }
-
 #file-input {
 	display: none;
+}
+.control-point {
+	stroke: gray;
+	stroke-width: 1;
+	fill: none;
+	cursor: pointer;
+	opacity: 0;
+}
+.control-point.cp-opaque {
+	opacity: 1;
+}
+.control-point:hover {
+	fill: blue;
+	opacity: 1;
 }

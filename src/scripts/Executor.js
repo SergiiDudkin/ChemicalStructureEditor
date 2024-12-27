@@ -1,5 +1,6 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
+import {Line} from './ControlPoint.js';
 import {vecDif, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 
 
@@ -11,6 +12,8 @@ export function editStructure({
 	rotating_atoms=new Set(), rot_angle=0, rot_ctr=[0, 0],
 	scaling_atoms=new Set(), scale_factor=0, scale_ctr=[0, 0],
 	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0],
+	new_lines_data={},
+	del_lines=new Set(),
 	moving_ctr_pts=new Set(), moving_vec_ctr_pts=[0, 0]
 }) {
 	var atoms_parse = new Set(),
@@ -212,16 +215,34 @@ export function editStructure({
 
 //////////////////////////////////
 
-	var ctr_pts_render = new Set();
+	var ctr_pts_render = new Set(),
+		shapes_render = new Set();
+
+	// Delete atoms
+	for (const line_id of del_lines) {
+		document.getElementById(line_id).objref.delete();
+	}
+
+	// Create lines
+	for (const [id, data] of Object.entries(new_lines_data)) {
+		let new_line = new Line(id, ...data); // data: [x, y, text]
+		shapes_render.add(new_line);
+		ctr_pts_render.add(new_line.cp0);
+		ctr_pts_render.add(new_line.cp1);
+	}
 
 	for (const ctr_pt_id of moving_ctr_pts) {
 		let ctr_pt = document.getElementById(ctr_pt_id).objref;
 		ctr_pt.translate(moving_vec_ctr_pts);
 		ctr_pts_render.add(ctr_pt);
+		shapes_render.add(ctr_pt.master);
+	}
+
+	for (const shape of shapes_render) {
+		shape.render();
 	}
 
 	for (const ctr_pt of ctr_pts_render) {
 		ctr_pt.render();
 	}
-
 }
