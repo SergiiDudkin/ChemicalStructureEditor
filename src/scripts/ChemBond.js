@@ -9,7 +9,7 @@ export class ChemBond {
 	constructor(id, node0, node1, type) {
 		this.id = id;
 
-		this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
+		this.g = attachSvg(document.getElementById('bondsall'), 'g');
 
 		this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: this.constructor.sel_h});
 		this.backrect.shape.is_bond = true;

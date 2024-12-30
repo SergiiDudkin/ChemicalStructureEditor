@@ -1119,7 +1119,6 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 
 function lineHandler(btn) {
-	// var node0, pt0, new_node0id, new_node1id, new_bond_id, node0id;
 	var pt0, new_line_id;
 	btn.mask_g.addEventListener('click', crLine);
 
@@ -1130,31 +1129,13 @@ function lineHandler(btn) {
 	}
 
 	function stLine(event) { // Start drawing line. Called when mouse button 1 is down.
-		if (canvas.contains(event.target)) { // Bond starts within the canvas. Continue drawing.
-			// if (event.target.is_bond) { // If an existing bond was clicked, change its multiplicity
-			// 	var focobj = event.target.objref;
-			// 	var kwargs = {bonds_type: {[focobj.id]: focobj.getNextType(rotation_schema)}};
-			// 	dispatcher.do(editStructure, kwargs);
-			// 	refreshBondCutouts();
-			// }
-			// else { // If blank space or a chem node was clicked, start drawing a new bond
-			// 	[pt0, node0] = pickNodePoint(event);
-			// 	new_node0id = ChemNode.getNewId();
-			// 	new_node1id = ChemNode.getNewId();
-			//	new_bond_id = ChemBond.getNewId();
-			// 	node0id = node0 ? node0.id : new_node0id;
-			// 	var node_selectors = [new_node0id, new_node1id].map(id => '#' + id).join();
-			// 	document.styleSheets[0].cssRules[0].selectorText = `:is(${node_selectors}):hover`;
-			// 	document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover`;
-			// 	window.addEventListener('mousemove', movLine);
-			// 	window.addEventListener('mouseup', enLine);
-			// }
+		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			pt0 = getSvgPoint(event);
 			new_line_id = Line.getNewId();
 			window.addEventListener('mousemove', movLine);
 			window.addEventListener('mouseup', enLine);
 		}
-		else { // Bond starts outside of canvas. Exit drawing.
+		else { // Line starts outside of canvas. Exit drawing.
 			window.removeEventListener('mousemove', movLine);
 			window.removeEventListener('mousedown', stLine);
 			btn.deselectCond(event);
@@ -1162,29 +1143,18 @@ function lineHandler(btn) {
 	}
 
 	function movLine(event) { // Move second end of the drawn bond
-		// if (document.getElementById(new_bond_id) !== null) dispatcher.undo();
-		// var [pt1, node1] = getBondEnd(event, pt0);
-		// var node1id = node1 ? node1.id : new_node1id;
-		// if (pt1 !== null) {
-		// 	var new_atoms_data = {};
-		// 	if (node0id == new_node0id) new_atoms_data[node0id] = [...pt0, ''];
-		// 	if (node1id == new_node1id) new_atoms_data[node1id] = [...pt1, ''];
-		// 	var kwargs = {
-		// 		new_atoms_data: new_atoms_data,
-		// 		new_bonds_data: {[new_bond_id]: [node0id, node1id, init_type]}
-		// 	};
-		// 	dispatcher.do(editStructure, kwargs);
-		// }
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
 		let kwargs = {new_lines_data: {[new_line_id]: [...pt0, ...pt1]}};
 		dispatcher.do(editStructure, kwargs);
+		document.getElementById(new_line_id).objref.eventsOff();
 	}
 
 	// eslint-disable-next-line no-unused-vars
 	function enLine(event) { // Finish drawing bond
 		window.removeEventListener('mouseup', enLine);
 		window.removeEventListener('mousemove', movLine);
+		document.getElementById(new_line_id).objref.eventsOn();
 	}
 }
 
@@ -1200,6 +1170,7 @@ function transformHandler(btn, SelectTool=null) {
 		canvas.addEventListener('mousedown', selectAct);
 		sensors_a.addEventListener('mousedown', pick);
 		sensors_b.addEventListener('mousedown', pick);
+		sensors_s.addEventListener('mousedown', pick);
 		control_points.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
@@ -1207,12 +1178,14 @@ function transformHandler(btn, SelectTool=null) {
 	function selectAct(event) { // Click on canvas
 		event.stopPropagation();
 		selection.deactivate();
+		draw_selection.deactivate();
 		if (SelectTool) new SelectTool('utils');
 	}
 
 	function pick(event) {
 		event.stopPropagation();
 		selection.deactivate();
+		draw_selection.deactivate();
 		var picked_obj = event.target.objref;
 		if (SelectTool) {
 			selection.setSelectedChemObj(picked_obj);
@@ -1232,6 +1205,7 @@ function transformHandler(btn, SelectTool=null) {
 		control_points.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
+		draw_selection.deactivate();
 		btn.deselectCond(event);
 	}
 }
@@ -1261,6 +1235,7 @@ class SelectShape extends DeletableAbortable {
 		window.removeEventListener('mouseup', this.selectStop);
 		this.shape.removeAttribute('class');
 		selection.activateFromShape(this.shape);
+		draw_selection.activateFromShape(this.shape);
 		this.delete();
 	}
 
@@ -1314,15 +1289,59 @@ class SelectLasso extends SelectShape {
 class DrawingSelection {
 	constructor() {
 		this.control_points = new Set([]); // Selected control points
+		this.shapes = new Set([]); // Selected shapes
+		this.highlights = document.getElementById('selecthighlight');
 		this.bottom_ptr = Infinity;
+		this.transform_tool_flag = false; // !!! Temp
 		['startMoving', 'moving', 'finishMoving']
 			.forEach(method => this[method] = this[method].bind(this));
+	}
+
+	static parent_map = {
+		'shapes': 'sensors_s'
+	};
+
+	static objsUnderShape(parent_id, covering_shape) {
+		return [...document.getElementById(parent_id).children].map(el => el.objref)
+			.filter(el => document.elementFromPoint(...getScreenPoint(el.xy)) == covering_shape);
+	}
+
+	activateFromShape(covering_shape) {
+		this.selectFromShape(covering_shape);
+		this.activate();
+	}
+
+	selectFromShape(covering_shape) {
+		for (const [attr, parent_id] of Object.entries(this.constructor.parent_map)) {
+			this[attr] = new Set(this.constructor.objsUnderShape(parent_id, covering_shape).map(item => item.id));
+		}
+		this.control_points = new Set([...this.shapes].map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id));
+	}
+
+	activate() {
+		this.highlight();
+		this.transform_tool_flag = true; // !!! Temp
+		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
+	}
+
+	highlight() {
+		this.shapes.forEach(item_id => document.getElementById(item_id).objref.select());
+	}
+
+	dehighlight() {
+		excludeNonExisting(this.shapes).forEach(item_id => document.getElementById(item_id)
+			.objref.deselect());
 	}
 
 	setSelectedDrawObj(item) {
 		if (item instanceof ControlPoint) {
 			this.control_points = new Set([item.id]);
 		}
+		else if (item instanceof Line) {
+			this.shapes = new Set([item.id]);
+			this.control_points = new Set(item.cps.map(cp => cp.id));
+		}
+		this.highlight();
 	}
 
 	startMoving(event) {
@@ -1341,7 +1360,6 @@ class DrawingSelection {
 	}
 
 	moving(event) { // Active moving
-		// console.log(event);
 		var corrected_point = getSvgPoint(event);
 		var moving_vec = vecDif(this.mo_st, corrected_point);
 
@@ -1375,15 +1393,19 @@ class DrawingSelection {
 	finishAction(kwargs, kwargs_rev) {
 		// this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
-		this.deactivate();
+		if (!this.transform_tool_flag) this.deactivate();
 	}
 
 	deselect() {
 		this.control_points.clear();
+		this.shapes.clear();
 	}
 
 	deactivate() {
+		this.highlights.removeEventListener('mousedown', this.startMoving);
+		this.transform_tool_flag = false; // !!! Temp
 		// this.bottom_ptr = Infinity;
+		this.dehighlight();
 		this.deselect();
 	}
 }
@@ -2036,5 +2058,5 @@ polygonHandler(benzenebtn, 6, true);
 lineHandler(linebtn);
 
 
-new ControlPoint('cp0', 200, 200).render();
+// new ControlPoint('cp0', 200, 200).render();
 

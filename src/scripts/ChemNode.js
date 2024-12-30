@@ -15,7 +15,7 @@ export class ChemNode {
 		this.connections = [];
 		this.select_circ = null;
 
-		this.g = attachSvg(document.getElementById('atomsall'), 'g', {class: 'ag'});
+		this.g = attachSvg(document.getElementById('atomsall'), 'g');
 
 		this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle',
 			{id: id, class: 'anode', r: this.constructor.sel_r, cx: x, cy: y});

@@ -72,24 +72,32 @@ body {
 	fill: blue;
 	opacity: 0;
 }
-.anode:hover {
-	opacity: 1;
-	cursor: pointer;
-}
-.ag:hover .chemtxt {
-	filter: none;
-}
 .brect {
 	fill: blue;
 	opacity: 0;
+}
+.bline {
+	stroke: blue;
+	opacity: 0;
+}
+.anode:hover {
+	opacity: 1;
+	cursor: pointer;
 }
 .brect:hover {
 	opacity: 1;
 	cursor: pointer;
 }
-.bg:hover {
+.bline:hover {
+	opacity: 1;
 	cursor: pointer;
 }
+/*.ag:hover .chemtxt {
+	filter: none;
+}
+.bg:hover {
+	cursor: pointer;
+}*/
 .hlcirc {
 	stroke: blue;
 	stroke-width: 2.2;
@@ -157,12 +165,15 @@ body {
 }
 #selectholes {
 	fill: black;
+	stroke: black;
+	stroke-width: 0;
 }
 #selection:hover {
 	cursor: pointer;
 }
 #selection:hover #selectholes {
 	fill: white;
+	stroke: white;
 }
 #selecthighlight {
 	fill: blue;

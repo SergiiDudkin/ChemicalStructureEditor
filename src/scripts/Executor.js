@@ -218,7 +218,7 @@ export function editStructure({
 	var ctr_pts_render = new Set(),
 		shapes_render = new Set();
 
-	// Delete atoms
+	// Delete lines
 	for (const line_id of del_lines) {
 		document.getElementById(line_id).objref.delete();
 	}
@@ -227,8 +227,9 @@ export function editStructure({
 	for (const [id, data] of Object.entries(new_lines_data)) {
 		let new_line = new Line(id, ...data); // data: [x, y, text]
 		shapes_render.add(new_line);
-		ctr_pts_render.add(new_line.cp0);
-		ctr_pts_render.add(new_line.cp1);
+		// ctr_pts_render.add(new_line.cp0);
+		// ctr_pts_render.add(new_line.cp1);
+		new_line.cps.forEach(cp => ctr_pts_render.add(cp));
 	}
 
 	for (const ctr_pt_id of moving_ctr_pts) {
