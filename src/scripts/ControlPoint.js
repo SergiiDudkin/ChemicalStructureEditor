@@ -2,10 +2,10 @@ import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
 
 
 export class ControlPoint extends CtrRect {
-	constructor(id, cx, cy, master=null) {
+	constructor(id, cx, cy, master) {
 		super('control_points', cx, cy, {width: 10, height: 10, class: 'control-point', id: id});
 		this.id = id;
-		this.master = master;
+		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
 
 		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
 		this.shape.addEventListener('mousedown', this.focus);
@@ -40,12 +40,10 @@ export class ControlPoint extends CtrRect {
 
 
 export class Line {
-	constructor(id, x0, y0, x1, y1) {
+	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
 		this.id = id;
-		this.cps = [
-			new ControlPoint(ControlPoint.getNewId(), x0, y0, this),
-			new ControlPoint(ControlPoint.getNewId(), x1, y1, this)
-		];
+		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
+
 		this.recalcCtr();
 
 		this.style = {};
@@ -58,7 +56,7 @@ export class Line {
 				'stroke-linecap': 'round', 'stroke-width': this.style['stroke-width'] + 8
 			}
 		);
-		this.backline.is_true = true;
+		this.backline.is_line = true;
 		this.backline.objref = this;
 	}
 
@@ -93,7 +91,6 @@ export class Line {
 			this.constructor.selectholes, 'line', 
 			{...this.getCoordinates(), 'stroke-linecap': 'round', 'stroke-width': this.style['stroke-width'] + 5}
 		);
-		// , 'stroke-linecap': 'round'
 	};
 
 	deselect() {
@@ -119,12 +116,11 @@ export class Line {
 	}
 
 	getData() {
-		return [this.cps[0].xy[0], this.cps[0].xy[1], this.cps[1].xy[0], this.cps[1].xy[1]];
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
 	}
 
 	recalcCtr() {
 		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
-		// console.log(this.xy);
 	}
 
 	render() {

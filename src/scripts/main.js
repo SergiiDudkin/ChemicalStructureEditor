@@ -75,12 +75,6 @@ function gatherAtomsBondsData(atom_ids=new Set(), bond_ids=new Set()) {
 function gatherShapesData(shape_ids=new Set()) {
 	var kwargs = {};
 	if (shape_ids.size) {
-		// kwargs.new_lines_data = {};
-		// shape_ids.forEach(id => {
-		// 	var shape = document.getElementById(id).objref;
-		// 	kwargs.new_atoms_data[id] = shape.getData();
-		// });
-
 		kwargs.new_lines_data = Object.fromEntries(
 			[...shape_ids].map(id => [id, document.getElementById(id).objref.getData()])
 		);
@@ -490,6 +484,7 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
 
 	//////////
+	Object.assign(kwargs_rev, gatherShapesData(kwargs_dir.del_lines));
 	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
 	if (kwargs_dir.moving_ctr_pts) kwargs_rev.moving_ctr_pts = new Set(kwargs_dir.moving_ctr_pts);
 	if (kwargs_dir.moving_vec_ctr_pts) kwargs_rev.moving_vec_ctr_pts = vecMul(kwargs_dir.moving_vec_ctr_pts, -1);
@@ -842,13 +837,15 @@ function deleteHandler(delbtn) {
 
 	function erase(event) { // Active eraser
 		var kwargs;
-		if (event.target.is_atom || event.target.is_bond) {
+		if (event.target.is_atom || event.target.is_bond || event.target.is_line) {
 			var focobj = event.target.objref;
-			if (focobj.constructor == ChemNode) kwargs = {
+			let focobj_cls = focobj.constructor;
+			if (focobj_cls == ChemNode) kwargs = {
 				del_atoms: new Set([focobj.id]),
 				del_bonds: new Set(focobj.connections.map(bond => bond.id))
 			};
-			else if (focobj.constructor == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
+			else if (focobj_cls == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
+			else if (focobj_cls == Line) kwargs = {del_lines: new Set([focobj.id])};
 			dispatcher.do(editStructure, kwargs);
 			refreshBondCutouts();
 		}
@@ -1136,7 +1133,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 
 function lineHandler(btn) {
-	var pt0, new_line_id;
+	var pt0, new_line_id, new_cp0_id, new_cp1_id;
 	btn.mask_g.addEventListener('click', crLine);
 
 	// eslint-disable-next-line no-unused-vars
@@ -1149,6 +1146,8 @@ function lineHandler(btn) {
 		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			pt0 = getSvgPoint(event);
 			new_line_id = Line.getNewId();
+			new_cp0_id = ControlPoint.getNewId();
+			new_cp1_id = ControlPoint.getNewId();
 			window.addEventListener('mousemove', movLine);
 			window.addEventListener('mouseup', enLine);
 		}
@@ -1162,7 +1161,7 @@ function lineHandler(btn) {
 	function movLine(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
-		let kwargs = {new_lines_data: {[new_line_id]: [...pt0, ...pt1]}};
+		let kwargs = {new_lines_data: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
 		dispatcher.do(editStructure, kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
@@ -1476,8 +1475,6 @@ class DrawingSelection {
 
 	paste(event) {
 		event.preventDefault();
-
-		console.log('!!! paste');
 		if (!this.clipboard.mol) return;
 
 		// Replase ids with the new ones, move shapes
@@ -1485,11 +1482,13 @@ class DrawingSelection {
 		var moving_vec = vecMul([15, 15], ++this.clipboard.mol.cnt);
 		kwargs.new_lines_data = Object.fromEntries(
 			Object.entries(this.clipboard.mol.kwargs.new_lines_data).map(([key, value]) => {
-				const new_id = Line.getNewId();
-				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), ...vecSum(value.slice(2, 4), moving_vec)]];
+				return [Line.getNewId(), 
+					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
+				];
 			}
 			)
 		);
+
 		dispatcher.do(editStructure, kwargs);
 		this.deactivate();
 		this.activateFromIds(new Set(Object.keys(kwargs.new_lines_data)));
