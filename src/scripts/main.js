@@ -72,6 +72,23 @@ function gatherAtomsBondsData(atom_ids=new Set(), bond_ids=new Set()) {
 	return kwargs;
 }
 
+function gatherShapesData(shape_ids=new Set()) {
+	var kwargs = {};
+	if (shape_ids.size) {
+		// kwargs.new_lines_data = {};
+		// shape_ids.forEach(id => {
+		// 	var shape = document.getElementById(id).objref;
+		// 	kwargs.new_atoms_data[id] = shape.getData();
+		// });
+
+		kwargs.new_lines_data = Object.fromEntries(
+			[...shape_ids].map(id => [id, document.getElementById(id).objref.getData()])
+		);
+	}
+	return kwargs;
+}
+
+
 
 function downloadJson() { // Download .svg
 	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
@@ -1292,9 +1309,15 @@ class DrawingSelection {
 		this.shapes = new Set([]); // Selected shapes
 		this.highlights = document.getElementById('selecthighlight');
 		this.bottom_ptr = Infinity;
-		this.transform_tool_flag = false; // !!! Temp
-		['startMoving', 'moving', 'finishMoving']
+		this.transform_tool = null;
+		this.clipboard = {mol: null};
+
+		['startMoving', 'moving', 'finishMoving', 'keyDownHandler', 'copy', 'cut', 'paste']
 			.forEach(method => this[method] = this[method].bind(this));
+		document.addEventListener('keydown', this.keyDownHandler);
+		document.addEventListener('copy', this.copy);
+		document.addEventListener('cut', this.cut);
+		document.addEventListener('paste', this.paste);
 	}
 
 	static parent_map = {
@@ -1318,10 +1341,35 @@ class DrawingSelection {
 		this.control_points = new Set([...this.shapes].map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id));
 	}
 
+	activateFromIds(shape_ids) {
+		this.shapes = shape_ids;
+		this.control_points = new Set([...this.shapes].map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id));
+		this.activate();
+	}
+
 	activate() {
 		this.highlight();
-		this.transform_tool_flag = true; // !!! Temp
+		this.addTransformTool();
 		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
+	}
+
+	addTransformTool() {
+		if (this.highlights.hasChildNodes()) {
+			var margin = 6;
+			var bbox = this.highlights.getBBox();
+			var width = bbox.width + margin * 2;
+			var height = bbox.height + margin * 2;
+			var cx = bbox.x - margin + width / 2;
+			var cy = bbox.y - margin + height / 2;
+			this.transform_tool = new TransformTool('utils', cx, cy, width, height);
+		}
+	}
+
+	removeTransformTool() {
+		if (this.transform_tool) {
+			this.transform_tool.delete();
+			this.transform_tool = null;
+		}
 	}
 
 	highlight() {
@@ -1371,6 +1419,8 @@ class DrawingSelection {
 		this.mo_st = corrected_point;
 		kwargs.moving_vec_ctr_pts = moving_vec;
 		this.relocatingCtrPts('moving', kwargs);
+
+		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
 
 	finishMoving(event) { // eslint-disable-line no-unused-vars
@@ -1393,7 +1443,56 @@ class DrawingSelection {
 	finishAction(kwargs, kwargs_rev) {
 		// this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
 		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
-		if (!this.transform_tool_flag) this.deactivate();
+		if (!this.transform_tool) this.deactivate();
+	}
+
+	keyDownHandler(event) {
+		if (['Delete', 'Backspace'].includes(event.key)) this.delItems();
+	}
+
+	delItems() {
+		var kwargs = {del_lines: new Set(this.shapes)};
+		dispatcher.do(editStructure, kwargs);
+		this.deactivate();
+	}
+
+	copy(event) {
+		event.preventDefault();
+
+		console.log('!!! copy');
+		if (!this.shapes.size) {
+			this.clipboard.mol = null;
+			return;
+		}
+
+		var kwargs = gatherShapesData(this.shapes);
+		this.clipboard.mol = {kwargs: kwargs, pt0: getSvgPoint(event), cnt: 0};
+	}
+
+	cut(event) {
+		this.copy(event);
+		this.delItems();
+	}
+
+	paste(event) {
+		event.preventDefault();
+
+		console.log('!!! paste');
+		if (!this.clipboard.mol) return;
+
+		// Replase ids with the new ones, move shapes
+		var kwargs = {};
+		var moving_vec = vecMul([15, 15], ++this.clipboard.mol.cnt);
+		kwargs.new_lines_data = Object.fromEntries(
+			Object.entries(this.clipboard.mol.kwargs.new_lines_data).map(([key, value]) => {
+				const new_id = Line.getNewId();
+				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), ...vecSum(value.slice(2, 4), moving_vec)]];
+			}
+			)
+		);
+		dispatcher.do(editStructure, kwargs);
+		this.deactivate();
+		this.activateFromIds(new Set(Object.keys(kwargs.new_lines_data)));
 	}
 
 	deselect() {
@@ -1403,7 +1502,7 @@ class DrawingSelection {
 
 	deactivate() {
 		this.highlights.removeEventListener('mousedown', this.startMoving);
-		this.transform_tool_flag = false; // !!! Temp
+		this.removeTransformTool();
 		// this.bottom_ptr = Infinity;
 		this.dehighlight();
 		this.deselect();
@@ -1856,12 +1955,14 @@ class TransformTool extends DeletableAbortable {
 		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
 		selection.relocatingAtoms('rotating', {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts('rotating', {rot_angle_ctr_pts: rot_angle, rot_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	finishRotating() {
 		window.removeEventListener('mousemove', this.rotating);
 		window.removeEventListener('mouseup', this.finishRotating);
 		selection.finishRelocatingAtoms('rotating', {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts('rotating', {rot_angle_ctr_pts: this.accum_rot_angle, rot_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	rotate(rot_angle, rot_ctr) {
@@ -1888,12 +1989,14 @@ class TransformTool extends DeletableAbortable {
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.scale(factor, this.pivot.xy);
 		selection.relocatingAtoms('scaling', {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts('scaling', {scale_factor_ctr_pts: factor, scale_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	finishScaling() {
 		window.removeEventListener('mousemove', this.scaling);
 		window.removeEventListener('mouseup', this.finishScaling);
 		selection.finishRelocatingAtoms('scaling', {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts('scaling', {scale_factor_ctr_pts: this.accum_factor, scale_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	scale(scale_factor, scale_ctr) {
@@ -1923,6 +2026,8 @@ class TransformTool extends DeletableAbortable {
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
 		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts('stretching', {stretch_factor_ctr_pts: factor, dir_angle_ctr_pts: this.dir_angle,
+			stretch_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	finishStretching() {
@@ -1930,6 +2035,8 @@ class TransformTool extends DeletableAbortable {
 		window.removeEventListener('mouseup', this.finishStretching);
 		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts('stretching', {stretch_factor_ctr_pts: this.accum_factor, dir_angle_ctr_pts: this.dir_angle,
+			stretch_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	stretch(stretch_factor, dir_angle, stretch_ctr) {

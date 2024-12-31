@@ -3,9 +3,12 @@ import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
 
 export class ControlPoint extends CtrRect {
 	constructor(id, cx, cy, master=null) {
-		super('control_points', cx, cy, {width: 15, height: 15, class: 'control-point', id: id});
+		super('control_points', cx, cy, {width: 10, height: 10, class: 'control-point', id: id});
 		this.id = id;
 		this.master = master;
+
+		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
+		this.shape.addEventListener('mousedown', this.focus);
 	}
 
 	static counter = 0;
@@ -21,6 +24,18 @@ export class ControlPoint extends CtrRect {
 	eventsOff() {
 		this.shape.classList.add('sympoi');
 	};
+
+	focus() {
+		this.shape.classList.remove('control-point');
+		this.shape.classList.add('control-point-opaque');
+		window.addEventListener('mouseup', this.blur);
+	}
+
+	blur() {
+		window.removeEventListener('mouseup', this.blur);
+		this.shape.classList.remove('control-point-opaque');
+		this.shape.classList.add('control-point');
+	}
 }
 
 
@@ -103,6 +118,10 @@ export class Line {
 		return {x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]};
 	}
 
+	getData() {
+		return [this.cps[0].xy[0], this.cps[0].xy[1], this.cps[1].xy[0], this.cps[1].xy[1]];
+	}
+
 	recalcCtr() {
 		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
 		// console.log(this.xy);
@@ -126,6 +145,10 @@ export class Line {
 	}
 
 	delete() {
+		if (this.select_line != null) {
+			this.constructor.delSel.add(this.id);
+			this.deselect();
+		}
 		this.cps.forEach(cp => cp.delete());
 		this.line.remove();
 		this.backline.remove();

@@ -14,7 +14,10 @@ export function editStructure({
 	stretching_atoms=new Set(), stretch_factor=0, dir_angle=0, stretch_ctr=[0, 0],
 	new_lines_data={},
 	del_lines=new Set(),
-	moving_ctr_pts=new Set(), moving_vec_ctr_pts=[0, 0]
+	moving_ctr_pts=new Set(), moving_vec_ctr_pts=[0, 0],
+	rotating_ctr_pts=new Set(), rot_angle_ctr_pts=0, rot_ctr_ctr_pts=[0, 0],
+	scaling_ctr_pts=new Set(), scale_factor_ctr_pts=0, scale_ctr_ctr_pts=[0, 0],
+	stretching_ctr_pts=new Set(), stretch_factor_ctr_pts=0, dir_angle_ctr_pts=0, stretch_ctr_ctr_pts=[0, 0],
 }) {
 	var atoms_parse = new Set(),
 		atoms_render = new Set(),
@@ -232,9 +235,34 @@ export function editStructure({
 		new_line.cps.forEach(cp => ctr_pts_render.add(cp));
 	}
 
+	// Move
 	for (const ctr_pt_id of moving_ctr_pts) {
 		let ctr_pt = document.getElementById(ctr_pt_id).objref;
 		ctr_pt.translate(moving_vec_ctr_pts);
+		ctr_pts_render.add(ctr_pt);
+		shapes_render.add(ctr_pt.master);
+	}
+
+	// Rotate
+	for (const ctr_pt_id of rotating_ctr_pts) {
+		let ctr_pt = document.getElementById(ctr_pt_id).objref;
+		ctr_pt.translate(vecDif(ctr_pt.xy, rotateAroundCtr(ctr_pt.xy, rot_angle_ctr_pts, rot_ctr_ctr_pts)));
+		ctr_pts_render.add(ctr_pt);
+		shapes_render.add(ctr_pt.master);
+	}
+
+	// Scale
+	for (const ctr_pt_id of scaling_ctr_pts) {
+		let ctr_pt = document.getElementById(ctr_pt_id).objref;
+		ctr_pt.translate(vecDif(ctr_pt.xy, scaleAroundCtr(ctr_pt.xy, scale_factor_ctr_pts, scale_ctr_ctr_pts)));
+		ctr_pts_render.add(ctr_pt);
+		shapes_render.add(ctr_pt.master);
+	}
+
+	// Stretch
+	for (const ctr_pt_id of stretching_ctr_pts) {
+		let ctr_pt = document.getElementById(ctr_pt_id).objref;
+		ctr_pt.translate(vecDif(ctr_pt.xy, stretchAlongDir(ctr_pt.xy, stretch_factor_ctr_pts, dir_angle_ctr_pts, stretch_ctr_ctr_pts)));
 		ctr_pts_render.add(ctr_pt);
 		shapes_render.add(ctr_pt.master);
 	}

@@ -197,7 +197,14 @@ body {
 	cursor: pointer;
 	opacity: 0;
 }
-.control-point.cp-opaque {
+.control-point-opaque {
+	stroke: gray;
+	stroke-width: 1;
+	fill: blue;
+	cursor: pointer;
+	opacity: 1;
+}
+.opaque {
 	opacity: 1;
 }
 .control-point:hover {
