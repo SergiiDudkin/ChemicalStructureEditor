@@ -1,6 +1,6 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {editStructure} from './Executor.js';
+import {editStructure, MOVE, ROTATE, SCALE, STRETCH} from './Executor.js';
 import {
 	styledict, styleToString, separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
 	computeElementalComposition
@@ -457,6 +457,13 @@ window.addEventListener('resize', svgWidth);
 window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse());
 
 
+var transform_inverts = {
+	[MOVE]: ({moving_vec}) => ({moving_vec: vecMul(moving_vec, -1)}),
+	[ROTATE]: ({rot_angle, rot_ctr}) => ({rot_angle: -rot_angle, rot_ctr: rot_ctr.slice()}),
+	[SCALE]: ({scale_factor, scale_ctr}) => ({scale_factor: 1 / scale_factor, scale_ctr: scale_ctr.slice()}),
+	[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => ({stretch_factor: 1 / stretch_factor, dir_angle: dir_angle + Math.PI, stretch_ctr: stretch_ctr.slice()})
+}
+
 function invertCmd(kwargs_dir) {
 	var kwargs_rev = gatherAtomsBondsData(kwargs_dir.del_atoms, kwargs_dir.del_bonds);
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
@@ -467,27 +474,58 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.bonds_type) kwargs_rev.bonds_type = Object.fromEntries(Object.keys(kwargs_dir.bonds_type).map(
 		id => [id, document.getElementById(id).objref.type]
 	));
-	if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms);
-	if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
+	// if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms);
+	// if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
 
-	if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms);
-	if (kwargs_dir.rot_angle !== undefined) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
-	if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
+	// if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms);
+	// if (kwargs_dir.rot_angle !== undefined) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
+	// if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
 
-	if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms);
-	if (kwargs_dir.scale_factor) kwargs_rev.scale_factor = 1 / kwargs_dir.scale_factor;
-	if (kwargs_dir.scale_ctr) kwargs_rev.scale_ctr = kwargs_dir.scale_ctr.slice();
+	// if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms);
+	// if (kwargs_dir.scale_factor) kwargs_rev.scale_factor = 1 / kwargs_dir.scale_factor;
+	// if (kwargs_dir.scale_ctr) kwargs_rev.scale_ctr = kwargs_dir.scale_ctr.slice();
 
-	if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms);
-	if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
-	if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
-	if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
+	// if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms);
+	// if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
+	// if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
+	// if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
 
 	//////////
 	Object.assign(kwargs_rev, gatherShapesData(kwargs_dir.del_lines));
 	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
-	if (kwargs_dir.moving_ctr_pts) kwargs_rev.moving_ctr_pts = new Set(kwargs_dir.moving_ctr_pts);
-	if (kwargs_dir.moving_vec_ctr_pts) kwargs_rev.moving_vec_ctr_pts = vecMul(kwargs_dir.moving_vec_ctr_pts, -1);
+	// if (kwargs_dir.moving_ctr_pts) kwargs_rev.moving_ctr_pts = new Set(kwargs_dir.moving_ctr_pts);
+	// if (kwargs_dir.moving_vec_ctr_pts) kwargs_rev.moving_vec_ctr_pts = vecMul(kwargs_dir.moving_vec_ctr_pts, -1);
+
+	if (kwargs_dir.transforms) {
+		// var rev_transforms = [];
+		// for (const [type, ids, params] of kwargs_dir.transforms) {
+		// 	if (type === MOVE) { // {moving_vec}
+		// 		rev_transforms.push([type, ids.slice(), {moving_vec: vecMul(params.moving_vec, -1)}]);
+		// 	}
+		// 	else if (type === ROTATE) { // {rot_angle, rot_ctr}
+		// 		rev_transforms.push([type, ids.slice(), {rot_angle: -params.rot_angle, rot_ctr: params.rot_ctr.slice()}]);
+		// 	}
+		// 	else if (type === SCALE) { // {scale_factor, scale_ctr}
+		// 		rev_transforms.push([type, ids.slice(), {scale_factor: 1 / params.scale_factor, scale_ctr: params.scale_ctr.slice()}]);
+		// 	}
+		// 	else if (type === STRETCH) { // {stretch_factor, dir_angle, stretch_ctr}
+		// 		rev_transforms.push([type, ids.slice(), {stretch_factor: 1 / params.stretch_factor, dir_angle: params.dir_angle + Math.PI;, stretch_ctr: params.stretch_ctr.slice()}]);
+		// 	}
+		// }
+
+		// console.log(type);
+		// console.log(transform_inverts[1]);
+		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type, new Set(ids), transform_inverts[type](params)]);
+		// kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(transform => {
+		// 	let func = transform_inverts[type];
+		// 	let inverted_params = func(params);
+		// 	let res = [type, new Set([ids]), transform_inverts[type](params)];
+		// 	return res;
+		// });
+		// for (const [type, ids, params] of kwargs_dir.transforms) {
+		// 	kwargs_rev.transforms.push([type, ids.slice(), transform_inverts[type](params)]);
+		// }
+	}
 
 	return kwargs_rev;
 }
@@ -942,7 +980,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
-		editStructure({moving_atoms: cur_node_ids, moving_vec: moving_vec});
+		// editStructure({moving_atoms: cur_node_ids, moving_vec: moving_vec});
+		editStructure({transforms: [[MOVE, new Set(cur_node_ids), {moving_vec: moving_vec}]]});
 	}
 
 	function setPolygon(event) { // Move cursor polygon
@@ -1348,6 +1387,9 @@ class DrawingSelection {
 
 	activate() {
 		this.highlight();
+
+		// if (this.control_points.size === 0) return; // !!! Temp
+
 		this.addTransformTool();
 		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
 	}
@@ -1416,8 +1458,8 @@ class DrawingSelection {
 
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = corrected_point;
-		kwargs.moving_vec_ctr_pts = moving_vec;
-		this.relocatingCtrPts('moving', kwargs);
+		kwargs.moving_vec = moving_vec;
+		this.relocatingCtrPts(MOVE, kwargs);
 
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
@@ -1426,16 +1468,18 @@ class DrawingSelection {
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
 
-		this.finishRelocatingCtrPts('moving', {moving_vec_ctr_pts: this.accum_vec});
+		this.finishRelocatingCtrPts(MOVE, {moving_vec: this.accum_vec});
 	}
 
-	relocatingCtrPts(action_type, kwargs) {
-		kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+	relocatingCtrPts(action_type, params) {
+		// kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.control_points)), params]]};
 		editStructure(kwargs);
 	}
 
-	finishRelocatingCtrPts(action_type, kwargs) {
-		kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+	finishRelocatingCtrPts(action_type, params) {
+		// kwargs[action_type + '_ctr_pts'] = new Set(excludeNonExisting(this.control_points));
+		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.control_points)), params]]};
 		this.finishAction(kwargs, invertCmd(kwargs));
 	}
 
@@ -1553,6 +1597,9 @@ class UserSelection {
 
 	activate() {
 		this.highlight();
+
+		if (this.atoms.size === 0) return; // !!! Temp
+
 		this.addTransformTool();
 		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
 	}
@@ -1633,7 +1680,7 @@ class UserSelection {
 		var pt = getSvgPoint(event);
 
 		this.eventsOff();
-		this.pointed_atom = pickNode(pt);
+		this.pointed_atom = pickNode(pt); // Moved atom, pointed by the cursor
 		this.eventsOn();
 		if (event.shiftKey) this.focusElement();
 
@@ -1650,22 +1697,23 @@ class UserSelection {
 		var moving_vec = vecDif(this.mo_st, corrected_point);
 		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`,
 			event);
+		// var params = {};
 		var kwargs = {};
 
-		if (this.join_cmd) {
-			if (event.target.id == this.pointed_atom.id) return;
-			kwargs = this.join_cmd.rev;
+		if (this.join_cmd) { // If already joined
+			if (event.target.id == this.pointed_atom.id) return; // If the target atom is still pointed, keep joined
+			kwargs = this.join_cmd.rev; // Disjoin molecules
 			this.join_cmd = null;
 			this.pointed_atom.eventsOff();
 		}
 
-		if (to_join) {
-			var target_node = event.target.objref;
+		if (to_join) { // Join
+			var target_node = event.target.objref; // Target atom (static)
 			var bonds_data = gatherAtomsBondsData(new Set(), new Set(target_node.connections.map(bond => bond.id)))
 				.new_bonds_data;
-			kwargs.del_atoms = new Set([target_node.id]);
-			kwargs.atoms_text = {[this.pointed_atom.id]: target_node.text};
-			kwargs.del_bonds = new Set(Object.keys(bonds_data));
+			kwargs.del_atoms = new Set([target_node.id]); // Delete target atom
+			kwargs.atoms_text = {[this.pointed_atom.id]: target_node.text}; // Apply target atom's text to the pointed atom
+			kwargs.del_bonds = new Set(Object.keys(bonds_data)); // Delete bonds of the target atom
 			kwargs.new_bonds_data = {};
 			for (const [id, data] of Object.entries(bonds_data)) {
 				if (data[0] == target_node.id) data[0] = this.pointed_atom.id;
@@ -1673,16 +1721,17 @@ class UserSelection {
 				if (data[0] == data[1]) continue;
 				kwargs.new_bonds_data[id] = data;
 			}
-			kwargs.moving_atoms = new Set(excludeNonExisting(this.atoms));
-			kwargs.moving_vec = moving_vec;
+			// kwargs.moving_atoms = new Set(excludeNonExisting(this.atoms));
+			// params.moving_vec = moving_vec;
+			kwargs.transforms = [MOVE, new Set(excludeNonExisting(this.atoms)), {moving_vec: moving_vec}];
 			this.join_cmd = {dir: kwargs, rev: invertCmd(kwargs)};
 			this.pointed_atom.eventsOn();
 		}
 
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = corrected_point;
-		kwargs.moving_vec = moving_vec;
-		this.relocatingAtoms('moving', kwargs);
+		// params.moving_vec = moving_vec;
+		this.relocatingAtoms(MOVE, {moving_vec: moving_vec});
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
 
@@ -1700,17 +1749,19 @@ class UserSelection {
 			this.join_cmd = null;
 		}
 		else {
-			this.finishRelocatingAtoms('moving', {moving_vec: this.accum_vec});
+			this.finishRelocatingAtoms(MOVE, {moving_vec: this.accum_vec});
 		}
 	}
 
-	relocatingAtoms(action_type, kwargs) {
-		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
+	relocatingAtoms(action_type, params) {
+		// kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
+		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.atoms)), params]]};
 		editStructure(kwargs);
 	}
 
-	finishRelocatingAtoms(action_type, kwargs) {
-		kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
+	finishRelocatingAtoms(action_type, params) {
+		// kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
+		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.atoms)), params]]};
 		this.finishAction(kwargs, invertCmd(kwargs));
 	}
 
@@ -1845,11 +1896,16 @@ class UserSelection {
 				this.addTransformTool();
 			}
 			else if (this.transform_tool) {
-				if (cmd.moving_atoms) this.transform_tool.translate(cmd.moving_vec);
-				if (cmd.rotating_atoms) this.transform_tool.rotate(cmd.rot_angle, cmd.rot_ctr);
-				if (cmd.scaling_atoms) this.transform_tool.scale(cmd.scale_factor, cmd.scale_ctr);
-				if (cmd.stretching_atoms) this.transform_tool.stretch(cmd.stretch_factor, cmd.dir_angle,
-					cmd.stretch_ctr);
+				// if (cmd.moving_atoms) this.transform_tool.translate(cmd.moving_vec);
+				// if (cmd.rotating_atoms) this.transform_tool.rotate(cmd.rot_angle, cmd.rot_ctr);
+				// if (cmd.scaling_atoms) this.transform_tool.scale(cmd.scale_factor, cmd.scale_ctr);
+				// if (cmd.stretching_atoms) this.transform_tool.stretch(cmd.stretch_factor, cmd.dir_angle,
+				// 	cmd.stretch_ctr);
+
+				// for (const [type, ids, params] of transforms) {
+				// 	this.transform_tool.enum_funcs[type](params);
+				// }
+				cmd.transforms.forEach(([type, ids, params]) => this.transform_tool.enum_funcs[type](params));
 			}
 			else {
 				this.addTransformTool();
@@ -1924,6 +1980,13 @@ class TransformTool extends DeletableAbortable {
 		);
 		this.pivot = this.jigs[0];
 		this.lever = this.jigs[1];
+
+		this.enum_funcs = {
+			[MOVE]: ({moving_vec}) => this.translate(moving_vec),
+			[ROTATE]: ({rot_angle, rot_ctr}) => this.rotate(rot_angle, rot_ctr),
+			[SCALE]: ({scale_factor, scale_ctr}) => this.scale(scale_factor, scale_ctr),
+			[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => this.stretch(stretch_factor, dir_angle, stretch_ctr)
+		}
 	}
 
 	// Moving all jigs
@@ -1953,15 +2016,15 @@ class TransformTool extends DeletableAbortable {
 			.toFixed(1)} \u00B0`, event);
 		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
-		selection.relocatingAtoms('rotating', {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts('rotating', {rot_angle_ctr_pts: rot_angle, rot_ctr_ctr_pts: [...this.pivot.xy]});
+		// selection.relocatingAtoms(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
 	}
 
 	finishRotating() {
 		window.removeEventListener('mousemove', this.rotating);
 		window.removeEventListener('mouseup', this.finishRotating);
-		selection.finishRelocatingAtoms('rotating', {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts('rotating', {rot_angle_ctr_pts: this.accum_rot_angle, rot_ctr_ctr_pts: [...this.pivot.xy]});
+		// selection.finishRelocatingAtoms(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
 	}
 
 	rotate(rot_angle, rot_ctr) {
@@ -1987,15 +2050,15 @@ class TransformTool extends DeletableAbortable {
 		var factor = this.getFactor();
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.scale(factor, this.pivot.xy);
-		selection.relocatingAtoms('scaling', {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts('scaling', {scale_factor_ctr_pts: factor, scale_ctr_ctr_pts: [...this.pivot.xy]});
+		// selection.relocatingAtoms(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
 	}
 
 	finishScaling() {
 		window.removeEventListener('mousemove', this.scaling);
 		window.removeEventListener('mouseup', this.finishScaling);
-		selection.finishRelocatingAtoms('scaling', {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts('scaling', {scale_factor_ctr_pts: this.accum_factor, scale_ctr_ctr_pts: [...this.pivot.xy]});
+		// selection.finishRelocatingAtoms(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
 	}
 
 	scale(scale_factor, scale_ctr) {
@@ -2023,19 +2086,19 @@ class TransformTool extends DeletableAbortable {
 		var factor = this.getFactor();
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
-		selection.relocatingAtoms('stretching', {stretch_factor: factor, dir_angle: this.dir_angle,
+		// selection.relocatingAtoms(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
+		// 	stretch_ctr: [...this.pivot.xy]});
+		draw_selection.relocatingCtrPts(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts('stretching', {stretch_factor_ctr_pts: factor, dir_angle_ctr_pts: this.dir_angle,
-			stretch_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	finishStretching() {
 		window.removeEventListener('mousemove', this.stretching);
 		window.removeEventListener('mouseup', this.finishStretching);
-		selection.finishRelocatingAtoms('stretching', {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
+		// selection.finishRelocatingAtoms(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
+		// 	stretch_ctr: [...this.pivot.xy]});
+		draw_selection.finishRelocatingCtrPts(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts('stretching', {stretch_factor_ctr_pts: this.accum_factor, dir_angle_ctr_pts: this.dir_angle,
-			stretch_ctr_ctr_pts: [...this.pivot.xy]});
 	}
 
 	stretch(stretch_factor, dir_angle, stretch_ctr) {
