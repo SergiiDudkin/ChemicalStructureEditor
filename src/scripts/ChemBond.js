@@ -169,15 +169,6 @@ export class ChemBond {
 		this.deleteMask();
 	};
 
-	translate(moving_vec) {
-		for (const line of this.lines) {
-			for (const tip of line) {
-				tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec)); // Move poligon corners
-			}
-		}
-		this.recalcLims();
-	};
-
 	posDouble() {
 		// Find the best shift of double bond; set type accordingly
 		var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side

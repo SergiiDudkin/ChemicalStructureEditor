@@ -1,7 +1,7 @@
 import {ChemBond} from './ChemBond.js';
 import {textTermBuilder, treeToFormula, buildBracketTree, tokenize} from './ChemParser.js';
 import {attachSvg} from './Utils.js';
-import {lineIntersec, vecSum, cosVec, angleVec} from './Geometry.js';
+import {lineIntersec, vecSum, vecDif, cosVec, angleVec} from './Geometry.js';
 
 
 export class ChemNode {
@@ -98,13 +98,13 @@ export class ChemNode {
 		this.formula = target_text ? treeToFormula(this.bracket_tree) : {C: 1, H: Math.max(4 - used_valency, 0)};
 	};
 
-	translate(moving_vec) {
-		var [dx, dy] = moving_vec;
-		var [x, y] = this.xy;
-		this.xy = vecSum(this.xy, moving_vec);
+	setCtr(xy) {
+		var [dx, dy] = vecDif(this.xy, xy);
+		let [x, y] = xy;
+		this.xy = [...xy]; // Copy the array
 
-		this.backcircle.setAttribute('cx', x + dx);
-		this.backcircle.setAttribute('cy', y + dy);
+		this.backcircle.setAttribute('cx', x);
+		this.backcircle.setAttribute('cy', y);
 
 		for (var textnode of this.g.childNodes) {
 			textnode.setAttribute('x', parseFloat(textnode.getAttribute('x')) + dx);
@@ -112,12 +112,12 @@ export class ChemNode {
 		}
 
 		if (this.select_circ != null) {
-			this.select_circ.setAttribute('cx', x + dx);
-			this.select_circ.setAttribute('cy', y + dy);
-			this.masksel_circ.setAttribute('cx', x + dx);
-			this.masksel_circ.setAttribute('cy', y + dy);
-		}
-	};
+			this.select_circ.setAttribute('cx', x);
+			this.select_circ.setAttribute('cy', y);
+			this.masksel_circ.setAttribute('cx', x);
+			this.masksel_circ.setAttribute('cy', y);
+		}	
+	}
 
 	select() {
 		this.eventsOff();

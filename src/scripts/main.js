@@ -457,14 +457,15 @@ window.addEventListener('resize', svgWidth);
 window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse());
 
 
-var transform_inverts = {
+const transform_inverts = Object.freeze({
 	[MOVE]: ({moving_vec}) => ({moving_vec: vecMul(moving_vec, -1)}),
 	[ROTATE]: ({rot_angle, rot_ctr}) => ({rot_angle: -rot_angle, rot_ctr: rot_ctr.slice()}),
 	[SCALE]: ({scale_factor, scale_ctr}) => ({scale_factor: 1 / scale_factor, scale_ctr: scale_ctr.slice()}),
 	[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => ({stretch_factor: 1 / stretch_factor, dir_angle: dir_angle + Math.PI, stretch_ctr: stretch_ctr.slice()})
-}
+});
 
 function invertCmd(kwargs_dir) {
+	// Chem inverts
 	var kwargs_rev = gatherAtomsBondsData(kwargs_dir.del_atoms, kwargs_dir.del_bonds);
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
 	if (kwargs_dir.new_bonds_data) kwargs_rev.del_bonds = new Set(Object.keys(kwargs_dir.new_bonds_data));
@@ -474,57 +475,14 @@ function invertCmd(kwargs_dir) {
 	if (kwargs_dir.bonds_type) kwargs_rev.bonds_type = Object.fromEntries(Object.keys(kwargs_dir.bonds_type).map(
 		id => [id, document.getElementById(id).objref.type]
 	));
-	// if (kwargs_dir.moving_atoms) kwargs_rev.moving_atoms = new Set(kwargs_dir.moving_atoms);
-	// if (kwargs_dir.moving_vec) kwargs_rev.moving_vec = vecMul(kwargs_dir.moving_vec, -1);
 
-	// if (kwargs_dir.rotating_atoms) kwargs_rev.rotating_atoms = new Set(kwargs_dir.rotating_atoms);
-	// if (kwargs_dir.rot_angle !== undefined) kwargs_rev.rot_angle = -kwargs_dir.rot_angle;
-	// if (kwargs_dir.rot_ctr) kwargs_rev.rot_ctr = kwargs_dir.rot_ctr.slice();
-
-	// if (kwargs_dir.scaling_atoms) kwargs_rev.scaling_atoms = new Set(kwargs_dir.scaling_atoms);
-	// if (kwargs_dir.scale_factor) kwargs_rev.scale_factor = 1 / kwargs_dir.scale_factor;
-	// if (kwargs_dir.scale_ctr) kwargs_rev.scale_ctr = kwargs_dir.scale_ctr.slice();
-
-	// if (kwargs_dir.stretching_atoms) kwargs_rev.stretching_atoms = new Set(kwargs_dir.stretching_atoms);
-	// if (kwargs_dir.stretch_factor) kwargs_rev.stretch_factor = 1 / kwargs_dir.stretch_factor;
-	// if (kwargs_dir.dir_angle !== undefined) kwargs_rev.dir_angle = kwargs_dir.dir_angle + Math.PI;
-	// if (kwargs_dir.stretch_ctr) kwargs_rev.stretch_ctr = kwargs_dir.stretch_ctr.slice();
-
-	//////////
+	// Shape inverts
 	Object.assign(kwargs_rev, gatherShapesData(kwargs_dir.del_lines));
 	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
-	// if (kwargs_dir.moving_ctr_pts) kwargs_rev.moving_ctr_pts = new Set(kwargs_dir.moving_ctr_pts);
-	// if (kwargs_dir.moving_vec_ctr_pts) kwargs_rev.moving_vec_ctr_pts = vecMul(kwargs_dir.moving_vec_ctr_pts, -1);
 
+	// Common transforms
 	if (kwargs_dir.transforms) {
-		// var rev_transforms = [];
-		// for (const [type, ids, params] of kwargs_dir.transforms) {
-		// 	if (type === MOVE) { // {moving_vec}
-		// 		rev_transforms.push([type, ids.slice(), {moving_vec: vecMul(params.moving_vec, -1)}]);
-		// 	}
-		// 	else if (type === ROTATE) { // {rot_angle, rot_ctr}
-		// 		rev_transforms.push([type, ids.slice(), {rot_angle: -params.rot_angle, rot_ctr: params.rot_ctr.slice()}]);
-		// 	}
-		// 	else if (type === SCALE) { // {scale_factor, scale_ctr}
-		// 		rev_transforms.push([type, ids.slice(), {scale_factor: 1 / params.scale_factor, scale_ctr: params.scale_ctr.slice()}]);
-		// 	}
-		// 	else if (type === STRETCH) { // {stretch_factor, dir_angle, stretch_ctr}
-		// 		rev_transforms.push([type, ids.slice(), {stretch_factor: 1 / params.stretch_factor, dir_angle: params.dir_angle + Math.PI;, stretch_ctr: params.stretch_ctr.slice()}]);
-		// 	}
-		// }
-
-		// console.log(type);
-		// console.log(transform_inverts[1]);
 		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type, new Set(ids), transform_inverts[type](params)]);
-		// kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(transform => {
-		// 	let func = transform_inverts[type];
-		// 	let inverted_params = func(params);
-		// 	let res = [type, new Set([ids]), transform_inverts[type](params)];
-		// 	return res;
-		// });
-		// for (const [type, ids, params] of kwargs_dir.transforms) {
-		// 	kwargs_rev.transforms.push([type, ids.slice(), transform_inverts[type](params)]);
-		// }
 	}
 
 	return kwargs_rev;
@@ -716,7 +674,7 @@ function chemNodeHandler(elbtn) {
 	}
 
 	function movElem(event) { // Move cursor atom
-		cursoratom.translate(vecDif(cursoratom.xy, clampToCnv(getSvgPoint(event))));
+		cursoratom.setCtr(clampToCnv(getSvgPoint(event)));
 	}
 
 	function setElem(event) { // Create a new atom
@@ -1388,7 +1346,7 @@ class DrawingSelection {
 	activate() {
 		this.highlight();
 
-		// if (this.control_points.size === 0) return; // !!! Temp
+		if (this.control_points.size === 0) return; // !!! Temp
 
 		this.addTransformTool();
 		if (this.highlights.hasChildNodes()) this.highlights.addEventListener('mousedown', this.startMoving);
@@ -1501,13 +1459,10 @@ class DrawingSelection {
 
 	copy(event) {
 		event.preventDefault();
-
-		console.log('!!! copy');
 		if (!this.shapes.size) {
 			this.clipboard.mol = null;
 			return;
 		}
-
 		var kwargs = gatherShapesData(this.shapes);
 		this.clipboard.mol = {kwargs: kwargs, pt0: getSvgPoint(event), cnt: 0};
 	}
@@ -1557,7 +1512,6 @@ class UserSelection {
 	constructor() {
 		this.atoms = new Set(); // Selected atoms
 		this.bonds = new Set(); // Selected bonds
-		// this.control_points = new Set([]); // Selected control points
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.pointed_atom = null;
@@ -1627,17 +1581,10 @@ class UserSelection {
 		if (item instanceof ChemNode) {
 			this.atoms = new Set([item.id]);
 		}
-		// else {
-		// 	this.bonds =  new Set([item.id]);
-		// 	this.atoms = new Set(item.nodes.map(node => node.id));
-		// }
 		else if (item instanceof ChemBond) {
 			this.bonds =  new Set([item.id]);
 			this.atoms = new Set(item.nodes.map(node => node.id));
 		}
-		// else {
-		// 	this.control_points = new Set([item]);
-		// }
 		this.highlight();
 	}
 
@@ -1697,7 +1644,6 @@ class UserSelection {
 		var moving_vec = vecDif(this.mo_st, corrected_point);
 		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`,
 			event);
-		// var params = {};
 		var kwargs = {};
 
 		if (this.join_cmd) { // If already joined
@@ -1721,17 +1667,14 @@ class UserSelection {
 				if (data[0] == data[1]) continue;
 				kwargs.new_bonds_data[id] = data;
 			}
-			// kwargs.moving_atoms = new Set(excludeNonExisting(this.atoms));
-			// params.moving_vec = moving_vec;
-			kwargs.transforms = [MOVE, new Set(excludeNonExisting(this.atoms)), {moving_vec: moving_vec}];
+			kwargs.transforms = [[MOVE, new Set(excludeNonExisting(this.atoms)), {moving_vec: moving_vec}]];
 			this.join_cmd = {dir: kwargs, rev: invertCmd(kwargs)};
 			this.pointed_atom.eventsOn();
 		}
 
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = corrected_point;
-		// params.moving_vec = moving_vec;
-		this.relocatingAtoms(MOVE, {moving_vec: moving_vec});
+		this.relocatingAtoms(MOVE, {moving_vec: moving_vec}, kwargs);
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
 	}
 
@@ -1743,8 +1686,8 @@ class UserSelection {
 		this.pointed_atom = null;
 
 		if (this.join_cmd) {
-			this.join_cmd.dir.moving_vec = this.accum_vec;
-			this.join_cmd.rev.moving_vec = vecMul(this.accum_vec, -1);
+			this.join_cmd.dir.transforms[0][2].moving_vec = this.accum_vec;
+			this.join_cmd.rev.transforms[0][2].moving_vec = vecMul(this.accum_vec, -1);
 			this.finishAction(this.join_cmd.dir, this.join_cmd.rev);
 			this.join_cmd = null;
 		}
@@ -1753,14 +1696,13 @@ class UserSelection {
 		}
 	}
 
-	relocatingAtoms(action_type, params) {
-		// kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
-		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.atoms)), params]]};
+	relocatingAtoms(action_type, params, extra_kwargs) {
+		let kwargs = {...extra_kwargs};
+		kwargs.transforms = [[action_type, new Set(excludeNonExisting(this.atoms)), params]];
 		editStructure(kwargs);
 	}
 
 	finishRelocatingAtoms(action_type, params) {
-		// kwargs[action_type + '_atoms'] = new Set(excludeNonExisting(this.atoms));
 		let kwargs = {transforms: [[action_type, new Set(excludeNonExisting(this.atoms)), params]]};
 		this.finishAction(kwargs, invertCmd(kwargs));
 	}
@@ -1896,15 +1838,6 @@ class UserSelection {
 				this.addTransformTool();
 			}
 			else if (this.transform_tool) {
-				// if (cmd.moving_atoms) this.transform_tool.translate(cmd.moving_vec);
-				// if (cmd.rotating_atoms) this.transform_tool.rotate(cmd.rot_angle, cmd.rot_ctr);
-				// if (cmd.scaling_atoms) this.transform_tool.scale(cmd.scale_factor, cmd.scale_ctr);
-				// if (cmd.stretching_atoms) this.transform_tool.stretch(cmd.stretch_factor, cmd.dir_angle,
-				// 	cmd.stretch_ctr);
-
-				// for (const [type, ids, params] of transforms) {
-				// 	this.transform_tool.enum_funcs[type](params);
-				// }
 				cmd.transforms.forEach(([type, ids, params]) => this.transform_tool.enum_funcs[type](params));
 			}
 			else {
@@ -1981,12 +1914,12 @@ class TransformTool extends DeletableAbortable {
 		this.pivot = this.jigs[0];
 		this.lever = this.jigs[1];
 
-		this.enum_funcs = {
+		this.enum_funcs = Object.freeze({
 			[MOVE]: ({moving_vec}) => this.translate(moving_vec),
 			[ROTATE]: ({rot_angle, rot_ctr}) => this.rotate(rot_angle, rot_ctr),
 			[SCALE]: ({scale_factor, scale_ctr}) => this.scale(scale_factor, scale_ctr),
 			[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => this.stretch(stretch_factor, dir_angle, stretch_ctr)
-		}
+		});
 	}
 
 	// Moving all jigs
@@ -2016,15 +1949,15 @@ class TransformTool extends DeletableAbortable {
 			.toFixed(1)} \u00B0`, event);
 		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
-		// selection.relocatingAtoms(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
+		selection.relocatingAtoms(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
+		// draw_selection.relocatingCtrPts(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
 	}
 
 	finishRotating() {
 		window.removeEventListener('mousemove', this.rotating);
 		window.removeEventListener('mouseup', this.finishRotating);
-		// selection.finishRelocatingAtoms(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
+		selection.finishRelocatingAtoms(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
+		// draw_selection.finishRelocatingCtrPts(ROTATE, {rot_angle: this.accum_rot_angle, rot_ctr: [...this.pivot.xy]});
 	}
 
 	rotate(rot_angle, rot_ctr) {
@@ -2050,15 +1983,15 @@ class TransformTool extends DeletableAbortable {
 		var factor = this.getFactor();
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.scale(factor, this.pivot.xy);
-		// selection.relocatingAtoms(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
+		selection.relocatingAtoms(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
+		// draw_selection.relocatingCtrPts(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
 	}
 
 	finishScaling() {
 		window.removeEventListener('mousemove', this.scaling);
 		window.removeEventListener('mouseup', this.finishScaling);
-		// selection.finishRelocatingAtoms(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
+		selection.finishRelocatingAtoms(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
+		// draw_selection.finishRelocatingCtrPts(SCALE, {scale_factor: this.accum_factor, scale_ctr: [...this.pivot.xy]});
 	}
 
 	scale(scale_factor, scale_ctr) {
@@ -2086,19 +2019,19 @@ class TransformTool extends DeletableAbortable {
 		var factor = this.getFactor();
 		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
-		// selection.relocatingAtoms(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
-		// 	stretch_ctr: [...this.pivot.xy]});
-		draw_selection.relocatingCtrPts(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
+		selection.relocatingAtoms(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
+		// draw_selection.relocatingCtrPts(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
+		// 	stretch_ctr: [...this.pivot.xy]});
 	}
 
 	finishStretching() {
 		window.removeEventListener('mousemove', this.stretching);
 		window.removeEventListener('mouseup', this.finishStretching);
-		// selection.finishRelocatingAtoms(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
-		// 	stretch_ctr: [...this.pivot.xy]});
-		draw_selection.finishRelocatingCtrPts(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
+		selection.finishRelocatingAtoms(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
+		// draw_selection.finishRelocatingCtrPts(STRETCH, {stretch_factor: this.accum_factor, dir_angle: this.dir_angle,
+			// stretch_ctr: [...this.pivot.xy]});
 	}
 
 	stretch(stretch_factor, dir_angle, stretch_ctr) {
@@ -2225,7 +2158,3 @@ polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
 lineHandler(linebtn);
-
-
-// new ControlPoint('cp0', 200, 200).render();
-
