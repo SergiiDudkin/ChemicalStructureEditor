@@ -1,7 +1,7 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
 import {Line} from './ControlPoint.js';
-import {vecDif, vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
+import {vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 
 
 export const MOVE = 1;
