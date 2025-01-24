@@ -52,49 +52,27 @@ function downloadSvg() { // Download .svg
 }
 document.getElementById('download-svg').addEventListener('click', downloadSvg);
 
-
-function gatherAtomsBondsData(atom_ids=new Set(), bond_ids=new Set()) {
-	var kwargs = {};
-	if (atom_ids && atom_ids.size) {
-		kwargs.new_atoms_data = {};
-		atom_ids.forEach(id => {
-			var node = document.getElementById(id).objref;
-			kwargs.new_atoms_data[id] = [...node.xy, node.text];
-		});
-	}
-	if (bond_ids && bond_ids.size) {
-		kwargs.new_bonds_data = {};
-		bond_ids.forEach(id => {
-			var bond = document.getElementById(id).objref;
-			kwargs.new_bonds_data[id] = [...bond.nodes.map(node => node.id), bond.type];
-		});
-	}
-	return kwargs;
+function gatherData(ids=new Set()) {
+	let data = {};
+	ids.forEach(id => data[id] = document.getElementById(id).objref.getData());
+	return data;
 }
-
-function gatherShapesData(shape_ids=new Set()) {
-	var kwargs = {};
-	if (shape_ids.size) {
-		kwargs.new_shapes_data = Object.fromEntries(
-			[...shape_ids].map(id => [id, document.getElementById(id).objref.getData()])
-		);
-	}
-	return kwargs;
-}
-
-
 
 function downloadJson() { // Download .svg
 	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
 	var bond_ids = new Set([...document.getElementById('sensors_b').children].map(el => el.objref.id));
-	var json_content = JSON.stringify(gatherAtomsBondsData(atom_ids, bond_ids), null, '\t');
+	var shape_ids = new Set([...document.getElementById('sensors_c').children].map(el => el.objref.id));
+	var json_content = JSON.stringify({
+		new_atoms_data: gatherData(atom_ids),
+		new_bonds_data: gatherData(bond_ids),
+		new_lines_data: gatherData(shape_ids)
+	}, null, '\t');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
 	element.setAttribute('download', 'molecule.json');
 	element.click();
 }
 document.getElementById('download-json').addEventListener('click', downloadJson);
-
 
 function blankCanvasCmd() {
 	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
@@ -104,7 +82,6 @@ function blankCanvasCmd() {
 	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
 	return kwargs;
 }
-
 
 function openJsonFile(event) {
 	var file = event.target.files[0];
@@ -123,7 +100,6 @@ function openJsonFile(event) {
 }
 document.getElementById('open-json').addEventListener('click', () => document.getElementById('file-input').click());
 document.getElementById('file-input').addEventListener('change', openJsonFile);
-
 
 function eraseAll() {
 	dispatcher.do(editStructure, blankCanvasCmd());
@@ -465,8 +441,11 @@ const transform_inverts = Object.freeze({
 });
 
 function invertCmd(kwargs_dir) {
+	let kwargs_rev = {};
+
 	// Chem inverts
-	var kwargs_rev = gatherAtomsBondsData(kwargs_dir.del_atoms, kwargs_dir.del_bonds);
+	kwargs_rev.new_atoms_data = gatherData(kwargs_dir.del_atoms);
+	kwargs_rev.new_bonds_data = gatherData(kwargs_dir.del_bonds);
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
 	if (kwargs_dir.new_bonds_data) kwargs_rev.del_bonds = new Set(Object.keys(kwargs_dir.new_bonds_data));
 	if (kwargs_dir.atoms_text) kwargs_rev.atoms_text = Object.fromEntries(Object.keys(kwargs_dir.atoms_text).map(
@@ -477,8 +456,8 @@ function invertCmd(kwargs_dir) {
 	));
 
 	// Shape inverts
-	Object.assign(kwargs_rev, gatherShapesData(kwargs_dir.del_lines));
-	if (kwargs_dir.new_shapes_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_shapes_data));
+	kwargs_rev.new_lines_data = gatherData(kwargs_dir.del_lines);
+	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
 
 	// Common transforms
 	if (kwargs_dir.transforms) {
@@ -595,7 +574,8 @@ function getBondEnd(event, pt0) {
 }
 
 function pickMol(chemobj) {
-	return iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
+	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0])
+	return {atoms: atoms, bonds: bonds};
 }
 
 function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
@@ -1158,7 +1138,7 @@ function lineHandler(btn) {
 	function movLine(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
-		let kwargs = {new_shapes_data: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
+		let kwargs = {new_lines_data: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
 		dispatcher.do(editStructure, kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
@@ -1197,12 +1177,13 @@ function transformHandler(btn, SelectTool=null) {
 	function pick(event) {
 		event.stopPropagation();
 		selection.deactivate();
-		var picked_obj = event.target.objref;
-		if (SelectTool) {
+		let target = event.target;
+		let picked_obj = target.objref;
+		if (SelectTool || target.is_shape) {
 			selection.setSelectedItem(picked_obj);
 		}
-		else {
-			selection.activateFromIds(...pickMol(picked_obj)); // CHeck if picked object is a shape
+		else if (target.is_chem) {
+			selection.activateFromIds(pickMol(picked_obj));
 		}
 		selection.startMoving(event);
 	}
@@ -1330,7 +1311,7 @@ class SelectionBase {
 		}
 	}
 
-	activateFromIds(grouped_ids) { // !!! Change the usage of this method!
+	activateFromIds(grouped_ids) {
 		Object.entries(grouped_ids).forEach(([group, ids]) => this[group] = ids);
 		this.activate();
 	}
@@ -1474,15 +1455,15 @@ class SelectionBase {
 	activateFromPasteKwargs(kwargs) {
 		let ids_to_activate = {};
 		for (const [attr, param_name] of Object.entries(this.constructor.cr_param_map)) {
-			if (param_name in kwargs) ids_to_activate[attr] = kwargs[param_name];
+			if (param_name in kwargs) ids_to_activate[attr] = new Set(Object.keys(kwargs[param_name]));
 		}
-		this.activateFromIds(new Set(ids_to_activate));
+		this.activateFromIds(ids_to_activate);
 	}
 
 	paste(event) {
 		event.preventDefault();
 		if (!this.clipboard.mol) return;
-		let kwargs = getPasteKwargs(vecMul([15, 15], ++this.clipboard.mol.cnt));
+		let kwargs = this.getPasteKwargs(vecMul([15, 15], ++this.clipboard.mol.cnt));
 		dispatcher.do(editStructure, kwargs);
 		this.deactivate();
 		this.activateFromPasteKwargs(kwargs);
@@ -1542,7 +1523,7 @@ class SelectionShape extends SelectionBase {
 	};
 
 	static cr_param_map = {
-		shapes: 'new_shapes_data',
+		shapes: 'new_lines_data',
 		...this.prototype.constructor.cr_param_map
 	};
 
@@ -1570,20 +1551,20 @@ class SelectionShape extends SelectionBase {
 	}
 
 	getCopyKwargs() {
-		return {...super.getCopyKwargs(), ...gatherShapesData(this.shapes)};
+		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.shapes)};
 	}
 
 	getPasteKwargs(moving_vec) {
 		// Replase ids with the new ones, move shapes
-		kwargs.new_shapes_data = Object.fromEntries(
-			Object.entries(this.clipboard.mol.kwargs.new_shapes_data).map(([key, value]) => {
+		let new_lines_data = Object.fromEntries(
+			Object.entries(this.clipboard.mol.kwargs.new_lines_data).map(([key, value]) => {
 				return [Line.getNewId(), 
 					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
 				];
 			}
 			)
 		);
-		return {...super.getPasteKwargs(moving_vec), new_shapes_data: new_shapes_data};
+		return {...super.getPasteKwargs(moving_vec), new_lines_data: new_lines_data};
 	}
 
 	getDelKwargs() {
@@ -1666,8 +1647,7 @@ class SelectionChem extends SelectionShape {
 	joinMols(event) {
 		let kwargs = {};
 		let target_node = event.target.objref; // Target atom (static)
-		let bonds_data = gatherAtomsBondsData(new Set(), new Set(target_node.connections.map(bond => bond.id)))
-			.new_bonds_data;
+		let bonds_data = gatherData(new Set(target_node.connections.map(bond => bond.id)));
 		kwargs.del_atoms = new Set([target_node.id]); // Delete target atom
 		kwargs.atoms_text = {[this.pointed_atom.id]: target_node.text}; // Apply target atom's text to the pointed atom
 		kwargs.del_bonds = new Set(Object.keys(bonds_data)); // Delete bonds of the target atom
@@ -1776,7 +1756,7 @@ class SelectionChem extends SelectionShape {
 	}
 
 	getCopyKwargs() {
-		var kwargs = gatherAtomsBondsData(this.atoms, this.bonds);
+		let kwargs = {new_atoms_data: gatherData(this.atoms), new_bonds_data: gatherData(this.bonds)};
 		if (this.bonds.size) {
 			for (const [id, data] of Object.entries(kwargs.new_bonds_data)) {
 				if (data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data) continue;
@@ -1809,7 +1789,7 @@ class SelectionChem extends SelectionShape {
 	}
 
 	getDelKwargs() {
-		let bonds = this.atoms.map(atom_id => document.getElementById(atom_id).objref.connections).flat();
+		let bonds = [...this.atoms].map(atom_id => document.getElementById(atom_id).objref.connections).flat().map(bond => bond.id);
 		return {...super.getDelKwargs(), del_atoms: new Set(this.atoms), del_bonds: new Set(bonds)};
 	}
 

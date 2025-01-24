@@ -6,6 +6,7 @@ export class ControlPoint extends CtrRect {
 		super('control_points', cx, cy, {width: 10, height: 10, class: 'control-point', id: id});
 		this.id = id;
 		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
+		this.shape.is_shape = true;
 
 		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
 		this.shape.addEventListener('mousedown', this.focus);
@@ -57,6 +58,7 @@ export class Line {
 			}
 		);
 		this.backline.is_line = true;
+		this.backline.is_shape = true;
 		this.backline.objref = this;
 	}
 

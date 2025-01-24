@@ -20,6 +20,7 @@ export class ChemNode {
 		this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle',
 			{id: id, class: 'anode', r: this.constructor.sel_r, cx: x, cy: y});
 		this.backcircle.is_atom = true;
+		this.backcircle.is_chem = true;
 		this.backcircle.objref = this;
 
 		this.xy = [x, y];
@@ -141,6 +142,10 @@ export class ChemNode {
 
 	eventsOff() {
 		this.backcircle.classList.add('sympoi');
+	};
+
+	getData() {
+		return [...this.xy, this.text];
 	};
 
 	promoteMaskSel() {

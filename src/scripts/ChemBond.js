@@ -444,6 +444,10 @@ export class ChemBond {
 		this.backrect.shape.classList.add('sympoi');
 	};
 
+	getData() {
+		return [...this.nodes.map(node => node.id), this.type];
+	};
+
 	refreshSelectRect() {
 		if (this.select_rect && !this.offsets.includes(undefined)) {
 			var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(
