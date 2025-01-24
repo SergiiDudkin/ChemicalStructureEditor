@@ -21,7 +21,7 @@ export function editStructure({
 	new_atoms_data={}, new_bonds_data={},
 	del_atoms=new Set(), del_bonds=new Set(),
 	atoms_text={}, bonds_type={},
-	new_lines_data={},
+	new_shapes_data={},
 	del_lines=new Set(),
 	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
 }) {
@@ -34,7 +34,7 @@ export function editStructure({
 	}
 
 	let shape_kwargs = {
-		new_lines_data: new_lines_data, del_lines: del_lines, transforms: new Array()
+		new_shapes_data: new_shapes_data, del_lines: del_lines, transforms: new Array()
 	}
 
 	// Split transforms
@@ -225,7 +225,7 @@ export function editChem({
 
 
 export function editShapes({
-	new_lines_data={},
+	new_shapes_data={},
 	del_lines=new Set(),
 	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
 }) {
@@ -238,7 +238,7 @@ export function editShapes({
 	}
 
 	// Create lines
-	for (const [id, data] of Object.entries(new_lines_data)) {
+	for (const [id, data] of Object.entries(new_shapes_data)) {
 		let new_line = new Line(id, ...data); // data: [x, y, text]
 		shapes_render.add(new_line);
 		new_line.cps.forEach(cp => ctr_pts_render.add(cp));
