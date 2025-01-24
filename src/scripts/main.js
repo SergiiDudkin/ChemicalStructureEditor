@@ -1568,7 +1568,7 @@ class SelectionShape extends SelectionBase {
 	}
 
 	getDelKwargs() {
-		return {...super.getDelKwargs(), del_lines: new Set(this.shapes)};
+		return {...super.getDelKwargs(), del_lines: new Set(excludeNonExisting(this.shapes))};
 	}
 
 	deselect() {
@@ -1789,8 +1789,9 @@ class SelectionChem extends SelectionShape {
 	}
 
 	getDelKwargs() {
-		let bonds = [...this.atoms].map(atom_id => document.getElementById(atom_id).objref.connections).flat().map(bond => bond.id);
-		return {...super.getDelKwargs(), del_atoms: new Set(this.atoms), del_bonds: new Set(bonds)};
+		let atoms = excludeNonExisting(this.atoms);
+		let bonds = atoms.map(atom_id => document.getElementById(atom_id).objref.connections).flat().map(bond => bond.id);
+		return {...super.getDelKwargs(), del_atoms: new Set(atoms), del_bonds: new Set(bonds)};
 	}
 
 	deselect() {
