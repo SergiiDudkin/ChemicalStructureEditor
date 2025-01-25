@@ -1281,12 +1281,22 @@ class SelectionBase {
 		this.bottom_ptr = Infinity;
 		this.clipboard = {mol: null};
 
-		['startMoving', 'moving', 'finishMoving', 'keyDownHandler', 'copy', 'cut', 'paste']
-			.forEach(method => this[method] = this[method].bind(this));
-		document.addEventListener('keydown', this.keyDownHandler);
-		document.addEventListener('copy', this.copy);
-		document.addEventListener('cut', this.cut);
-		document.addEventListener('paste', this.paste);
+		for (const attr of this.constructor.attrs) {
+			this[`_${attr}`] = new Set();
+			Object.defineProperty(this, attr, {
+				get() {
+					return excludeNonExisting(this[`_${attr}`]);
+				},
+				set (new_value) {
+					this[`_${attr}`] = new Set(new_value);
+				}
+			});
+		}
+
+		for (const [key, val] of Object.entries(this.constructor.event_handlers)) {
+			this[key] = this[key].bind(this);
+			if (val) document.addEventListener(val, this[key]);
+		}
 	}
 
 	static parent_map = {};
@@ -1294,6 +1304,18 @@ class SelectionBase {
 	static cr_param_map = {};
 
 	static movable_els = [];
+
+	static attrs = [];
+
+	static event_handlers = {
+		keyDownHandler: 'keydown',
+		copy: 'copy',
+		cut: 'cut',
+		paste: 'paste',
+		startMoving: null,
+		moving: null,
+		finishMoving: null
+	}
 
 	static objsUnderShape(parent_id, covering_shape) {
 		return [...document.getElementById(parent_id).children].map(el => el.objref)
@@ -1305,14 +1327,18 @@ class SelectionBase {
 		this.activate();
 	}
 
+	extraSelect() {} // Helper
+
 	selectFromShape(covering_shape) {
 		for (const [attr, parent_id] of Object.entries(this.constructor.parent_map)) {
 			this[attr] = new Set(this.constructor.objsUnderShape(parent_id, covering_shape).map(item => item.id));
 		}
+		this.extraSelect();
 	}
 
 	activateFromIds(grouped_ids) {
 		Object.entries(grouped_ids).forEach(([group, ids]) => this[group] = ids);
+		this.extraSelect();
 		this.activate();
 	}
 
@@ -1351,7 +1377,7 @@ class SelectionBase {
 	}
 
 	dehighlight() {
-		Object.keys(this.constructor.parent_map).forEach(group => excludeNonExisting(this[group])
+		Object.keys(this.constructor.parent_map).forEach(group => this[group]
 			.forEach(item_id => document.getElementById(item_id).objref.deselect()));
 	}
 
@@ -1402,7 +1428,7 @@ class SelectionBase {
 	}
 
 	paramsToTransform(action_type, params) {
-		let ids = new Set(this.constructor.movable_els.map(group => excludeNonExisting(this[group])).flat());
+		let ids = new Set(this.constructor.movable_els.map(group => this[group]).flat());
 		return [action_type, ids, params];
 	}
 
@@ -1471,7 +1497,11 @@ class SelectionBase {
 	}
 
 	getDelKwargs() { // Helper
-		return {};
+		let kwargs = {};
+		for (const [key, val] of Object.entries(this.constructor.cr_param_map)) {
+			kwargs[`del_${val.slice(4, -5)}`] = new Set(this[key]);
+		}
+		return kwargs;
 	}
 
 	delItems() {
@@ -1498,7 +1528,9 @@ class SelectionBase {
 		}
 	}
 
-	deselect() {}
+	deselect() {
+		for (const attr of this.constructor.attrs) this[`_${attr}`] = new Set();
+	}
 
 	deactivate() {
 		this.highlights.removeEventListener('mousedown', this.startMoving);
@@ -1511,12 +1543,6 @@ class SelectionBase {
 
 
 class SelectionShape extends SelectionBase {
-	constructor() {
-		super();
-		this.control_points = new Set([]); // Selected control points
-		this.shapes = new Set([]); // Selected shapes
-	}
-
 	static parent_map = {
 		shapes: 'sensors_s',  
 		...this.prototype.constructor.parent_map
@@ -1529,23 +1555,20 @@ class SelectionShape extends SelectionBase {
 
 	static movable_els = ['control_points', ...this.prototype.constructor.movable_els];
 
-	selectFromShape(covering_shape) {
-		super.selectFromShape(covering_shape);
-		this.control_points = new Set([...this.shapes].map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id));
-	}
+	static attrs = ['shapes', 'control_points', ...this.prototype.constructor.attrs];
 
-	activateFromIds(grouped_ids) {
-		super.activateFromIds(grouped_ids);
-		this.control_points = new Set([...this.shapes].map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id));
+	extraSelect() {
+		super.extraSelect();
+		this.control_points = this.shapes.map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id);
 	}
 
 	setSelectedItem(item) {
 		if (item instanceof ControlPoint) {
-			this.control_points = new Set([item.id]);
+			this.control_points = [item.id];
 		}
 		else if (item instanceof Line) {
-			this.shapes = new Set([item.id]);
-			this.control_points = new Set(item.cps.map(cp => cp.id));
+			this.shapes = [item.id];
+			this.control_points = item.cps.map(cp => cp.id);
 		}
 		super.setSelectedItem(item);
 	}
@@ -1566,31 +1589,10 @@ class SelectionShape extends SelectionBase {
 		);
 		return {...super.getPasteKwargs(moving_vec), new_lines_data: new_lines_data};
 	}
-
-	getDelKwargs() {
-		return {...super.getDelKwargs(), del_lines: new Set(excludeNonExisting(this.shapes))};
-	}
-
-	deselect() {
-		super.deselect();
-		this.control_points.clear();
-		this.shapes.clear();
-	}
 }
 
 
 class SelectionChem extends SelectionShape {
-	constructor() {
-		super();
-		this.atoms = new Set(); // Selected atoms
-		this.bonds = new Set(); // Selected bonds
-		this.pointed_atom = null;
-		this.join_cmd = null;
-
-		this.keyUpHandler = this.keyUpHandler.bind(this);
-		document.addEventListener('keyup', this.keyUpHandler);
-	}
-
 	static parent_map = {
 		atoms: 'sensors_a', 
 		bonds: 'sensors_b', 
@@ -1605,32 +1607,37 @@ class SelectionChem extends SelectionShape {
 
 	static movable_els = ['atoms', ...this.prototype.constructor.movable_els];
 
+	static attrs = ['atoms', 'bonds', ...this.prototype.constructor.attrs];
+
+	static event_handlers = {keyUpHandler: 'keyup', ...this.prototype.constructor.event_handlers};
+
 	setSelectedItem(item) {
 		if (item instanceof ChemNode) {
-			this.atoms = new Set([item.id]);
+			this.atoms = [item.id];
 		}
 		else if (item instanceof ChemBond) {
-			this.bonds =  new Set([item.id]);
-			this.atoms = new Set(item.nodes.map(node => node.id));
+			this.bonds = [item.id];
+			this.atoms = item.nodes.map(node => node.id);
 		}
 		super.setSelectedItem(item);
 	}
 
 	eventsOn() {
 		this.highlights.classList.remove('sympoi');
-		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id)
+		[...this.atoms, ...this.bonds].forEach(item_id => document.getElementById(item_id)
 			.objref.eventsOff());
 	};
 
 	eventsOff() {
 		this.highlights.classList.add('sympoi');
-		excludeNonExisting([...this.atoms, ...this.bonds]).forEach(item_id => document.getElementById(item_id)
+		[...this.atoms, ...this.bonds].forEach(item_id => document.getElementById(item_id)
 			.objref.eventsOn());
 	};
 
 	prepareGroup() {
 		this.eventsOff();
 		this.pointed_atom = pickNode(this.pt); // Moved atom, pointed by the cursor
+		this.join_cmd = null;
 		this.eventsOn();
 		if (event.shiftKey) this.focusElement();
 	}
@@ -1757,7 +1764,7 @@ class SelectionChem extends SelectionShape {
 
 	getCopyKwargs() {
 		let kwargs = {new_atoms_data: gatherData(this.atoms), new_bonds_data: gatherData(this.bonds)};
-		if (this.bonds.size) {
+		if (this.bonds.length) {
 			for (const [id, data] of Object.entries(kwargs.new_bonds_data)) {
 				if (data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data) continue;
 				delete kwargs.new_bonds_data[id];
@@ -1789,15 +1796,10 @@ class SelectionChem extends SelectionShape {
 	}
 
 	getDelKwargs() {
-		let atoms = excludeNonExisting(this.atoms);
-		let bonds = atoms.map(atom_id => document.getElementById(atom_id).objref.connections).flat().map(bond => bond.id);
-		return {...super.getDelKwargs(), del_atoms: new Set(atoms), del_bonds: new Set(bonds)};
-	}
-
-	deselect() {
-		super.deselect();
-		this.atoms.clear();
-		this.bonds.clear();
+		let kwargs = super.getDelKwargs();
+		kwargs.del_atoms.forEach(atom_id => document.getElementById(atom_id).objref.connections
+			.forEach(bond => kwargs.del_bonds.add(bond.id)));
+		return kwargs;
 	}
 
 	deactivate() {
