@@ -61,11 +61,11 @@ function gatherData(ids=new Set()) {
 function downloadJson() { // Download .svg
 	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
 	var bond_ids = new Set([...document.getElementById('sensors_b').children].map(el => el.objref.id));
-	var shape_ids = new Set([...document.getElementById('sensors_c').children].map(el => el.objref.id));
+	var line_ids = new Set([...document.getElementById('sensors_s').children].map(el => el.objref.id));
 	var json_content = JSON.stringify({
 		new_atoms_data: gatherData(atom_ids),
 		new_bonds_data: gatherData(bond_ids),
-		new_lines_data: gatherData(shape_ids)
+		new_lines_data: gatherData(line_ids)
 	}, null, '\t');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
@@ -77,9 +77,11 @@ document.getElementById('download-json').addEventListener('click', downloadJson)
 function blankCanvasCmd() {
 	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
 	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
+	var line_ids = [...document.getElementById('sensors_s').children].map(el => el.objref.id);
 	var kwargs = {};
 	if (atom_ids) kwargs.del_atoms = new Set(atom_ids);
 	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
+	if (line_ids) kwargs.del_lines = new Set(line_ids);
 	return kwargs;
 }
 
@@ -92,7 +94,7 @@ function openJsonFile(event) {
 		ChemNode.counter = Math.max(...Object.keys(kwargs.new_atoms_data).map(id => parseInt(id.slice(1)))) + 1;
 		ChemBond.counter = Math.max(...Object.keys(kwargs.new_bonds_data).map(id => parseInt(id.slice(1)))) + 1;
 		Object.assign(kwargs, blankCanvasCmd());
-		dispatcher.do(editStructure, kwargs);
+		dispatcher.do(kwargs);
 		refreshBondCutouts();
 		document.getElementById('file-input').value = null;
 	});
@@ -102,7 +104,7 @@ document.getElementById('open-json').addEventListener('click', () => document.ge
 document.getElementById('file-input').addEventListener('change', openJsonFile);
 
 function eraseAll() {
-	dispatcher.do(editStructure, blankCanvasCmd());
+	dispatcher.do(blankCanvasCmd());
 }
 document.getElementById('new-file').addEventListener('click', eraseAll);
 
@@ -469,51 +471,54 @@ function invertCmd(kwargs_dir) {
 
 
 class Dispatcher {
-	constructor() {
+	constructor(executor, inverter, postaction = () => void 0, callback = (cmd, is_undo) => void 0) {
 		this.commands = [];
 		this.ptr = 0;
+		this.executor = executor;
+		this.inverter = inverter;
+		this.postaction = postaction;
+		this.callback = callback;
 		document.addEventListener('keydown', event => this.keyHandler(event));
 	}
 
-	addCmd(func_dir, args_dir, func_rev, args_rev) {
+	addCmd(args_dir, args_rev) {
 		this.commands = this.commands.slice(0, this.ptr); // Delete extra commands
-		this.commands.push([{func: func_dir, args: args_dir}, {func: func_rev, args: args_rev}]); /* Add new command to
-		the history */
+		this.commands.push([args_dir, args_rev]); // Add new command to the history
 		this.ptr++;
 	}
 
-	do(func_dir, kwargs_dir) {
-		var kwargs_rev = invertCmd(kwargs_dir);
-		func_dir(kwargs_dir);
-		this.addCmd(func_dir, kwargs_dir, func_dir, kwargs_rev);
+	do(kwargs_dir) {
+		const kwargs_rev = this.inverter(kwargs_dir);
+		this.executor(kwargs_dir);
+		this.addCmd(kwargs_dir, kwargs_rev);
 	}
 
 	redo() {
 		if (this.ptr >= this.commands.length) return;
-		var command = this.commands[this.ptr++][0]; // Fetch command
-		command.func(command.args); // Execute the given function with args
-		selection.undoRedo(command.args, false);
+		let args_rev = this.commands[this.ptr++][0]; // Fetch command
+		this.executor(args_rev); // Execute the given function with args
+		selection.undoRedo(args_rev, false);
 	}
 
 	undo() {
 		if (this.ptr <= 0) return;
-		var command = this.commands[--this.ptr][1]; // Fetch command
-		command.func(command.args); // Execute the given function with args
-		selection.undoRedo(command.args, true);
+		const args_dir = this.commands[--this.ptr][1]; // Fetch command
+		this.executor(args_dir); // Execute the given function with args
+		selection.undoRedo(args_dir, true);
 	}
 
 	keyHandler(event) {
 		if ((event.ctrlKey || event.metaKey) && !event.repeat) {
-			var toRedo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
-			var toUndo = event.key == 'z' && !event.shiftKey;
-			if (toRedo) this.redo();
-			if (toUndo) this.undo();
-			if (toUndo || toRedo) refreshBondCutouts();
+			var to_redo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
+			var to_undo = event.key == 'z' && !event.shiftKey;
+			if (to_redo) this.redo();
+			if (to_undo) this.undo();
+			if (to_undo || to_redo) this.postaction();
 		}
 	}
 }
 
-var dispatcher = new Dispatcher();
+var dispatcher = new Dispatcher(editStructure, invertCmd, refreshBondCutouts);
 
 
 function getSvgPoint(event) {
@@ -668,7 +673,7 @@ function chemNodeHandler(elbtn) {
 				if (node0.connections.length == 0 && (node0.text == atomtext ||
 					(node0.text == '' && atomtext == 'C'))) {
 					kwargs = {del_atoms: new Set([node0.id])};
-					dispatcher.do(editStructure, kwargs);
+					dispatcher.do(kwargs);
 					return;
 				}
 				old_atomtext = node0.text;
@@ -682,9 +687,9 @@ function chemNodeHandler(elbtn) {
 				node0_is_new = true;
 				node0_id = new_node0id;
 				kwargs = {new_atoms_data: {[new_node0id]: [...pt0, new_atomtext]}};
-				dispatcher.do(editStructure, kwargs);
+				dispatcher.do(kwargs);
 			}
-			dispatcher.do(editStructure, {});
+			dispatcher.do({});
 			movBoundNode(event);
 			document.styleSheets[0].cssRules[0].selectorText = `${'#' + new_node1id}:hover`;
 			document.styleSheets[0].cssRules[1].selectorText = `${'#' + new_bond_id}:hover`;
@@ -709,7 +714,7 @@ function chemNodeHandler(elbtn) {
 			if (!node0_is_new) kwargs.atoms_text = {[node0_id]: old_atomtext};
 		}
 		else kwargs.atoms_text = {[node0_id]: new_atomtext};
-		dispatcher.do(editStructure, kwargs);
+		dispatcher.do(kwargs);
 	}
 
 	// eslint-disable-next-line no-unused-vars
@@ -740,7 +745,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 			if (event.target.is_bond) { // If an existing bond was clicked, change its multiplicity
 				var focobj = event.target.objref;
 				var kwargs = {bonds_type: {[focobj.id]: focobj.getNextType(rotation_schema)}};
-				dispatcher.do(editStructure, kwargs);
+				dispatcher.do(kwargs);
 				refreshBondCutouts();
 			}
 			else { // If blank space or a chem node was clicked, start drawing a new bond
@@ -775,7 +780,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 				new_atoms_data: new_atoms_data,
 				new_bonds_data: {[new_bond_id]: [node0id, node1id, init_type]}
 			};
-			dispatcher.do(editStructure, kwargs);
+			dispatcher.do(kwargs);
 		}
 	}
 
@@ -822,7 +827,7 @@ function deleteHandler(delbtn) {
 			};
 			else if (focobj_cls == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
 			else if (focobj_cls == Line) kwargs = {del_lines: new Set([focobj.id])};
-			dispatcher.do(editStructure, kwargs);
+			dispatcher.do(kwargs);
 			refreshBondCutouts();
 		}
 	}
@@ -852,7 +857,7 @@ function textHandler(textbtn) {
 		var old_input = document.getElementById('txt-input');
 		if (old_input) {
 			var kwargs = {atoms_text: {[node.id]: (old_input.value ? '@' : '') + old_input.value}};
-			dispatcher.do(editStructure, kwargs);
+			dispatcher.do(kwargs);
 			old_input.remove();
 		}
 	}
@@ -918,7 +923,6 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
-		// editStructure({moving_atoms: cur_node_ids, moving_vec: moving_vec});
 		editStructure({transforms: [[MOVE, new Set(cur_node_ids), {moving_vec: moving_vec}]]});
 	}
 
@@ -929,7 +933,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			if (node) {
 				stopCursor();
 				common_node = node;
-				dispatcher.do(editStructure, {});
+				dispatcher.do({});
 				rotatePolygon(event);
 				window.addEventListener('mousemove', rotatePolygon);
 				window.addEventListener('mouseup', appendPolygon);
@@ -937,7 +941,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 			else if (event.target.is_bond) { // Some bond was clicked
 				stopCursor();
 				common_bond = event.target.objref;
-				dispatcher.do(editStructure, {});
+				dispatcher.do({});
 				flipPolygon(event);
 				window.addEventListener('mousemove', flipPolygon);
 				window.addEventListener('mouseup', appendPolygon);
@@ -946,7 +950,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				var vec0 = vecDif(pt, document.getElementById(cur_node_ids[0]).objref.xy);
 				var [new_atoms_data, new_bonds_data] = generatePolygon(pt, vec0, new_node_ids, new_bond_ids);
 				var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
-				dispatcher.do(editStructure, kwargs);
+				dispatcher.do(kwargs);
 				refreshBondCutouts(cur_bond_ids);
 			}
 		}
@@ -1104,7 +1108,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		}
 
 		var kwargs = {new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data, bonds_type: bonds_type};
-		dispatcher.do(editStructure, kwargs);
+		dispatcher.do(kwargs);
 	}
 }
 
@@ -1139,7 +1143,7 @@ function lineHandler(btn) {
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
 		let kwargs = {new_lines_data: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
-		dispatcher.do(editStructure, kwargs);
+		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
 
@@ -1275,11 +1279,13 @@ class SelectLasso extends SelectShape {
 
 
 class SelectionBase {
-	constructor() {
+	constructor(dispatcher) {
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.bottom_ptr = Infinity;
 		this.clipboard = null;
+		this.dispatcher = dispatcher;
+		dispatcher.callback = this.undoRedo;
 
 		for (const attr of this.constructor.attrs) {
 			this[`#${attr}`] = new Set();
@@ -1445,9 +1451,9 @@ class SelectionBase {
 		this.finishAction(kwargs_dir, kwargs_rev);
 	}
 
-	finishAction(kwargs, kwargs_rev) {
-		this.bottom_ptr = Math.min(this.bottom_ptr, dispatcher.ptr);
-		dispatcher.addCmd(editStructure, kwargs, editStructure, kwargs_rev);
+	finishAction(kwargs_dir, kwargs_rev) {
+		this.bottom_ptr = Math.min(this.bottom_ptr, this.dispatcher.ptr);
+		this.dispatcher.addCmd(kwargs_dir, kwargs_rev);
 		if (!this.transform_tool) this.deactivate();
 		this.postAction();
 	}
@@ -1489,7 +1495,7 @@ class SelectionBase {
 		event.preventDefault();
 		if (!this.clipboard) return;
 		let kwargs = this.getPasteKwargs(vecMul([15, 15], ++this.clipboard.cnt));
-		dispatcher.do(editStructure, kwargs);
+		this.dispatcher.do(kwargs);
 		this.deactivate();
 		this.activateFromPasteKwargs(kwargs);
 		this.postAction();
@@ -1504,14 +1510,14 @@ class SelectionBase {
 	}
 
 	delItems() {
-		dispatcher.do(editStructure, this.getDelKwargs());
+		this.dispatcher.do(this.getDelKwargs());
 		this.deactivate();
 		this.postAction();
 	}
 
 	undoRedo(cmd, is_undo) {
 		if (this.highlights.hasChildNodes()) {
-			if (dispatcher.ptr + is_undo <= this.bottom_ptr) {
+			if (this.dispatcher.ptr + is_undo <= this.bottom_ptr) {
 				this.removeTransformTool();
 				this.addTransformTool();
 			}
@@ -1815,7 +1821,7 @@ class SelectionChem extends SelectionShape {
 }
 
 
-var selection = new SelectionChem();
+var selection = new SelectionChem(dispatcher);
 window.selection = selection;
 window.dispatcher = dispatcher;
 
