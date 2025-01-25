@@ -1279,16 +1279,16 @@ class SelectionBase {
 		this.highlights = document.getElementById('selecthighlight');
 		this.transform_tool = null;
 		this.bottom_ptr = Infinity;
-		this.clipboard = {mol: null};
+		this.clipboard = null;
 
 		for (const attr of this.constructor.attrs) {
-			this[`_${attr}`] = new Set();
+			this[`#${attr}`] = new Set();
 			Object.defineProperty(this, attr, {
 				get() {
-					return excludeNonExisting(this[`_${attr}`]);
+					return excludeNonExisting(this[`#${attr}`]);
 				},
-				set (new_value) {
-					this[`_${attr}`] = new Set(new_value);
+				set(new_value) {
+					this[`#${attr}`] = new Set(new_value);
 				}
 			});
 		}
@@ -1301,7 +1301,7 @@ class SelectionBase {
 
 	static parent_map = {};
 
-	static cr_param_map = {};
+	static cr_del_params = {};
 
 	static movable_els = [];
 
@@ -1417,8 +1417,7 @@ class SelectionBase {
 		this.relocatingItems(MOVE, {moving_vec: moving_vec});
 
 		if (this.transform_tool) this.transform_tool.translate(moving_vec);
-		this.indicator.setText(`\u0394x: ${this.accum_vec[0].toFixed(0)}\n\u0394y: ${this.accum_vec[1].toFixed(0)}`,
-			event);
+		this.indicator.showDelta(event, this.accum_vec.map(val => val.toFixed(0)));
 	}
 
 	finishMoving(event) { // eslint-disable-line no-unused-vars
@@ -1466,7 +1465,7 @@ class SelectionBase {
 	copy(event) {
 		event.preventDefault();
 		let kwargs = this.getCopyKwargs();
-		this.clipboard.mol = Object.keys(kwargs).length ? {kwargs: this.getCopyKwargs(), pt0: getSvgPoint(event), cnt: 0} : null;
+		this.clipboard = Object.keys(kwargs).length ? {kwargs: this.getCopyKwargs(), pt0: getSvgPoint(event), cnt: 0} : null;
 	}
 
 	cut(event) {
@@ -1480,16 +1479,16 @@ class SelectionBase {
 
 	activateFromPasteKwargs(kwargs) {
 		let ids_to_activate = {};
-		for (const [attr, param_name] of Object.entries(this.constructor.cr_param_map)) {
-			if (param_name in kwargs) ids_to_activate[attr] = new Set(Object.keys(kwargs[param_name]));
+		for (const [attr, cr_del] of Object.entries(this.constructor.cr_del_params)) {
+			if (cr_del[0] in kwargs) ids_to_activate[attr] = new Set(Object.keys(kwargs[cr_del[0]]));
 		}
 		this.activateFromIds(ids_to_activate);
 	}
 
 	paste(event) {
 		event.preventDefault();
-		if (!this.clipboard.mol) return;
-		let kwargs = this.getPasteKwargs(vecMul([15, 15], ++this.clipboard.mol.cnt));
+		if (!this.clipboard) return;
+		let kwargs = this.getPasteKwargs(vecMul([15, 15], ++this.clipboard.cnt));
 		dispatcher.do(editStructure, kwargs);
 		this.deactivate();
 		this.activateFromPasteKwargs(kwargs);
@@ -1498,8 +1497,8 @@ class SelectionBase {
 
 	getDelKwargs() { // Helper
 		let kwargs = {};
-		for (const [key, val] of Object.entries(this.constructor.cr_param_map)) {
-			kwargs[`del_${val.slice(4, -5)}`] = new Set(this[key]);
+		for (const [attr, cr_del] of Object.entries(this.constructor.cr_del_params)) {
+			kwargs[cr_del[1]] = new Set(this[attr]);
 		}
 		return kwargs;
 	}
@@ -1529,7 +1528,7 @@ class SelectionBase {
 	}
 
 	deselect() {
-		for (const attr of this.constructor.attrs) this[`_${attr}`] = new Set();
+		for (const attr of this.constructor.attrs) this[`#${attr}`] = new Set();
 	}
 
 	deactivate() {
@@ -1544,18 +1543,22 @@ class SelectionBase {
 
 class SelectionShape extends SelectionBase {
 	static parent_map = {
-		shapes: 'sensors_s',  
+		lines: 'sensors_s',  
 		...this.prototype.constructor.parent_map
 	};
 
-	static cr_param_map = {
-		shapes: 'new_lines_data',
-		...this.prototype.constructor.cr_param_map
+	static cr_del_params = {
+		lines: ['new_lines_data', 'del_lines'],
+		...this.prototype.constructor.cr_del_params
 	};
 
 	static movable_els = ['control_points', ...this.prototype.constructor.movable_els];
 
-	static attrs = ['shapes', 'control_points', ...this.prototype.constructor.attrs];
+	static attrs = ['lines', 'control_points', ...this.prototype.constructor.attrs];
+
+	get shapes() {
+		return [...this.lines];
+	}
 
 	extraSelect() {
 		super.extraSelect();
@@ -1567,20 +1570,20 @@ class SelectionShape extends SelectionBase {
 			this.control_points = [item.id];
 		}
 		else if (item instanceof Line) {
-			this.shapes = [item.id];
+			this.lines = [item.id];
 			this.control_points = item.cps.map(cp => cp.id);
 		}
 		super.setSelectedItem(item);
 	}
 
 	getCopyKwargs() {
-		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.shapes)};
+		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.lines)};
 	}
 
 	getPasteKwargs(moving_vec) {
 		// Replase ids with the new ones, move shapes
 		let new_lines_data = Object.fromEntries(
-			Object.entries(this.clipboard.mol.kwargs.new_lines_data).map(([key, value]) => {
+			Object.entries(this.clipboard.kwargs.new_lines_data).map(([key, value]) => {
 				return [Line.getNewId(), 
 					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
 				];
@@ -1599,10 +1602,10 @@ class SelectionChem extends SelectionShape {
 		...this.prototype.constructor.parent_map
 	};
 
-	static cr_param_map = {
-		atoms: 'new_atoms_data',
-		bonds: 'new_bonds_data',
-		...this.prototype.constructor.cr_param_map
+	static cr_del_params = {
+		atoms: ['new_atoms_data', 'del_atoms'],
+		bonds: ['new_bonds_data', 'del_bonds'],
+		...this.prototype.constructor.cr_del_params
 	};
 
 	static movable_els = ['atoms', ...this.prototype.constructor.movable_els];
@@ -1610,6 +1613,10 @@ class SelectionChem extends SelectionShape {
 	static attrs = ['atoms', 'bonds', ...this.prototype.constructor.attrs];
 
 	static event_handlers = {keyUpHandler: 'keyup', ...this.prototype.constructor.event_handlers};
+
+	get atomsbonds() {
+		return [...this.atoms, ...this.bonds];
+	}
 
 	setSelectedItem(item) {
 		if (item instanceof ChemNode) {
@@ -1624,14 +1631,12 @@ class SelectionChem extends SelectionShape {
 
 	eventsOn() {
 		this.highlights.classList.remove('sympoi');
-		[...this.atoms, ...this.bonds].forEach(item_id => document.getElementById(item_id)
-			.objref.eventsOff());
+		this.atomsbonds.forEach(item_id => document.getElementById(item_id).objref.eventsOff());
 	};
 
 	eventsOff() {
 		this.highlights.classList.add('sympoi');
-		[...this.atoms, ...this.bonds].forEach(item_id => document.getElementById(item_id)
-			.objref.eventsOn());
+		this.atomsbonds.forEach(item_id => document.getElementById(item_id).objref.eventsOn());
 	};
 
 	prepareGroup() {
@@ -1777,7 +1782,7 @@ class SelectionChem extends SelectionShape {
 		// Replase ids with the new ones, move atoms
 		var keymap = {};
 		let new_atoms_data = Object.fromEntries(
-			Object.entries(this.clipboard.mol.kwargs.new_atoms_data).map(([key, value]) => {
+			Object.entries(this.clipboard.kwargs.new_atoms_data).map(([key, value]) => {
 				const new_id = ChemNode.getNewId();
 				keymap[key] = new_id;
 				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
@@ -1785,7 +1790,7 @@ class SelectionChem extends SelectionShape {
 			)
 		);
 		let new_bonds_data = Object.fromEntries(
-			Object.entries(this.clipboard.mol.kwargs.new_bonds_data)
+			Object.entries(this.clipboard.kwargs.new_bonds_data)
 				// eslint-disable-next-line no-unused-vars
 				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
 					return [ChemBond.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
@@ -1894,8 +1899,7 @@ class TransformTool extends DeletableAbortable {
 			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? new_accum_rot_angle - this.accum_rot_angle : 0;
 		}
 		this.accum_rot_angle += rot_angle;
-		this.indicator.setText(`${((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180)
-			.toFixed(1)} \u00B0`, event);
+		this.indicator.showDegree(event, ((this.accum_rot_angle * 180 / Math.PI - 540) % 360 + 180).toFixed(1));
 		this.rot_st = this.rot_st + rot_angle;
 		this.rotate(rot_angle, this.pivot.xy);
 		selection.relocatingItems(ROTATE, {rot_angle: rot_angle, rot_ctr: [...this.pivot.xy]});
@@ -1928,7 +1932,7 @@ class TransformTool extends DeletableAbortable {
 
 	scaling(event) {
 		var factor = this.getFactor();
-		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
+		this.indicator.showPercent(event, (this.accum_factor * 100).toFixed(1));
 		this.scale(factor, this.pivot.xy);
 		selection.relocatingItems(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
 	}
@@ -1962,7 +1966,7 @@ class TransformTool extends DeletableAbortable {
 
 	stretching(event) {
 		var factor = this.getFactor();
-		this.indicator.setText(`${(this.accum_factor * 100).toFixed(1)}%`, event);
+		this.indicator.showPercent(event, (this.accum_factor * 100).toFixed(1));
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
 		selection.relocatingItems(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
 			stretch_ctr: [...this.pivot.xy]});
@@ -2006,7 +2010,7 @@ class TransformTool extends DeletableAbortable {
 			this.pivot.shape.classList.remove('sympoi', 'jigforcehover');
 			selection.eventsOn();
 		}
-		this.indicator.setText(`x: ${corrected_point[0].toFixed(0)}\ny: ${corrected_point[1].toFixed(0)}`, event);
+		this.indicator.showPt(event, corrected_point.map(val => val.toFixed(0)));
 		this.pivot.setCtr(corrected_point).render();
 	}
 
@@ -2064,7 +2068,7 @@ class Indicator extends DeletableAbortable {
 		'font-weight': 'bold'
 	};
 
-	setText(text, event) {
+	setText(event, text) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
 		var pt = getSvgPoint(event);
 		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
@@ -2074,6 +2078,22 @@ class Indicator extends DeletableAbortable {
 		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));
 		bbox = this.text.getBBox();
 		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});
+	}
+
+	showPt(event, [x, y]) {
+		this.setText(event, `x: ${x}\ny: ${y}`);
+	}
+
+	showDelta(event, [x, y]) {
+		this.setText(event, `\u0394x: ${x}\n\u0394y: ${y}`);
+	}
+
+	showPercent(event, percent) {
+		this.setText(event, `${percent}%`);
+	}
+
+	showDegree(event, degree) {
+		this.setText(event, `${degree} \u00B0`);
 	}
 
 	delete() {
