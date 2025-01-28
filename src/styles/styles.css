@@ -76,19 +76,11 @@ body {
 	fill: blue;
 	opacity: 0;
 }
-.bline {
-	stroke: blue;
-	opacity: 0;
-}
 .anode:hover {
 	opacity: 1;
 	cursor: pointer;
 }
 .brect:hover {
-	opacity: 1;
-	cursor: pointer;
-}
-.bline:hover {
 	opacity: 1;
 	cursor: pointer;
 }
@@ -210,4 +202,12 @@ body {
 .control-point:hover {
 	fill: blue;
 	opacity: 1;
+}
+.sensor-line {
+	stroke: blue;
+	opacity: 0;
+}
+.sensor-line:hover {
+	opacity: 1;
+	cursor: pointer;
 }

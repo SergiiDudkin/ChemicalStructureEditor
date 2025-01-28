@@ -40,35 +40,50 @@ export class ControlPoint extends CtrRect {
 }
 
 
+const SENSOR = 0;
+const SHAPE = 1;
+const HIGHLIGHT = 2;
+const SELECTHOLE = 3;
+
+const LAYER_SPEC = Object.freeze({
+	[SENSOR]: {
+		override: {class: 'sensor-line', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'}, 
+		vals: {extra_width: 6}
+	},
+	[SHAPE]: {
+		override: {class: 'sympoi'},
+		vals: {extra_width: 0}
+	},
+	[HIGHLIGHT]: {
+		override: {'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'},
+		vals: {extra_width: 6}
+	},
+	[SELECTHOLE]: {
+		override: {'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: null, fill: null},
+		vals: {extra_width: 3}
+	},
+});
+
+
 export class Line {
 	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
 		this.id = id;
-		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
-
+		this.style = {...this.constructor.default_style};
+		this.layers = new Array(4).fill(null);
+		this.setControlPoints(cps_data);
 		this.recalcCtr();
-
-		this.style = {};
-		Object.assign(this.style, this.constructor.default_style);
-
-		this.backline = attachSvg(
-			this.constructor.sensors, 'line', 
-			{
-				id: this.id, class: 'bline', ...this.getCoordinates(), 
-				'stroke-linecap': 'round', 'stroke-width': this.style['stroke-width'] + 8
-			}
-		);
-		this.backline.is_line = true;
-		this.backline.is_shape = true;
-		this.backline.objref = this;
 	}
 
-	static highlights = document.getElementById('selecthighlight');
+	setControlPoints(cps_data) {
+		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
+	}
 
-	static selectholes = document.getElementById('selectholes');
-
-	static sensors = document.getElementById('sensors_s');
-
-	static shapes = document.getElementById('shapes');
+	static parents = {
+		[SENSOR]: document.getElementById('sensors_s'),
+		[SHAPE]: document.getElementById('shapes'),
+		[HIGHLIGHT]: document.getElementById('selecthighlight'),
+		[SELECTHOLE]: document.getElementById('selectholes')
+	}
 
 	static counter = 0;
 
@@ -79,42 +94,36 @@ export class Line {
 
 	static delSel = new Set(); // Nodes deleted while selected
 
+	static id_prefix = 'l';
+
 	static getNewId() {
-		return 'l' + this.counter++;
+		return this.id_prefix + this.counter++;
 	}
 
 	select() {
 		this.eventsOff();
-		this.select_line = attachSvg(
-			this.constructor.highlights, 'line', 
-			{...this.getCoordinates(), 'stroke-linecap': 'round', stroke: 'blue', 'stroke-width': this.style['stroke-width'] + 8}
-		);
-		this.masksel_line = attachSvg(
-			this.constructor.selectholes, 'line', 
-			{...this.getCoordinates(), 'stroke-linecap': 'round', 'stroke-width': this.style['stroke-width'] + 5}
-		);
+		this.createLayer(HIGHLIGHT);
+		this.createLayer(SELECTHOLE);
 	};
 
 	deselect() {
-		this.select_line.remove();
-		this.select_line = null;
-		this.masksel_line.remove();
-		this.masksel_line = null;
+		this.deleteLayer(HIGHLIGHT);
+		this.deleteLayer(SELECTHOLE);
 		this.eventsOn();
 	};
 
 	eventsOn() {
-		this.backline.classList.remove('sympoi');
+		this.layers[SENSOR].classList.remove('sympoi');
 		this.cps.forEach(cp => cp.eventsOn());
 	};
 
 	eventsOff() {
-		this.backline.classList.add('sympoi');
+		this.layers[SENSOR].classList.add('sympoi');
 		this.cps.forEach(cp => cp.eventsOff());
 	};
 
-	getCoordinates() {
-		return {x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]};
+	calcCoordinates() {
+		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
 	}
 
 	getData() {
@@ -127,28 +136,52 @@ export class Line {
 
 	render() {
 		this.recalcCtr();
-		let coordinates = this.getCoordinates();
+		this.calcCoordinates();
 
-		if (this.line) {
-			setAttrsSvg(this.line, coordinates);
+		// Follow coordinates
+		for (const layer of this.layers) {
+			if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
 		}
-		else {
-			this.line = attachSvg(this.constructor.shapes, 'line', {class: 'sympoi', ...coordinates, ...this.style});
+
+		this.createLayer(SHAPE);
+		this.createLayer(SENSOR);
+	}
+
+	createLayer(layer_idx) {
+		if (!this.layers[layer_idx]) {
+			const {override, vals: {extra_width}} = LAYER_SPEC[layer_idx];
+			const attrs = {...this.coords[0], ...this.style}
+			Object.assign(attrs, override);
+			attrs['stroke-width'] = attrs['stroke-width'] ? attrs['stroke-width'] + extra_width : extra_width;
+			this.layers[layer_idx] = attachSvg(this.constructor.parents[layer_idx], 'g');
+			const elements = this.createElements(layer_idx, attrs);
+			if (layer_idx == SENSOR) this.markSensor(elements);
 		}
-		setAttrsSvg(this.backline, coordinates);
-		if (this.select_line != null) {
-			setAttrsSvg(this.select_line, coordinates);
-			setAttrsSvg(this.masksel_line, coordinates);
+	}
+
+	createElements(layer_idx, attrs) {
+		return [attachSvg(this.layers[layer_idx], 'line', attrs)];
+	}
+
+	markSensor(elements) {
+		this.layers[SENSOR].id = this.id;
+		this.layers[SENSOR].objref = this;
+		elements.forEach(el => {
+			el.is_line = true;
+			el.is_shape = true;
+			el.objref = this;
+		});
+	}
+
+	deleteLayer(layer_idx) {
+		if (this.layers[layer_idx]) {
+			this.layers[layer_idx].remove();
+			this.layers[layer_idx] = null;
 		}
 	}
 
 	delete() {
-		if (this.select_line != null) {
-			this.constructor.delSel.add(this.id);
-			this.deselect();
-		}
+		Object.keys(LAYER_SPEC).forEach(layer => this.deleteLayer(layer));
 		this.cps.forEach(cp => cp.delete());
-		this.line.remove();
-		this.backline.remove();
 	}
 }
