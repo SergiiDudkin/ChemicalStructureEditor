@@ -1,4 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
+import {unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
 
 
 export class ControlPoint extends CtrRect {
@@ -47,7 +48,7 @@ const SELECTHOLE = 3;
 
 const LAYER_SPEC = Object.freeze({
 	[SENSOR]: {
-		override: {class: 'sensor-line', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'}, 
+		override: {'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'}, 
 		vals: {extra_width: 6}
 	},
 	[SHAPE]: {
@@ -65,7 +66,7 @@ const LAYER_SPEC = Object.freeze({
 });
 
 
-export class Line {
+export class ShapeBase {
 	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
 		this.id = id;
 		this.style = {...this.constructor.default_style};
@@ -75,11 +76,11 @@ export class Line {
 	}
 
 	setControlPoints(cps_data) {
-		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
+		throw new Error('Override the abstract method!');
 	}
 
 	static parents = {
-		[SENSOR]: document.getElementById('sensors_s'),
+		[SENSOR]: null, // Abstract attribute
 		[SHAPE]: document.getElementById('shapes'),
 		[HIGHLIGHT]: document.getElementById('selecthighlight'),
 		[SELECTHOLE]: document.getElementById('selectholes')
@@ -89,12 +90,14 @@ export class Line {
 
 	static default_style = {
 		stroke: 'black',
+		fill: 'black',
+		'stroke-linejoin': 'arcs',
 		'stroke-width': 2
 	}
 
 	static delSel = new Set(); // Nodes deleted while selected
 
-	static id_prefix = 'l';
+	static id_prefix = null;
 
 	static getNewId() {
 		return this.id_prefix + this.counter++;
@@ -123,15 +126,15 @@ export class Line {
 	};
 
 	calcCoordinates() {
-		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
+		throw new Error('Override the abstract method!');
 	}
 
 	getData() {
-		return [this.cps.map(cp => [cp.id, ...cp.xy])];
+		throw new Error('Override the abstract method!');
 	}
 
 	recalcCtr() {
-		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
+		throw new Error('Override the abstract method!');
 	}
 
 	render() {
@@ -150,7 +153,7 @@ export class Line {
 	createLayer(layer_idx) {
 		if (!this.layers[layer_idx]) {
 			const {override, vals: {extra_width}} = LAYER_SPEC[layer_idx];
-			const attrs = {...this.coords[0], ...this.style}
+			const attrs = {...this.style};
 			Object.assign(attrs, override);
 			attrs['stroke-width'] = attrs['stroke-width'] ? attrs['stroke-width'] + extra_width : extra_width;
 			this.layers[layer_idx] = attachSvg(this.constructor.parents[layer_idx], 'g');
@@ -160,10 +163,11 @@ export class Line {
 	}
 
 	createElements(layer_idx, attrs) {
-		return [attachSvg(this.layers[layer_idx], 'line', attrs)];
+		throw new Error('Override the abstract method!');
 	}
 
 	markSensor(elements) {
+		this.layers[SENSOR].setAttribute('class', 'sensor-line');
 		this.layers[SENSOR].id = this.id;
 		this.layers[SENSOR].objref = this;
 		elements.forEach(el => {
@@ -185,3 +189,67 @@ export class Line {
 		this.cps.forEach(cp => cp.delete());
 	}
 }
+
+
+export class Line extends ShapeBase {
+	setControlPoints(cps_data) {
+		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
+	}
+
+	static parents = {
+		...this.prototype.constructor.parents, 
+		[SENSOR]: document.getElementById('sensors_l')
+	}
+
+	static id_prefix = 'l';
+
+	calcCoordinates() {
+		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
+	}
+
+	getData() {
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
+	}
+
+	recalcCtr() {
+		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
+	}
+
+	createElements(layer_idx, attrs) {
+		return [attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0]})];
+	}
+}
+
+
+export class Arrow extends Line {
+	static parents = {
+		...this.prototype.constructor.parents, 
+		[SENSOR]: document.getElementById('sensors_r')
+	}
+
+	static id_prefix = 'r';
+
+	static triangle = [[-15, -5], [0, 0], [-15, 5]];
+
+	calcCoordinates() {
+		const vec = vecDif(this.cps[0].xy, this.cps[1].xy);
+		const rot_ang = Math.atan2(vec[1], vec[0]);
+		const triangle = this.constructor.triangle.map(
+			pt => vecSum(rotateVec(pt, rot_ang), this.cps[1].xy).join()
+		).join(' ');
+		const line_end = vecSum(this.cps[1].xy, vecMul(unitVec(vec), -10));
+		this.coords = [
+			{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: line_end[0], y2: line_end[1]},
+			{points: triangle}
+		];
+	}
+
+	createElements(layer_idx, attrs) {
+		const line = attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0]});
+		let strike_width = attrs['stroke-width'] - this.style['stroke-width'];
+		strike_width = strike_width == 0 ? null : strike_width
+		const triangle = attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[1], 'stroke-width': strike_width});
+		return [line, triangle];
+	}
+}
+

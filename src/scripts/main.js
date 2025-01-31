@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line} from './ControlPoint.js'
+import {ControlPoint, Line, Arrow} from './ControlPoint.js'
 
 
 window.DEBUG = false;
@@ -61,11 +61,13 @@ function gatherData(ids=new Set()) {
 function downloadJson() { // Download .svg
 	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
 	var bond_ids = new Set([...document.getElementById('sensors_b').children].map(el => el.objref.id));
-	var line_ids = new Set([...document.getElementById('sensors_s').children].map(el => el.objref.id));
+	var line_ids = new Set([...document.getElementById('sensors_l').children].map(el => el.objref.id));
+	var arrow_ids = new Set([...document.getElementById('sensors_r').children].map(el => el.objref.id));
 	var json_content = JSON.stringify({
 		new_atoms_data: gatherData(atom_ids),
 		new_bonds_data: gatherData(bond_ids),
-		new_lines_data: gatherData(line_ids)
+		new_lines_data: gatherData(line_ids),
+		new_arrows_data: gatherData(arrow_ids)
 	}, null, '\t');
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
@@ -77,11 +79,13 @@ document.getElementById('download-json').addEventListener('click', downloadJson)
 function blankCanvasCmd() {
 	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
 	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
-	var line_ids = [...document.getElementById('sensors_s').children].map(el => el.objref.id);
+	var line_ids = [...document.getElementById('sensors_l').children].map(el => el.objref.id);
+	var arrow_ids = [...document.getElementById('sensors_r').children].map(el => el.objref.id);
 	var kwargs = {};
 	if (atom_ids) kwargs.del_atoms = new Set(atom_ids);
 	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
 	if (line_ids) kwargs.del_lines = new Set(line_ids);
+	if (arrow_ids) kwargs.del_lines = new Set(arrow_ids);
 	return kwargs;
 }
 
@@ -415,6 +419,7 @@ var heptagonbtn = new SubButton(dropcycbtn,
 	fill="none" />`
 );
 var linebtn = new RegularButton(flex_container, toBtnText('li'));
+var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -459,7 +464,9 @@ function invertCmd(kwargs_dir) {
 
 	// Shape inverts
 	kwargs_rev.new_lines_data = gatherData(kwargs_dir.del_lines);
+	kwargs_rev.new_arrows_data = gatherData(kwargs_dir.del_arrows);
 	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
+	if (kwargs_dir.new_arrows_data) kwargs_rev.del_arrows = new Set(Object.keys(kwargs_dir.new_arrows_data));
 
 	// Common transforms
 	if (kwargs_dir.transforms) {
@@ -1113,7 +1120,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 }
 
 
-function lineHandler(btn) {
+function lineHandler(btn, LineClass, attr_name) {
 	var pt0, new_line_id, new_cp0_id, new_cp1_id;
 	btn.mask_g.addEventListener('click', crLine);
 
@@ -1126,7 +1133,7 @@ function lineHandler(btn) {
 	function stLine(event) { // Start drawing line. Called when mouse button 1 is down.
 		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			pt0 = getSvgPoint(event);
-			new_line_id = Line.getNewId();
+			new_line_id = LineClass.getNewId();
 			new_cp0_id = ControlPoint.getNewId();
 			new_cp1_id = ControlPoint.getNewId();
 			window.addEventListener('mousemove', movLine);
@@ -1142,7 +1149,7 @@ function lineHandler(btn) {
 	function movLine(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
-		let kwargs = {new_lines_data: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
+		let kwargs = {[attr_name]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
 		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
@@ -1159,6 +1166,8 @@ function lineHandler(btn) {
 function transformHandler(btn, SelectTool=null) {
 	var sensors_a = document.getElementById('sensors_a');
 	var sensors_b = document.getElementById('sensors_b');
+	var sensors_l = document.getElementById('sensors_l');
+	var sensors_r = document.getElementById('sensors_r');
 	var control_points = document.getElementById('control_points');
 	btn.mask_g.addEventListener('click', selectInit);
 
@@ -1167,7 +1176,8 @@ function transformHandler(btn, SelectTool=null) {
 		canvas.addEventListener('mousedown', selectAct);
 		sensors_a.addEventListener('mousedown', pick);
 		sensors_b.addEventListener('mousedown', pick);
-		sensors_s.addEventListener('mousedown', pick);
+		sensors_l.addEventListener('mousedown', pick);
+		sensors_r.addEventListener('mousedown', pick);
 		control_points.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
@@ -1196,6 +1206,8 @@ function transformHandler(btn, SelectTool=null) {
 		canvas.removeEventListener('mousedown', selectAct);
 		sensors_a.removeEventListener('mousedown', pick);
 		sensors_b.removeEventListener('mousedown', pick);
+		sensors_l.removeEventListener('mousedown', pick);
+		sensors_r.removeEventListener('mousedown', pick);
 		control_points.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
@@ -1549,21 +1561,23 @@ class SelectionBase {
 
 class SelectionShape extends SelectionBase {
 	static parent_map = {
-		lines: 'sensors_s',  
+		lines: 'sensors_l', 
+		arrows: 'sensors_r',  
 		...this.prototype.constructor.parent_map
 	};
 
 	static cr_del_params = {
 		lines: ['new_lines_data', 'del_lines'],
+		arrows: ['new_arrows_data', 'del_arrows'],
 		...this.prototype.constructor.cr_del_params
 	};
 
 	static movable_els = ['control_points', ...this.prototype.constructor.movable_els];
 
-	static attrs = ['lines', 'control_points', ...this.prototype.constructor.attrs];
+	static attrs = ['lines', 'arrows', 'control_points', ...this.prototype.constructor.attrs];
 
 	get shapes() {
-		return [...this.lines];
+		return [...this.lines, ...this.arrows];
 	}
 
 	extraSelect() {
@@ -1579,11 +1593,15 @@ class SelectionShape extends SelectionBase {
 			this.lines = [item.id];
 			this.control_points = item.cps.map(cp => cp.id);
 		}
+		else if (item instanceof Arrow) {
+			this.arrows = [item.id];
+			this.control_points = item.cps.map(cp => cp.id);
+		}
 		super.setSelectedItem(item);
 	}
 
 	getCopyKwargs() {
-		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.lines)};
+		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.lines), new_arrows_data: gatherData(this.arrows)};
 	}
 
 	getPasteKwargs(moving_vec) {
@@ -1596,7 +1614,15 @@ class SelectionShape extends SelectionBase {
 			}
 			)
 		);
-		return {...super.getPasteKwargs(moving_vec), new_lines_data: new_lines_data};
+		let new_arrows_data = Object.fromEntries(
+			Object.entries(this.clipboard.kwargs.new_arrows_data).map(([key, value]) => {
+				return [Arrow.getNewId(), 
+					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
+				];
+			}
+			)
+		);
+		return {...super.getPasteKwargs(moving_vec), new_arrows_data: new_arrows_data};
 	}
 }
 
@@ -2124,4 +2150,5 @@ polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
-lineHandler(linebtn);
+lineHandler(linebtn, Line, 'new_lines_data');
+lineHandler(arrowbtn, Arrow, 'new_arrows_data');
