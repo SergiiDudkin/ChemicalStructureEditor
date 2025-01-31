@@ -1605,24 +1605,18 @@ class SelectionShape extends SelectionBase {
 	}
 
 	getPasteKwargs(moving_vec) {
-		// Replase ids with the new ones, move shapes
-		let new_lines_data = Object.fromEntries(
-			Object.entries(this.clipboard.kwargs.new_lines_data).map(([key, value]) => {
-				return [Line.getNewId(), 
-					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
-				];
-			}
-			)
-		);
-		let new_arrows_data = Object.fromEntries(
-			Object.entries(this.clipboard.kwargs.new_arrows_data).map(([key, value]) => {
-				return [Arrow.getNewId(), 
-					[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
-				];
-			}
-			)
-		);
-		return {...super.getPasteKwargs(moving_vec), new_arrows_data: new_arrows_data};
+		const kwargs = super.getPasteKwargs(moving_vec);
+		for (const [cr_name, del_name] of Object.values(this.constructor.cr_del_params)) {
+			kwargs[cr_name] = Object.fromEntries(
+				Object.entries(this.clipboard.kwargs[cr_name]).map(([key, value]) => {
+					return [Arrow.getNewId(), 
+						[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
+					];
+				}
+				)
+			);
+		}
+		return kwargs;
 	}
 }
 
