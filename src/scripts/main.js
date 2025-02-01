@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow} from './ControlPoint.js'
+import {ControlPoint, Line, Arrow, SENSOR} from './ControlPoint.js'
 
 
 window.DEBUG = false;
@@ -1299,7 +1299,10 @@ class SelectionBase {
 		this.dispatcher = dispatcher;
 		dispatcher.callback = this.undoRedo;
 
-		for (const attr of this.constructor.attrs) {
+		this.citizens = this.constructor.classes.filter(cls => cls.citizen);
+		this.attrs = this.constructor.classes.map(cls => cls.name);
+
+		for (const attr of this.attrs) {
 			this[`#${attr}`] = new Set();
 			Object.defineProperty(this, attr, {
 				get() {
@@ -1317,13 +1320,7 @@ class SelectionBase {
 		}
 	}
 
-	static parent_map = {};
-
-	static cr_del_params = {};
-
-	static movable_els = [];
-
-	static attrs = [];
+	static classes = [];
 
 	static event_handlers = {
 		keyDownHandler: 'keydown',
@@ -1332,12 +1329,17 @@ class SelectionBase {
 		paste: 'paste',
 		startMoving: null,
 		moving: null,
-		finishMoving: null
+		finishMoving: null,
+		deactivate: null
 	}
 
-	static objsUnderShape(parent_id, covering_shape) {
-		return [...document.getElementById(parent_id).children].map(el => el.objref)
+	static objsUnderShape(parent, covering_shape) {
+		return [...parent.children].map(el => el.objref)
 			.filter(el => document.elementFromPoint(...getScreenPoint(el.xy)) == covering_shape);
+	}
+
+	get selected_collections() {
+		return this.citizens.map(citizen => this[citizen.name]);
 	}
 
 	activateFromShape(covering_shape) {
@@ -1345,18 +1347,18 @@ class SelectionBase {
 		this.activate();
 	}
 
-	extraSelect() {} // Helper
+	subSelect() {} // Helper
 
 	selectFromShape(covering_shape) {
-		for (const [attr, parent_id] of Object.entries(this.constructor.parent_map)) {
-			this[attr] = new Set(this.constructor.objsUnderShape(parent_id, covering_shape).map(item => item.id));
+		for (const {name, parents} of this.citizens) {
+			this[name] = this.constructor.objsUnderShape(parents[SENSOR], covering_shape).map(item => item.id);
 		}
-		this.extraSelect();
+		this.subSelect();
 	}
 
 	activateFromIds(grouped_ids) {
 		Object.entries(grouped_ids).forEach(([group, ids]) => this[group] = ids);
-		this.extraSelect();
+		this.subSelect();
 		this.activate();
 	}
 
@@ -1386,17 +1388,16 @@ class SelectionBase {
 	}
 
 	setSelectedItem(item) {
+		this[item.constructor.name] = [item.id];
 		this.highlight();
 	}
 
 	highlight() {
-		Object.keys(this.constructor.parent_map).forEach(group => this[group]
-			.forEach(item_id => document.getElementById(item_id).objref.select()));
+		this.selected_collections.flat().forEach(item_id => document.getElementById(item_id).objref.select());
 	}
 
 	dehighlight() {
-		Object.keys(this.constructor.parent_map).forEach(group => this[group]
-			.forEach(item_id => document.getElementById(item_id).objref.deselect()));
+		this.selected_collections.flat().forEach(item_id => document.getElementById(item_id).objref.deselect());
 	}
 
 	eventsOn() {}
@@ -1445,7 +1446,7 @@ class SelectionBase {
 	}
 
 	paramsToTransform(action_type, params) {
-		let ids = new Set(this.constructor.movable_els.map(group => this[group]).flat());
+		let ids = new Set(this.constructor.classes.filter(cls => cls.movable).map(cls => this[cls.name]).flat());
 		return [action_type, ids, params];
 	}
 
@@ -1477,11 +1478,12 @@ class SelectionBase {
 	}
 
 	getCopyKwargs() { // Helper
-		return {};
+		return Object.fromEntries(this.citizens.map(cls => [cls.cr_cmd_name, gatherData(this[cls.name])]));
 	}
 
 	copy(event) {
 		event.preventDefault();
+		this.clipboard = null;
 		let kwargs = this.getCopyKwargs();
 		this.clipboard = Object.keys(kwargs).length ? {kwargs: this.getCopyKwargs(), pt0: getSvgPoint(event), cnt: 0} : null;
 	}
@@ -1491,32 +1493,46 @@ class SelectionBase {
 		this.delItems();
 	}
 
-	getPasteKwargs(moving_vec) { // Helper
-		return {};
+	setNewCopyIds() { // Helper
+		for (const cls of this.citizens) {
+			const cr_subcmd = this.clipboard.kwargs[cls.cr_cmd_name];
+			const sorted_ids = Object.keys(cr_subcmd).sort();
+			for (const id of sorted_ids) {
+				cr_subcmd[cls.getNewId()] = cr_subcmd[id];
+				delete cr_subcmd[id];
+			}
+		}
 	}
 
 	activateFromPasteKwargs(kwargs) {
 		let ids_to_activate = {};
-		for (const [attr, cr_del] of Object.entries(this.constructor.cr_del_params)) {
-			if (cr_del[0] in kwargs) ids_to_activate[attr] = new Set(Object.keys(kwargs[cr_del[0]]));
+		for (const {name, cr_cmd_name} of this.citizens) {
+			if (cr_cmd_name in kwargs) ids_to_activate[name] = Object.keys(kwargs[cr_cmd_name]);
 		}
 		this.activateFromIds(ids_to_activate);
 	}
 
 	paste(event) {
 		event.preventDefault();
-		if (!this.clipboard) return;
-		let kwargs = this.getPasteKwargs(vecMul([15, 15], ++this.clipboard.cnt));
-		this.dispatcher.do(kwargs);
-		this.deactivate();
-		this.activateFromPasteKwargs(kwargs);
-		this.postAction();
+		if (this.clipboard) {
+			this.setNewCopyIds();
+			editStructure(this.clipboard.kwargs);
+			this.deactivate();
+			this.activateFromPasteKwargs(this.clipboard.kwargs);
+			const moving_vec = vecMul([15, 15], ++this.clipboard.cnt);
+			this.relocatingItems(MOVE, {moving_vec: moving_vec});
+			if (this.transform_tool) this.transform_tool.translate(moving_vec);
+			const kwargs_dir = this.getCopyKwargs();
+			this.dispatcher.addCmd(kwargs_dir, invertCmd(kwargs_dir));
+			this.postAction();
+			window.addEventListener('mousedown', this.deactivate);
+		}
 	}
 
 	getDelKwargs() { // Helper
 		let kwargs = {};
-		for (const [attr, cr_del] of Object.entries(this.constructor.cr_del_params)) {
-			kwargs[cr_del[1]] = new Set(this[attr]);
+		for (const {name, del_cmd_name} of this.citizens) {
+			kwargs[del_cmd_name] = new Set(name);
 		}
 		return kwargs;
 	}
@@ -1546,97 +1562,53 @@ class SelectionBase {
 	}
 
 	deselect() {
-		for (const attr of this.constructor.attrs) this[`#${attr}`] = new Set();
+		for (const attr of this.attrs) this[`#${attr}`] = [];
 	}
 
 	deactivate() {
+		window.removeEventListener('mousedown', this.deactivate);
 		this.highlights.removeEventListener('mousedown', this.startMoving);
 		this.removeTransformTool();
 		this.bottom_ptr = Infinity;
 		this.dehighlight();
 		this.deselect();
+		this.citizens.forEach(cls => cls.delSel.clear());
 	}
 }
 
 
 class SelectionShape extends SelectionBase {
-	static parent_map = {
-		lines: 'sensors_l', 
-		arrows: 'sensors_r',  
-		...this.prototype.constructor.parent_map
-	};
-
-	static cr_del_params = {
-		lines: ['new_lines_data', 'del_lines'],
-		arrows: ['new_arrows_data', 'del_arrows'],
-		...this.prototype.constructor.cr_del_params
-	};
-
-	static movable_els = ['control_points', ...this.prototype.constructor.movable_els];
-
-	static attrs = ['lines', 'arrows', 'control_points', ...this.prototype.constructor.attrs];
+	static classes = [...this.prototype.constructor.classes, ControlPoint, Line, Arrow];
 
 	get shapes() {
 		return [...this.lines, ...this.arrows];
 	}
 
-	extraSelect() {
-		super.extraSelect();
-		this.control_points = this.shapes.map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id);
+	subSelect() {
+		super.subSelect();
+		this.control_points = [...this.control_points, ...this.shapes.map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id)];
 	}
 
 	setSelectedItem(item) {
-		if (item instanceof ControlPoint) {
-			this.control_points = [item.id];
-		}
-		else if (item instanceof Line) {
-			this.lines = [item.id];
-			this.control_points = item.cps.map(cp => cp.id);
-		}
-		else if (item instanceof Arrow) {
-			this.arrows = [item.id];
-			this.control_points = item.cps.map(cp => cp.id);
-		}
 		super.setSelectedItem(item);
+		this.subSelect();
 	}
 
-	getCopyKwargs() {
-		return {...super.getCopyKwargs(), new_lines_data: gatherData(this.lines), new_arrows_data: gatherData(this.arrows)};
-	}
+	setNewCopyIds() { // Helper
+		super.setNewCopyIds();
 
-	getPasteKwargs(moving_vec) {
-		const kwargs = super.getPasteKwargs(moving_vec);
-		for (const [cr_name, del_name] of Object.values(this.constructor.cr_del_params)) {
-			kwargs[cr_name] = Object.fromEntries(
-				Object.entries(this.clipboard.kwargs[cr_name]).map(([key, value]) => {
-					return [Arrow.getNewId(), 
-						[value[0].map(cp_data => [ControlPoint.getNewId(), ...vecSum(cp_data.slice(1, 3), moving_vec)])]
-					];
-				}
-				)
-			);
+		// Get new IDs for control points.
+		for (const cls of this.citizens.filter(cls => cls.shape)) {
+			for (const [id, data] of Object.entries(this.clipboard.kwargs[cls.cr_cmd_name])) {
+				data[0].forEach(cp_data => cp_data[0] = ControlPoint.getNewId())
+			}
 		}
-		return kwargs;
 	}
 }
 
 
 class SelectionChem extends SelectionShape {
-	static parent_map = {
-		atoms: 'sensors_a', 
-		bonds: 'sensors_b', 
-		...this.prototype.constructor.parent_map
-	};
-
-	static cr_del_params = {
-		atoms: ['new_atoms_data', 'del_atoms'],
-		bonds: ['new_bonds_data', 'del_bonds'],
-		...this.prototype.constructor.cr_del_params
-	};
-
-	static movable_els = ['atoms', ...this.prototype.constructor.movable_els];
-
-	static attrs = ['atoms', 'bonds', ...this.prototype.constructor.attrs];
+	static classes = [...this.prototype.constructor.classes, ChemNode, ChemBond];
 
 	static event_handlers = {keyUpHandler: 'keyup', ...this.prototype.constructor.event_handlers};
 
@@ -1645,13 +1617,7 @@ class SelectionChem extends SelectionShape {
 	}
 
 	setSelectedItem(item) {
-		if (item instanceof ChemNode) {
-			this.atoms = [item.id];
-		}
-		else if (item instanceof ChemBond) {
-			this.bonds = [item.id];
-			this.atoms = item.nodes.map(node => node.id);
-		}
+		if (item instanceof ChemBond) this.atoms = item.nodes.map(node => node.id);
 		super.setSelectedItem(item);
 	}
 
@@ -1794,36 +1760,13 @@ class SelectionChem extends SelectionShape {
 	}
 
 	getCopyKwargs() {
-		let kwargs = {new_atoms_data: gatherData(this.atoms), new_bonds_data: gatherData(this.bonds)};
-		if (this.bonds.length) {
-			for (const [id, data] of Object.entries(kwargs.new_bonds_data)) {
-				if (data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data) continue;
-				delete kwargs.new_bonds_data[id];
-			}
+		const kwargs = super.getCopyKwargs();
+		if (this.bonds.length && this.clipboard.cnt == null) {
+			kwargs.new_bonds_data = Object.fromEntries(Object.entries(kwargs.new_bonds_data)
+				.filter(([id, data]) => {data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data})
+			);
 		}
-		return {...super.getCopyKwargs(), ...kwargs};
-	}
-
-	getPasteKwargs(moving_vec) {
-		// Replase ids with the new ones, move atoms
-		var keymap = {};
-		let new_atoms_data = Object.fromEntries(
-			Object.entries(this.clipboard.kwargs.new_atoms_data).map(([key, value]) => {
-				const new_id = ChemNode.getNewId();
-				keymap[key] = new_id;
-				return [new_id, [...vecSum(value.slice(0, 2), moving_vec), value[2]]];
-			}
-			)
-		);
-		let new_bonds_data = Object.fromEntries(
-			Object.entries(this.clipboard.kwargs.new_bonds_data)
-				// eslint-disable-next-line no-unused-vars
-				.sort((a, b) => parseInt(a[0].slice(1)) - parseInt(b[0].slice(1))).map(([key, value]) => {
-					return [ChemBond.getNewId(), [keymap[value[0]], keymap[value[1]], value[2]]];
-				}
-				)
-		);
-		return {...super.getPasteKwargs(moving_vec), new_atoms_data: new_atoms_data, new_bonds_data: new_bonds_data};
+		return kwargs;
 	}
 
 	getDelKwargs() {
@@ -1831,12 +1774,6 @@ class SelectionChem extends SelectionShape {
 		kwargs.del_atoms.forEach(atom_id => document.getElementById(atom_id).objref.connections
 			.forEach(bond => kwargs.del_bonds.add(bond.id)));
 		return kwargs;
-	}
-
-	deactivate() {
-		super.deactivate();
-		ChemNode.delSel.clear();
-		ChemBond.delSel.clear();
 	}
 }
 

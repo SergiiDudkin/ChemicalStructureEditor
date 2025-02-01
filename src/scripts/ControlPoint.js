@@ -13,6 +13,12 @@ export class ControlPoint extends CtrRect {
 		this.shape.addEventListener('mousedown', this.focus);
 	}
 
+	// Public info
+	static name = 'control_points';
+	static movable = true;
+	static citizen = false;
+	static shape = false;
+
 	static counter = 0;
 
 	static getNewId() {
@@ -41,10 +47,10 @@ export class ControlPoint extends CtrRect {
 }
 
 
-const SENSOR = 0;
-const SHAPE = 1;
-const HIGHLIGHT = 2;
-const SELECTHOLE = 3;
+export const SENSOR = 0;
+export const SHAPE = 1;
+export const HIGHLIGHT = 2;
+export const SELECTHOLE = 3;
 
 const LAYER_SPEC = Object.freeze({
 	[SENSOR]: {
@@ -86,6 +92,11 @@ export class ShapeBase {
 		[SELECTHOLE]: document.getElementById('selectholes')
 	}
 
+	// Public info
+	static movable = false;
+	static citizen = true;
+	static shape = true;
+
 	static counter = 0;
 
 	static default_style = {
@@ -102,6 +113,8 @@ export class ShapeBase {
 	static getNewId() {
 		return this.id_prefix + this.counter++;
 	}
+
+	static delSel = new Set(); // Shapes deleted while selected
 
 	select() {
 		this.eventsOff();
@@ -148,6 +161,11 @@ export class ShapeBase {
 
 		this.createLayer(SHAPE);
 		this.createLayer(SENSOR);
+
+		if (this.constructor.delSel.has(this.id)) {
+			this.select();
+			this.constructor.delSel.delete(this.id);
+		}
 	}
 
 	createLayer(layer_idx) {
@@ -201,6 +219,11 @@ export class Line extends ShapeBase {
 		[SENSOR]: document.getElementById('sensors_l')
 	}
 
+	// Public info
+	static name = 'lines';
+	static cr_cmd_name = 'new_lines_data';
+	static del_cmd_name = 'del_lines';
+
 	static id_prefix = 'l';
 
 	calcCoordinates() {
@@ -226,6 +249,11 @@ export class Arrow extends Line {
 		...this.prototype.constructor.parents, 
 		[SENSOR]: document.getElementById('sensors_r')
 	}
+
+	// Public info
+	static name = 'arrows';
+	static cr_cmd_name = 'new_arrows_data';
+	static del_cmd_name = 'del_arrows';
 
 	static id_prefix = 'r';
 

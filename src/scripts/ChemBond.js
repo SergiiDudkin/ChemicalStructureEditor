@@ -5,6 +5,12 @@ import {
 import {getColor} from './Debug.js';
 
 
+const SENSOR = 0;
+const SHAPE = 1;
+const HIGHLIGHT = 2;
+const SELECTHOLE = 3;
+
+
 export class ChemBond {
 	constructor(id, node0, node1, type) {
 		this.id = id;
@@ -27,6 +33,21 @@ export class ChemBond {
 			this.constructor.delSel.delete(this.id);
 		}
 	}
+
+	static parents = {
+		[SENSOR]: document.getElementById('sensors_b'),
+		[SHAPE]: document.getElementById('bondsall'),
+		[HIGHLIGHT]: document.getElementById('selecthighlight'),
+		[SELECTHOLE]: document.getElementById('selectholes')
+	}
+
+	// Public info
+	static name = 'bonds';
+	static cr_cmd_name = 'new_bonds_data';
+	static del_cmd_name = 'del_bonds';
+	static movable = false;
+	static citizen = true;
+	static shape = false;
 
 	static counter = 0;
 

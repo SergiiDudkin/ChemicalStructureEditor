@@ -4,6 +4,12 @@ import {attachSvg} from './Utils.js';
 import {lineIntersec, vecSum, vecDif, cosVec, angleVec} from './Geometry.js';
 
 
+const SENSOR = 0;
+const SHAPE = 1;
+const HIGHLIGHT = 2;
+const SELECTHOLE = 3;
+
+
 export class ChemNode {
 	constructor(id, x, y, text) {
 		this.id = id;
@@ -30,6 +36,21 @@ export class ChemNode {
 			this.constructor.delSel.delete(this.id);
 		}
 	}
+
+	static parents = {
+		[SENSOR]: document.getElementById('sensors_a'),
+		[SHAPE]: document.getElementById('atomsall'),
+		[HIGHLIGHT]: document.getElementById('selecthighlight'),
+		[SELECTHOLE]: document.getElementById('selectholes')
+	}
+
+	// Public info
+	static name = 'atoms';
+	static cr_cmd_name = 'new_atoms_data';
+	static del_cmd_name = 'del_atoms';
+	static movable = true;
+	static citizen = true;
+	static shape = false;
 
 	static counter = 0;
 
