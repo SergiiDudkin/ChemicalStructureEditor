@@ -1482,6 +1482,8 @@ class SelectionBase {
 		return id_map;
 	}
 
+	updateNewCopySubIds(id_map) {} // Helper
+
 	activateFromPasteKwargs(kwargs) {
 		let ids_to_activate = {};
 		for (const {name, cr_cmd_name} of this.citizens) {
@@ -1493,7 +1495,7 @@ class SelectionBase {
 	paste(event) {
 		event.preventDefault();
 		if (this.clipboard) {
-			this.setNewCopyIds();
+			this.updateNewCopySubIds(this.setNewCopyIds());
 			editStructure(this.clipboard.kwargs);
 			this.deactivate();
 			this.activateFromPasteKwargs(this.clipboard.kwargs);
@@ -1572,16 +1574,13 @@ class SelectionShape extends SelectionBase {
 		this.subSelect();
 	}
 
-	setNewCopyIds() { // Helper
-		const id_map = super.setNewCopyIds();
-
-		// Get new IDs for control points.
+	updateNewCopySubIds(id_map) { // Get new IDs for control points
 		for (const cls of this.citizens.filter(cls => cls.shape)) {
 			for (const [id, data] of Object.entries(this.clipboard.kwargs[cls.cr_cmd_name])) {
 				data[0].forEach(cp_data => cp_data[0] = ControlPoint.getNewId())
 			}
 		}
-		return id_map;
+		super.updateNewCopySubIds(id_map);
 	}
 }
 
@@ -1748,15 +1747,12 @@ class SelectionChem extends SelectionShape {
 		return kwargs;
 	}
 
-	setNewCopyIds() { // Helper
-		const id_map = super.setNewCopyIds();
-
-		// Replace IDs for atoms in bonds data
+	updateNewCopySubIds(id_map) { // Replace IDs for atoms in bonds data
 		for (const [id, data] of Object.entries(this.clipboard.kwargs.new_bonds_data)) {
 			data[0] = id_map[data[0]];
 			data[1] = id_map[data[1]];
 		}
-		return id_map;
+		super.updateNewCopySubIds(id_map);
 	}
 
 	getDelKwargs() {
