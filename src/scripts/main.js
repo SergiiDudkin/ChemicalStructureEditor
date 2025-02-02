@@ -60,17 +60,10 @@ function gatherData(ids=new Set()) {
 }
 
 function downloadJson() { // Download .svg
-	var atom_ids = new Set([...document.getElementById('sensors_a').children].map(el => el.objref.id));
-	var bond_ids = new Set([...document.getElementById('sensors_b').children].map(el => el.objref.id));
-	var line_ids = new Set([...document.getElementById('sensors_l').children].map(el => el.objref.id));
-	var arrow_ids = new Set([...document.getElementById('sensors_r').children].map(el => el.objref.id));
-	var json_content = JSON.stringify({
-		new_atoms_data: gatherData(atom_ids),
-		new_bonds_data: gatherData(bond_ids),
-		new_lines_data: gatherData(line_ids),
-		new_arrows_data: gatherData(arrow_ids)
-	}, null, '\t');
-	var element = document.createElement('a');
+	const kwargs = {};
+	selection.citizens.forEach(cls => kwargs[cls.cr_cmd_name] = gatherData(cls.getAllInstanceIDs()));
+	const json_content = JSON.stringify(kwargs, null, '\t');
+	const element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
 	element.setAttribute('download', 'molecule.json');
 	element.click();
@@ -78,15 +71,8 @@ function downloadJson() { // Download .svg
 document.getElementById('download-json').addEventListener('click', downloadJson);
 
 function blankCanvasCmd() {
-	var atom_ids = [...document.getElementById('sensors_a').children].map(el => el.objref.id);
-	var bond_ids = [...document.getElementById('sensors_b').children].map(el => el.objref.id);
-	var line_ids = [...document.getElementById('sensors_l').children].map(el => el.objref.id);
-	var arrow_ids = [...document.getElementById('sensors_r').children].map(el => el.objref.id);
-	var kwargs = {};
-	if (atom_ids) kwargs.del_atoms = new Set(atom_ids);
-	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
-	if (line_ids) kwargs.del_lines = new Set(line_ids);
-	if (arrow_ids) kwargs.del_arrows = new Set(arrow_ids);
+	const kwargs = {};
+	selection.citizens.forEach(cls => kwargs[cls.del_cmd_name] = cls.getAllInstanceIDs());
 	return kwargs;
 }
 
@@ -96,8 +82,16 @@ function openJsonFile(event) {
 	var reader = new FileReader();
 	reader.addEventListener('load', event => {
 		var kwargs = JSON.parse(event.target.result);
-		ChemNode.counter = Math.max(...Object.keys(kwargs.new_atoms_data).map(id => parseInt(id.slice(1)))) + 1;
-		ChemBond.counter = Math.max(...Object.keys(kwargs.new_bonds_data).map(id => parseInt(id.slice(1)))) + 1;
+		let cp_max_id = 0
+		selection.citizens.forEach(cls => {
+			cls.counter = Math.max(...Object.keys(kwargs[cls.cr_cmd_name]).map(id => parseInt(id.slice(1)))) + 1;
+			if (cls.shape) {
+				const cp_ids = Object.values(kwargs[cls.cr_cmd_name])
+					.map(data => data[0]).flat().map(cp_data => parseInt(cp_data[0].slice(2)));
+				cp_max_id = Math.max(cp_max_id, Math.max(...cp_ids) + 1);
+			}
+		});
+		ControlPoint.counter = cp_max_id;
 		Object.assign(kwargs, blankCanvasCmd());
 		dispatcher.do(kwargs);
 		refreshBondCutouts();

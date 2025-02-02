@@ -84,7 +84,7 @@ export class ShapeBase extends CanvasCitizen {
 	}
 
 	setControlPoints(cps_data) {
-		throw new Error('Override the abstract method!');
+		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
 	}
 
 	static parents = {
@@ -197,10 +197,6 @@ export class ShapeBase extends CanvasCitizen {
 
 
 export class Line extends ShapeBase {
-	setControlPoints(cps_data) {
-		this.cps = cps_data.map(cp_data => new ControlPoint(...cp_data, this));
-	}
-
 	static parents = {
 		...this.prototype.constructor.parents, 
 		[SENSOR]: document.getElementById('sensors_l')

@@ -4,6 +4,34 @@ export const HIGHLIGHT = 2;
 export const SELECTHOLE = 3;
 
 
+export class IdBearer {
+	constructor(id) {
+		this.id = id;
+	}
+
+	static counter = 0; // ID conuter
+
+	static id_prefix = '';
+
+	static getNewId() {
+		return this.id_prefix + this.counter++;
+	}
+
+	static getAllInstanceIDs() {
+		return new Set([...this.parents[SENSOR].children].map(el => el.objref.id));
+	}
+
+	static getMaxId() {
+		return Math.max(...this.getAllInstanceIDs().map(id => parseInt(id.slice(id_prefix.length))));
+	}
+
+	static setMaxIdCounter() {
+		this.counter = Math.max(this.counter, this.getMaxId() + 1);
+	}
+}
+
+
+
 export class CanvasCitizen {
 	// Public info
 	static movable = true;
