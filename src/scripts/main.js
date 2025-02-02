@@ -12,7 +12,8 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow, SENSOR} from './ControlPoint.js'
+import {ControlPoint, Line, Arrow} from './ControlPoint.js';
+import {SENSOR} from './BaseClasses.js';
 
 
 window.DEBUG = false;
@@ -85,7 +86,7 @@ function blankCanvasCmd() {
 	if (atom_ids) kwargs.del_atoms = new Set(atom_ids);
 	if (bond_ids) kwargs.del_bonds = new Set(bond_ids);
 	if (line_ids) kwargs.del_lines = new Set(line_ids);
-	if (arrow_ids) kwargs.del_lines = new Set(arrow_ids);
+	if (arrow_ids) kwargs.del_arrows = new Set(arrow_ids);
 	return kwargs;
 }
 
@@ -1485,7 +1486,7 @@ class SelectionBase {
 		event.preventDefault();
 		this.clipboard = null;
 		let kwargs = this.getCopyKwargs();
-		this.clipboard = Object.keys(kwargs).length ? {kwargs: this.getCopyKwargs(), pt0: getSvgPoint(event), cnt: 0} : null;
+		this.clipboard = Object.keys(kwargs).length ? {kwargs: kwargs, pt0: getSvgPoint(event), cnt: 0} : null;
 	}
 
 	cut(event) {
@@ -1494,14 +1495,18 @@ class SelectionBase {
 	}
 
 	setNewCopyIds() { // Helper
+		const id_map = {};
 		for (const cls of this.citizens) {
 			const cr_subcmd = this.clipboard.kwargs[cls.cr_cmd_name];
 			const sorted_ids = Object.keys(cr_subcmd).sort();
-			for (const id of sorted_ids) {
-				cr_subcmd[cls.getNewId()] = cr_subcmd[id];
-				delete cr_subcmd[id];
+			for (const old_id of sorted_ids) {
+				const new_id = cls.getNewId();
+				cr_subcmd[new_id] = cr_subcmd[old_id];
+				delete cr_subcmd[old_id];
+				id_map[old_id] = new_id;
 			}
 		}
+		return id_map;
 	}
 
 	activateFromPasteKwargs(kwargs) {
@@ -1532,7 +1537,7 @@ class SelectionBase {
 	getDelKwargs() { // Helper
 		let kwargs = {};
 		for (const {name, del_cmd_name} of this.citizens) {
-			kwargs[del_cmd_name] = new Set(name);
+			kwargs[del_cmd_name] = new Set(this[name]);
 		}
 		return kwargs;
 	}
@@ -1595,7 +1600,7 @@ class SelectionShape extends SelectionBase {
 	}
 
 	setNewCopyIds() { // Helper
-		super.setNewCopyIds();
+		const id_map = super.setNewCopyIds();
 
 		// Get new IDs for control points.
 		for (const cls of this.citizens.filter(cls => cls.shape)) {
@@ -1603,6 +1608,7 @@ class SelectionShape extends SelectionBase {
 				data[0].forEach(cp_data => cp_data[0] = ControlPoint.getNewId())
 			}
 		}
+		return id_map;
 	}
 }
 
@@ -1761,12 +1767,23 @@ class SelectionChem extends SelectionShape {
 
 	getCopyKwargs() {
 		const kwargs = super.getCopyKwargs();
-		if (this.bonds.length && this.clipboard.cnt == null) {
+		if (this.bonds.length && this.clipboard == null) {
 			kwargs.new_bonds_data = Object.fromEntries(Object.entries(kwargs.new_bonds_data)
-				.filter(([id, data]) => {data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data})
+				.filter(([id, data]) => data[0] in kwargs.new_atoms_data && data[1] in kwargs.new_atoms_data)
 			);
 		}
 		return kwargs;
+	}
+
+	setNewCopyIds() { // Helper
+		const id_map = super.setNewCopyIds();
+
+		// Replace IDs for atoms in bonds data
+		for (const [id, data] of Object.entries(this.clipboard.kwargs.new_bonds_data)) {
+			data[0] = id_map[data[0]];
+			data[1] = id_map[data[1]];
+		}
+		return id_map;
 	}
 
 	getDelKwargs() {

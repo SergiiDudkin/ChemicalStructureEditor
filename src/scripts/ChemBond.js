@@ -3,19 +3,15 @@ import {
 	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector
 } from './Geometry.js';
 import {getColor} from './Debug.js';
+import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
 
 
-const SENSOR = 0;
-const SHAPE = 1;
-const HIGHLIGHT = 2;
-const SELECTHOLE = 3;
-
-
-export class ChemBond {
+export class ChemBond extends CanvasCitizen {
 	constructor(id, node0, node1, type) {
+		super();
 		this.id = id;
 
-		this.g = attachSvg(document.getElementById('bondsall'), 'g');
+		this.g = attachSvg(this.constructor.parents[SHAPE], 'g');
 
 		this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: this.constructor.sel_h});
 		this.backrect.shape.is_bond = true;
@@ -35,10 +31,9 @@ export class ChemBond {
 	}
 
 	static parents = {
+		...this.prototype.constructor.parents, 
 		[SENSOR]: document.getElementById('sensors_b'),
-		[SHAPE]: document.getElementById('bondsall'),
-		[HIGHLIGHT]: document.getElementById('selecthighlight'),
-		[SELECTHOLE]: document.getElementById('selectholes')
+		[SHAPE]: document.getElementById('bondsall')
 	}
 
 	// Public info
@@ -46,10 +41,8 @@ export class ChemBond {
 	static cr_cmd_name = 'new_bonds_data';
 	static del_cmd_name = 'del_bonds';
 	static movable = false;
-	static citizen = true;
-	static shape = false;
 
-	static counter = 0;
+	static id_prefix = 'b';
 
 	static default_style = {
 		color: 'black',
@@ -63,8 +56,6 @@ export class ChemBond {
 	static sel_h = 12; // Selection rectangle height
 
 	static min_offset = 5;
-
-	static delSel = new Set(); // Bonds deleted while selected
 
 	/*	Bond types:
 	0 - hydrogen bond
@@ -113,16 +104,12 @@ export class ChemBond {
 
 	static auto_d_bonds = 		    [11, 12, 13, 14];
 
-	static getNewId() {
-		return 'b' + this.counter++;
-	};
-
 	static eventsOnAll() {
-		document.getElementById('sensors_b').classList.remove('sympoi');
+		this.parents[SENSOR].classList.remove('sympoi');
 	};
 
 	static eventsOffAll() {
-		document.getElementById('sensors_b').classList.add('sympoi');
+		this.parents[SENSOR].classList.add('sympoi');
 	};
 
 	recalcDims() {

@@ -1,5 +1,6 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
 import {unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
+import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
 
 
 export class ControlPoint extends CtrRect {
@@ -47,10 +48,10 @@ export class ControlPoint extends CtrRect {
 }
 
 
-export const SENSOR = 0;
-export const SHAPE = 1;
-export const HIGHLIGHT = 2;
-export const SELECTHOLE = 3;
+// export const SENSOR = 0;
+// export const SHAPE = 1;
+// export const HIGHLIGHT = 2;
+// export const SELECTHOLE = 3;
 
 const LAYER_SPEC = Object.freeze({
 	[SENSOR]: {
@@ -72,8 +73,9 @@ const LAYER_SPEC = Object.freeze({
 });
 
 
-export class ShapeBase {
+export class ShapeBase extends CanvasCitizen {
 	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
+		super();
 		this.id = id;
 		this.style = {...this.constructor.default_style};
 		this.layers = new Array(4).fill(null);
@@ -86,18 +88,13 @@ export class ShapeBase {
 	}
 
 	static parents = {
-		[SENSOR]: null, // Abstract attribute
-		[SHAPE]: document.getElementById('shapes'),
-		[HIGHLIGHT]: document.getElementById('selecthighlight'),
-		[SELECTHOLE]: document.getElementById('selectholes')
+		...this.prototype.constructor.parents, 
+		[SHAPE]: document.getElementById('shapes')
 	}
 
 	// Public info
 	static movable = false;
-	static citizen = true;
 	static shape = true;
-
-	static counter = 0;
 
 	static default_style = {
 		stroke: 'black',
@@ -105,16 +102,6 @@ export class ShapeBase {
 		'stroke-linejoin': 'arcs',
 		'stroke-width': 2
 	}
-
-	static delSel = new Set(); // Nodes deleted while selected
-
-	static id_prefix = null;
-
-	static getNewId() {
-		return this.id_prefix + this.counter++;
-	}
-
-	static delSel = new Set(); // Shapes deleted while selected
 
 	select() {
 		this.eventsOff();
