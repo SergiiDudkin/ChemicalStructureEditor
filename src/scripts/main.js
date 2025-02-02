@@ -1150,21 +1150,13 @@ function lineHandler(btn, LineClass, attr_name) {
 
 
 function transformHandler(btn, SelectTool=null) {
-	var sensors_a = document.getElementById('sensors_a');
-	var sensors_b = document.getElementById('sensors_b');
-	var sensors_l = document.getElementById('sensors_l');
-	var sensors_r = document.getElementById('sensors_r');
-	var control_points = document.getElementById('control_points');
+	var sensors_all = document.getElementById('sensors');
 	btn.mask_g.addEventListener('click', selectInit);
 
 	function selectInit(event) { // eslint-disable-line no-unused-vars
 		btn.selectCond();
 		canvas.addEventListener('mousedown', selectAct);
-		sensors_a.addEventListener('mousedown', pick);
-		sensors_b.addEventListener('mousedown', pick);
-		sensors_l.addEventListener('mousedown', pick);
-		sensors_r.addEventListener('mousedown', pick);
-		control_points.addEventListener('mousedown', pick);
+		sensors_all.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
 
@@ -1190,11 +1182,7 @@ function transformHandler(btn, SelectTool=null) {
 
 	function exit(event) {
 		canvas.removeEventListener('mousedown', selectAct);
-		sensors_a.removeEventListener('mousedown', pick);
-		sensors_b.removeEventListener('mousedown', pick);
-		sensors_l.removeEventListener('mousedown', pick);
-		sensors_r.removeEventListener('mousedown', pick);
-		control_points.removeEventListener('mousedown', pick);
+		sensors_all.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
 		btn.deselectCond(event);
