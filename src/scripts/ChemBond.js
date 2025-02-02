@@ -8,8 +8,7 @@ import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses
 
 export class ChemBond extends CanvasCitizen {
 	constructor(id, node0, node1, type) {
-		super();
-		this.id = id;
+		super(id);
 
 		this.g = attachSvg(this.constructor.parents[SHAPE], 'g');
 

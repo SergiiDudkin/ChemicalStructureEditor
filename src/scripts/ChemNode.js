@@ -7,8 +7,7 @@ import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses
 
 export class ChemNode extends CanvasCitizen {
 	constructor(id, x, y, text) {
-		super();
-		this.id = id;
+		super(id);
 
 		this.style = {};
 		Object.assign(this.style, this.constructor.default_style);

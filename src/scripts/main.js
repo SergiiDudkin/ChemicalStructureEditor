@@ -82,19 +82,10 @@ function openJsonFile(event) {
 	var reader = new FileReader();
 	reader.addEventListener('load', event => {
 		var kwargs = JSON.parse(event.target.result);
-		let cp_max_id = 0
-		selection.citizens.forEach(cls => {
-			cls.counter = Math.max(...Object.keys(kwargs[cls.cr_cmd_name]).map(id => parseInt(id.slice(1)))) + 1;
-			if (cls.shape) {
-				const cp_ids = Object.values(kwargs[cls.cr_cmd_name])
-					.map(data => data[0]).flat().map(cp_data => parseInt(cp_data[0].slice(2)));
-				cp_max_id = Math.max(cp_max_id, Math.max(...cp_ids) + 1);
-			}
-		});
-		ControlPoint.counter = cp_max_id;
 		Object.assign(kwargs, blankCanvasCmd());
 		dispatcher.do(kwargs);
 		refreshBondCutouts();
+		selection.constructor.classes.forEach(cls => cls.setMaxIdCounter());
 		document.getElementById('file-input').value = null;
 	});
 	reader.readAsText(file);

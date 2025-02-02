@@ -4,14 +4,16 @@ export const HIGHLIGHT = 2;
 export const SELECTHOLE = 3;
 
 
-export class IdBearer {
+export class IdHolder {
 	constructor(id) {
 		this.id = id;
 	}
 
+	static parents = {[SENSOR]: null}; // Reassign!
+
 	static counter = 0; // ID conuter
 
-	static id_prefix = '';
+	static id_prefix = ''; // Reassign!
 
 	static getNewId() {
 		return this.id_prefix + this.counter++;
@@ -22,7 +24,7 @@ export class IdBearer {
 	}
 
 	static getMaxId() {
-		return Math.max(...this.getAllInstanceIDs().map(id => parseInt(id.slice(id_prefix.length))));
+		return Math.max(...[...this.getAllInstanceIDs()].map(id => parseInt(id.slice(this.id_prefix.length))));
 	}
 
 	static setMaxIdCounter() {
@@ -31,8 +33,7 @@ export class IdBearer {
 }
 
 
-
-export class CanvasCitizen {
+export class CanvasCitizen extends IdHolder {
 	// Public info
 	static movable = true;
 
@@ -48,19 +49,6 @@ export class CanvasCitizen {
 		[SELECTHOLE]: document.getElementById('selectholes')
 	}
 
-	// ID counter
-	static counter = 0;
-
-	static id_prefix = null;
-
-	static getNewId() {
-		return this.id_prefix + this.counter++;
-	}
-
 	// Deleted elements while being selected
 	static delSel = new Set();
-
-	static getAllInstanceIDs() {
-		return new Set([...this.parents[SENSOR].children].map(el => el.objref.id));
-	}
 }

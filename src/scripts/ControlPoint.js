@@ -1,18 +1,26 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
 import {unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
-import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
+import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
-export class ControlPoint extends CtrRect {
+export class ControlPoint extends IdHolder {
 	constructor(id, cx, cy, master) {
-		super('control_points', cx, cy, {width: 10, height: 10, class: 'control-point', id: id});
-		this.id = id;
+		super(id);
+		this.setCtr([cx, cy]);
 		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
+
+		this.shape = attachSvg(this.constructor.parents[SENSOR], this.constructor.tag, 
+			{width: 10, height: 10, class: 'control-point', id: id});
+		this.shape.objref = this;
 		this.shape.is_shape = true;
 
 		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
 		this.shape.addEventListener('mousedown', this.focus);
 	}
+
+	static parents = {[SENSOR]: document.getElementById('control_points')};
+	static tag = 'rect';
+	static id_prefix = 'cp';
 
 	// Public info
 	static name = 'control_points';
@@ -20,10 +28,13 @@ export class ControlPoint extends CtrRect {
 	static citizen = false;
 	static shape = false;
 
-	static counter = 0;
+	setCtr(xy) {
+		this.xy = [...xy];
+	}
 
-	static getNewId() {
-		return 'cp' + this.counter++;
+	render() {
+		this.shape.setAttribute('x', this.xy[0] - this.shape.getAttribute('width') / 2);
+		this.shape.setAttribute('y', this.xy[1] - this.shape.getAttribute('height') / 2);
 	}
 
 	eventsOn() {
@@ -45,13 +56,13 @@ export class ControlPoint extends CtrRect {
 		this.shape.classList.remove('control-point-opaque');
 		this.shape.classList.add('control-point');
 	}
+
+	delete() {
+		this.shape.remove();
+		Object.keys(this).forEach(key => delete this[key]);
+	}
 }
 
-
-// export const SENSOR = 0;
-// export const SHAPE = 1;
-// export const HIGHLIGHT = 2;
-// export const SELECTHOLE = 3;
 
 const LAYER_SPEC = Object.freeze({
 	[SENSOR]: {
@@ -75,8 +86,7 @@ const LAYER_SPEC = Object.freeze({
 
 export class ShapeBase extends CanvasCitizen {
 	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
-		super();
-		this.id = id;
+		super(id);
 		this.style = {...this.constructor.default_style};
 		this.layers = new Array(4).fill(null);
 		this.setControlPoints(cps_data);
