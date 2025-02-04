@@ -267,10 +267,8 @@ export class Arrow extends Line {
 
 	createElements(layer_idx, attrs) {
 		const line = attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0]});
-		let strike_width = attrs['stroke-width'] - this.style['stroke-width'];
-		strike_width = strike_width == 0 ? null : strike_width
-		const triangle = attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[1], 'stroke-width': strike_width});
+		let stroke_width = attrs['stroke-width'] - this.style['stroke-width'];
+		const triangle = attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[1], 'stroke-width': stroke_width});
 		return [line, triangle];
 	}
 }
-

@@ -28,7 +28,8 @@ export function findDist(xy0, xy1) { // Find distance between two points
 }
 
 export function unitVec(xy) { // Find unit vector
-	return vecDiv(xy, vecLen(xy));
+	const vec_len = vecLen(xy);
+	return vec_len ? vecDiv(xy, vecLen(xy)) : [1, 0];
 }
 
 export function vecSum([x0, y0], [x1, y1]) { // Add vectors

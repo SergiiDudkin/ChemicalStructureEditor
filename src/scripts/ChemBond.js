@@ -1,6 +1,6 @@
 import {attachSvg, OffsetRect} from './Utils.js';
 import {
-	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector
+	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector, unitVec
 } from './Geometry.js';
 import {getColor} from './Debug.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
@@ -114,7 +114,7 @@ export class ChemBond extends CanvasCitizen {
 	recalcDims() {
 		this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 		this.len = vecLen(this.difxy); // Distance between nodes
-		this.uv = vecDiv(this.difxy, this.len); // Unit vector
+		this.uv = unitVec(this.difxy); // Unit vector
 		this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
 		this.rotang = Math.atan2(...this.uv.toReversed()); // Rotation angle of the bond
 		this.recalcLims();

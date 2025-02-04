@@ -200,7 +200,7 @@ export class ChemNode extends CanvasCitizen {
 
 	computeBondsJunc(bond0, bond1) {
 		var cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
-		if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
+		if (Math.abs(cos_a) > Math.cos(Math.PI / 24) || !bond0.len || !bond1.len) {
 			bond0.setHalfButt(this, true);
 			bond1.setHalfButt(this, false);
 		}
