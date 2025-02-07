@@ -13,6 +13,7 @@ export class ControlPoint extends IdHolder {
 			{width: 10, height: 10, class: 'control-point', id: id});
 		this.shape.objref = this;
 		this.shape.is_shape = true;
+		this.shape.is_cp = true;
 
 		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
 		this.shape.addEventListener('mousedown', this.focus);

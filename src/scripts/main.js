@@ -561,6 +561,11 @@ function pickNode(pt) {
 	return (pt_elem != null && pt_elem.is_atom) ? pt_elem.objref : null;
 }
 
+function pickCp(pt) {
+	var pt_elem = document.elementFromPoint(...getScreenPoint(pt));
+	return (pt_elem != null && pt_elem.is_cp) ? pt_elem.objref : null;
+}
+
 function getBondEnd(event, pt0) {
 	var [pt1, node1] = pickNodePoint(event);
 	var difxy = vecDif(pt0, pt1);
@@ -1121,9 +1126,11 @@ function lineHandler(btn, LineClass, attr_name) {
 	function stLine(event) { // Start drawing line. Called when mouse button 1 is down.
 		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			pt0 = getSvgPoint(event);
+			if (event.shiftKey) pt0 = pt0.map(val => Math.round(val / 10) * 10);
 			new_line_id = LineClass.getNewId();
 			new_cp0_id = ControlPoint.getNewId();
 			new_cp1_id = ControlPoint.getNewId();
+			movLine(event);
 			window.addEventListener('mousemove', movLine);
 			window.addEventListener('mouseup', enLine);
 		}
@@ -1137,6 +1144,7 @@ function lineHandler(btn, LineClass, attr_name) {
 	function movLine(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
+		if (event.shiftKey) pt1 = pt1.map(val => Math.round(val / 10) * 10);
 		let kwargs = {[attr_name]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
 		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
@@ -1383,6 +1391,7 @@ class SelectionBase {
 	prepareGroup() {} // Helper
 
 	initCtrPtErrSpecialCase() { // Helper
+		this.init_ctr_pt_error = [0, 0];
 		return false;
 	}
 
@@ -1392,7 +1401,7 @@ class SelectionBase {
 		this.accum_vec = [0, 0];
 		this.pt = getSvgPoint(event);
 		this.prepareGroup();
-		if (!this.initCtrPtErrSpecialCase()) this.init_ctr_pt_error = [0, 0];
+		this.initCtrPtErrSpecialCase();
 		this.mo_st = vecDif(this.init_ctr_pt_error, this.pt);
 
 		window.addEventListener('mousemove', this.moving);
@@ -1400,11 +1409,12 @@ class SelectionBase {
 	}
 
 	corrPtSpecialCase(event) { // Helper
+		this.corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
 		return false;
 	}
 
 	moving(event) { // Active moving
-		if (!this.corrPtSpecialCase(event)) this.corrected_point = vecDif(this.init_ctr_pt_error, getSvgPoint(event));
+		this.corrPtSpecialCase(event);
 		var moving_vec = vecDif(this.mo_st, this.corrected_point);
 		
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
@@ -1576,6 +1586,30 @@ class SelectionShape extends SelectionBase {
 		this.subSelect();
 	}
 
+	prepareGroup() {
+		super.prepareGroup();
+		this.pointed_cp = pickCp(this.pt)
+	}
+
+	initCtrPtErrSpecialCase() {
+		let flag = super.initCtrPtErrSpecialCase();
+		if (!flag && this.pointed_cp) {
+			this.init_ctr_pt_error = vecDif(this.pointed_cp.xy, this.pt);
+			flag = true;
+		}
+		return flag;
+	}
+
+	corrPtSpecialCase(event) {
+		let flag = super.corrPtSpecialCase(event);
+		if (!flag && this.pointed_cp) {
+			let pt = getSvgPoint(event);
+			if (event.shiftKey) this.corrected_point = pt.map(val => Math.round(val / 10) * 10);
+			flag = true;
+		}
+		return flag;
+	}
+
 	updateNewCopySubIds(id_map) { // Get new IDs for control points
 		for (const cls of this.citizens.filter(cls => cls.shape)) {
 			for (const [id, data] of Object.entries(this.clipboard.kwargs[cls.cr_cmd_name])) {
@@ -1612,6 +1646,7 @@ class SelectionChem extends SelectionShape {
 	};
 
 	prepareGroup() {
+		super.prepareGroup();
 		this.eventsOff();
 		this.pointed_atom = pickNode(this.pt); // Moved atom, pointed by the cursor
 		this.join_cmd = null;
@@ -1654,19 +1689,22 @@ class SelectionChem extends SelectionShape {
 	}
 
 	corrPtSpecialCase(event) {
-		let pt = getSvgPoint(event);
 		let flag = super.corrPtSpecialCase(event);
-		let to_join = event.shiftKey && event.target.is_atom && this.pointed_atom;
-		let to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
-		let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt, this.pointed_atom.xy));
+		if (!flag && this.pointed_atom) {
+			let pt = getSvgPoint(event);
+			let to_join = event.shiftKey && event.target.is_atom;
+			let to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
+			let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt, this.pointed_atom.xy));
 
-		if (!skip) {
-			if ((this.join_cmd && !to_join) || to_rejoin) this.disjoinMols();
-			if ((!this.join_cmd && to_join) || to_rejoin) this.joinMols(event);
-		}
+			if (!skip) {
+				if ((this.join_cmd && !to_join) || to_rejoin) this.disjoinMols();
+				if ((!this.join_cmd && to_join) || to_rejoin) this.joinMols(event);
+			}
 
-		if (to_join) {
-			this.corrected_point = skip ? this.pointed_atom.xy : event.target.objref.xy;
+			if (to_join) {
+				this.corrected_point = skip ? this.pointed_atom.xy : event.target.objref.xy;
+			}
+
 			flag = true;
 		}
 		return flag;
