@@ -439,8 +439,8 @@ function invertCmd(kwargs_dir) {
 	let kwargs_rev = {};
 
 	// Chem inverts
-	kwargs_rev.new_atoms_data = gatherData(kwargs_dir.del_atoms);
-	kwargs_rev.new_bonds_data = gatherData(kwargs_dir.del_bonds);
+	if (kwargs_dir.del_atoms) kwargs_rev.new_atoms_data = gatherData(kwargs_dir.del_atoms);
+	if (kwargs_dir.del_bonds) kwargs_rev.new_bonds_data = gatherData(kwargs_dir.del_bonds);
 	if (kwargs_dir.new_atoms_data) kwargs_rev.del_atoms = new Set(Object.keys(kwargs_dir.new_atoms_data));
 	if (kwargs_dir.new_bonds_data) kwargs_rev.del_bonds = new Set(Object.keys(kwargs_dir.new_bonds_data));
 	if (kwargs_dir.atoms_text) kwargs_rev.atoms_text = Object.fromEntries(Object.keys(kwargs_dir.atoms_text).map(
@@ -827,6 +827,7 @@ function deleteHandler(delbtn) {
 			};
 			else if (focobj_cls == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
 			else if (focobj_cls == Line) kwargs = {del_lines: new Set([focobj.id])};
+			else if (focobj_cls == Arrow) kwargs = {del_arrows: new Set([focobj.id])};
 			dispatcher.do(kwargs);
 			refreshBondCutouts();
 		}
