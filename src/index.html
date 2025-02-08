@@ -65,7 +65,7 @@
 			<div id="canvas-container">
 				<svg id="canvas" width="670" height="570" display="block"> <!-- Main canvas -->
 					<g filter="url(#shadow)">
-						<rect id="canvbckgrnd" class="brick" x="0" y="0" width="666" height="566" fill="white" clip-path="url(#cnvclip)" />
+						<rect id="canvbckgrnd" x="0" y="0" width="666" height="566" fill-opacity="0.9" clip-path="url(#cnvclip)" fill="white"/>
 					</g>
 					<g id="drawings" clip-path="url(#cnvclip)" >
 						<g id="sensors">
@@ -90,9 +90,17 @@
 					</g>
 					<defs id="bondcutouts"></defs>
 					<defs id="bondpatterns"></defs>
-					<clipPath id="cnvclip">
-						<path id="cnvclippath" clip-rule="evenodd" />
-					</clipPath>
+					<defs id="cnvdefs">
+						<clipPath id="cnvclip">
+							<path id="cnvclippath" clip-rule="evenodd" />
+						</clipPath>
+						<pattern id="chessgrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+							<rect x="0" y="0" width="10" height="10" fill="white"></rect>
+							<rect x="10" y="0" width="10" height="10" fill="white" fill-opacity="0.9"></rect>
+							<rect x="10" y="10" width="10" height="10" fill="white"></rect>
+							<rect x="0" y="10" width="10" height="10" fill="white" fill-opacity="0.9"></rect>
+						</pattern>
+					</defs>
 				</svg>
 			</div>
 		</div>

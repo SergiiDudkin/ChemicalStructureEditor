@@ -427,6 +427,17 @@ svgWidth();
 window.addEventListener('resize', svgWidth);
 window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse());
 
+function showChessGrid() {
+	canvbckgrnd.setAttribute('fill', 'url(#chessgrid)');
+}
+
+function hideGrid() {
+	canvbckgrnd.setAttribute('fill', 'white');
+}
+
+window.showChessGrid = showChessGrid;
+window.hideGrid = hideGrid;
+
 
 const transform_inverts = Object.freeze({
 	[MOVE]: ({moving_vec}) => ({moving_vec: vecMul(moving_vec, -1)}),
