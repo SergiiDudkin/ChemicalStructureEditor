@@ -101,7 +101,11 @@ export class ShapeBase extends CanvasCitizen {
 	static parents = {
 		...this.prototype.constructor.parents, 
 		[SHAPE]: document.getElementById('shapes')
-	}
+	};
+
+	static sensor_flags = {
+		is_shape: true
+	};
 
 	// Public info
 	static movable = false;
@@ -112,7 +116,7 @@ export class ShapeBase extends CanvasCitizen {
 		fill: 'black',
 		'stroke-linejoin': 'arcs',
 		'stroke-width': 2
-	}
+	};
 
 	select() {
 		this.eventsOff();
@@ -187,8 +191,7 @@ export class ShapeBase extends CanvasCitizen {
 		this.layers[SENSOR].id = this.id;
 		this.layers[SENSOR].objref = this;
 		elements.forEach(el => {
-			el.is_line = true;
-			el.is_shape = true;
+			for (const [key, val] of Object.entries(this.constructor.sensor_flags)) el[key] = val;
 			el.objref = this;
 		});
 	}
@@ -212,6 +215,11 @@ export class Line extends ShapeBase {
 		...this.prototype.constructor.parents, 
 		[SENSOR]: document.getElementById('sensors_l')
 	}
+
+	static sensor_flags = {
+		...this.prototype.constructor.sensor_flags,
+		is_line: true
+	};
 
 	// Public info
 	static name = 'lines';
@@ -239,6 +247,11 @@ export class Line extends ShapeBase {
 
 
 export class Arrow extends Line {
+	static sensor_flags = {
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
+		is_arrow: true
+	};
+
 	static parents = {
 		...this.prototype.constructor.parents, 
 		[SENSOR]: document.getElementById('sensors_r')

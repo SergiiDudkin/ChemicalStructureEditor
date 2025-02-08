@@ -818,7 +818,7 @@ function deleteHandler(delbtn) {
 
 	function erase(event) { // Active eraser
 		var kwargs;
-		if (event.target.is_atom || event.target.is_bond || event.target.is_line) {
+		if (event.target.is_atom || event.target.is_bond || (event.target.is_shape && !event.target.is_cp)) {
 			var focobj = event.target.objref;
 			let focobj_cls = focobj.constructor;
 			if (focobj_cls == ChemNode) kwargs = {
