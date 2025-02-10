@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow} from './ControlPoint.js';
+import {ControlPoint, Line, Arrow, Polyline} from './ControlPoint.js';
 import {SENSOR} from './BaseClasses.js';
 
 
@@ -408,6 +408,7 @@ var heptagonbtn = new SubButton(dropcycbtn,
 );
 var linebtn = new RegularButton(flex_container, toBtnText('li'));
 var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
+var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -464,8 +465,10 @@ function invertCmd(kwargs_dir) {
 	// Shape inverts
 	kwargs_rev.new_lines_data = gatherData(kwargs_dir.del_lines);
 	kwargs_rev.new_arrows_data = gatherData(kwargs_dir.del_arrows);
+	kwargs_rev.new_polylines_data = gatherData(kwargs_dir.del_polylines);
 	if (kwargs_dir.new_lines_data) kwargs_rev.del_lines = new Set(Object.keys(kwargs_dir.new_lines_data));
 	if (kwargs_dir.new_arrows_data) kwargs_rev.del_arrows = new Set(Object.keys(kwargs_dir.new_arrows_data));
+	if (kwargs_dir.new_polylines_data) kwargs_rev.del_polylines = new Set(Object.keys(kwargs_dir.new_polylines_data));
 
 	// Common transforms
 	if (kwargs_dir.transforms) {
@@ -484,7 +487,7 @@ class Dispatcher {
 		this.inverter = inverter;
 		this.postaction = postaction;
 		this.callback = callback;
-		document.addEventListener('keydown', event => this.keyHandler(event));
+		document.addEventListener('keydown', event => this.keyHandler(event)); // !!! ToDo: bind and simplify
 	}
 
 	addCmd(args_dir, args_rev) {
@@ -1125,7 +1128,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 }
 
 
-function lineHandler(btn, LineClass, attr_name) {
+function lineHandler(btn, LineClass) {
 	var pt0, new_line_id, new_cp0_id, new_cp1_id;
 	btn.mask_g.addEventListener('click', crLine);
 
@@ -1157,7 +1160,7 @@ function lineHandler(btn, LineClass, attr_name) {
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
 		if (event.shiftKey) pt1 = pt1.map(val => Math.round(val / 10) * 10);
-		let kwargs = {[attr_name]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
+		let kwargs = {[LineClass.cr_cmd_name]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}};
 		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
@@ -1167,6 +1170,54 @@ function lineHandler(btn, LineClass, attr_name) {
 		window.removeEventListener('mouseup', enLine);
 		window.removeEventListener('mousemove', movLine);
 		document.getElementById(new_line_id).objref.eventsOn();
+	}
+}
+
+
+function multipointHandler(btn, LineClass) {
+	var pts, new_polyline_id;
+	btn.mask_g.addEventListener('click', crPolyine);
+
+	// eslint-disable-next-line no-unused-vars
+	function crPolyine(event) { // Create line. Called when the line button is cklicked.
+		btn.selectCond();
+		stNewPolyline(event);
+		window.addEventListener('mousedown', setPt);
+		document.addEventListener('keydown', keyHandler);
+	}
+
+	function setPt(event) { // Start drawing line. Called when mouse button 1 is down.
+		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
+			let pt = getSvgPoint(event);
+			pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
+			pts.push([ControlPoint.getNewId(), ...pt]);
+			if (pts.length > 1) {
+				if (document.getElementById(new_polyline_id) != null) {
+					dispatcher.undo();
+				};
+				const kwargs = {[LineClass.cr_cmd_name]: {[new_polyline_id]: [pts]}};
+				dispatcher.do(kwargs);
+			}
+		}
+		else { // Line starts outside of canvas. Exit drawing.
+			window.removeEventListener('mousedown', setPt);
+			document.removeEventListener('keydown', keyHandler);
+			btn.deselectCond(event);
+		}
+	}
+
+	function stNewPolyline() {
+		pts = [];
+		new_polyline_id = LineClass.getNewId();
+	}
+
+	function keyHandler(event) {
+		if (event.keyCode === 9) stNewPolyline(); // Tab is pressed
+	}
+
+	// eslint-disable-next-line no-unused-vars
+	function enLine(event) { // Finish drawing bond
+		window.removeEventListener('mousedown', setPt);
 	}
 }
 
@@ -1582,10 +1633,10 @@ class SelectionBase {
 
 
 class SelectionShape extends SelectionBase {
-	static classes = [...this.prototype.constructor.classes, ControlPoint, Line, Arrow];
+	static classes = [...this.prototype.constructor.classes, ControlPoint, Line, Arrow, Polyline];
 
 	get shapes() {
-		return [...this.lines, ...this.arrows];
+		return [...this.lines, ...this.arrows, ...this.polylines];
 	}
 
 	subSelect() {
@@ -2119,5 +2170,6 @@ polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
-lineHandler(linebtn, Line, 'new_lines_data');
-lineHandler(arrowbtn, Arrow, 'new_arrows_data');
+lineHandler(linebtn, Line);
+lineHandler(arrowbtn, Arrow);
+multipointHandler(polylinebtn, Polyline);

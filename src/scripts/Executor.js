@@ -1,6 +1,6 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {Line, Arrow} from './ControlPoint.js';
+import {Line, Arrow, Polyline} from './ControlPoint.js';
 import {vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 
 
@@ -21,8 +21,8 @@ export function editStructure({
 	new_atoms_data={}, new_bonds_data={},
 	del_atoms=new Set(), del_bonds=new Set(),
 	atoms_text={}, bonds_type={},
-	new_lines_data={}, new_arrows_data={},
-	del_lines=new Set(), del_arrows=new Set(),
+	new_lines_data={}, new_arrows_data={}, new_polylines_data={},
+	del_lines=new Set(), del_arrows=new Set(), del_polylines=new Set(),
 	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
 }) {
 	// Split kwargs
@@ -34,8 +34,10 @@ export function editStructure({
 	}
 
 	let shape_kwargs = {
-		new_lines_data: new_lines_data, del_lines: del_lines, transforms: new Array(),
-		new_arrows_data: new_arrows_data, del_arrows: del_arrows, transforms: new Array()
+		new_lines_data: new_lines_data, del_lines: del_lines,
+		new_arrows_data: new_arrows_data, del_arrows: del_arrows, 
+		new_polylines_data: new_polylines_data, del_polylines: del_polylines,
+		transforms: new Array()
 	}
 
 	// Split transforms
@@ -225,8 +227,8 @@ export function editChem({
 
 
 export function editShapes({
-	new_lines_data={}, new_arrows_data={},
-	del_lines=new Set(), del_arrows=new Set(),
+	new_lines_data={}, new_arrows_data={}, new_polylines_data={},
+	del_lines=new Set(), del_arrows=new Set(), del_polylines=new Set(),
 	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
 }) {
 	var ctr_pts_render = new Set(),
@@ -242,18 +244,30 @@ export function editShapes({
 		document.getElementById(arrow_id).objref.delete();
 	}
 
+	// Delete polylines
+	for (const polyline_id of del_polylines) {
+		document.getElementById(polyline_id).objref.delete();
+	}
+
 	// Create lines
 	for (const [id, data] of Object.entries(new_lines_data)) {
-		let new_line = new Line(id, ...data); // data: [x, y, text]
+		let new_line = new Line(id, ...data);
 		shapes_render.add(new_line);
 		new_line.cps.forEach(cp => ctr_pts_render.add(cp));
 	}
 
 	// Create arrows
 	for (const [id, data] of Object.entries(new_arrows_data)) {
-		let new_arrow = new Arrow(id, ...data); // data: [x, y, text]
+		let new_arrow = new Arrow(id, ...data);
 		shapes_render.add(new_arrow);
 		new_arrow.cps.forEach(cp => ctr_pts_render.add(cp));
+	}
+
+	// Create polylines
+	for (const [id, data] of Object.entries(new_polylines_data)) {
+		let new_polyline = new Polyline(id, ...data);
+		shapes_render.add(new_polyline);
+		new_polyline.cps.forEach(cp => ctr_pts_render.add(cp));
 	}
 
 	// Transforms

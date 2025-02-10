@@ -286,3 +286,57 @@ export class Arrow extends Line {
 		return [line, triangle];
 	}
 }
+
+
+export class Polyline extends ShapeBase {
+	static parents = {
+		...this.prototype.constructor.parents, 
+		[SENSOR]: document.getElementById('sensors_p')
+	}
+
+	static sensor_flags = {
+		...this.prototype.constructor.sensor_flags,
+		is_line: true
+	};
+
+	// Public info
+	static name = 'polylines';
+	static cr_cmd_name = 'new_polylines_data';
+	static del_cmd_name = 'del_polylines';
+
+	// static default_style = {
+	// 	...this.prototype.constructor.default_style,
+	// 	fill: 'none'
+	// };
+
+	static id_prefix = 'p';
+
+	calcCoordinates() {
+		this.coords = [{points: this.cps.map(cp => cp.xy.join()).join(' ')}];
+	}
+
+	getData() {
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
+	}
+
+	recalcCtr() {
+		// x_es = this.cps.map(cp => cp.xy[0]);
+		// y_es = this.cps.map(cp => cp.xy[1]);
+		// xy_s = [this.cps.map(cp => cp.xy[0]), this.cps.map(cp => cp.xy[1])];
+		// this.xy = [(Math.min(...x_es) + Math.max(...x_es)) / 2, (Math.min(...x_es) + Math.max(...x_es)) / 2];
+
+		// xy_s = [0, 1].map(i => this.cps.map(cp => cp.xy[i]));
+		// this.xy = xy_s.map(vals => (Math.min(...vals) + Math.max(...vals)) / 2);
+
+		this.xy = [0, 1].map(i => {
+			let vals = this.cps.map(cp => cp.xy[i]);
+			return (Math.min(...vals) + Math.max(...vals)) / 2;
+		});
+	}
+
+	createElements(layer_idx, attrs) {
+		attrs.fill = 'none';
+		return [attachSvg(this.layers[layer_idx], 'polyline', {...attrs, ...this.coords[0]})];
+	}
+}
+
