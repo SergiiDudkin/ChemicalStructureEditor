@@ -1183,6 +1183,7 @@ function multipointHandler(btn, LineClass) {
 		btn.selectCond();
 		stNewPolyline(event);
 		window.addEventListener('mousedown', setPt);
+		window.addEventListener('mousemove', movPolyline);
 		document.addEventListener('keydown', keyHandler);
 	}
 
@@ -1191,28 +1192,47 @@ function multipointHandler(btn, LineClass) {
 			let pt = getSvgPoint(event);
 			pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
 			pts.push([ControlPoint.getNewId(), ...pt]);
-			if (pts.length > 1) {
-				if (document.getElementById(new_polyline_id) != null) {
-					dispatcher.undo();
-				};
-				const kwargs = {[LineClass.cr_cmd_name]: {[new_polyline_id]: [pts]}};
-				dispatcher.do(kwargs);
-			}
+			updatePolyline(pts);
 		}
 		else { // Line starts outside of canvas. Exit drawing.
+			window.removeEventListener('mousemove', movPolyline);
 			window.removeEventListener('mousedown', setPt);
 			document.removeEventListener('keydown', keyHandler);
+			const new_polyline = document.getElementById(new_polyline_id);
+			if (new_polyline != null) new_polyline.objref.eventsOn();
 			btn.deselectCond(event);
 		}
 	}
 
 	function stNewPolyline() {
+		const new_polyline = document.getElementById(new_polyline_id);
+		if (new_polyline != null) new_polyline.objref.eventsOn();
 		pts = [];
 		new_polyline_id = LineClass.getNewId();
 	}
 
 	function keyHandler(event) {
+		event.preventDefault();
+		updatePolyline(pts);
 		if (event.keyCode === 9) stNewPolyline(); // Tab is pressed
+	}
+
+	function movPolyline(event) { // Move second end of the drawn bond
+		let pt = getSvgPoint(event);
+		pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
+		updatePolyline([...pts, [ControlPoint.getNewId(), ...pt]]);
+	}
+
+	function updatePolyline(points) {
+		if (document.getElementById(new_polyline_id) != null) {
+			dispatcher.undo();
+			dispatcher.commands.pop();
+		}
+		if (points.length > 1) {
+			const kwargs = {[LineClass.cr_cmd_name]: {[new_polyline_id]: [points]}};
+			dispatcher.do(kwargs);
+			document.getElementById(new_polyline_id).objref.eventsOff();
+		}
 	}
 
 	// eslint-disable-next-line no-unused-vars

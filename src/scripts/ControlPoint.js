@@ -304,11 +304,6 @@ export class Polyline extends ShapeBase {
 	static cr_cmd_name = 'new_polylines_data';
 	static del_cmd_name = 'del_polylines';
 
-	// static default_style = {
-	// 	...this.prototype.constructor.default_style,
-	// 	fill: 'none'
-	// };
-
 	static id_prefix = 'p';
 
 	calcCoordinates() {
@@ -320,14 +315,6 @@ export class Polyline extends ShapeBase {
 	}
 
 	recalcCtr() {
-		// x_es = this.cps.map(cp => cp.xy[0]);
-		// y_es = this.cps.map(cp => cp.xy[1]);
-		// xy_s = [this.cps.map(cp => cp.xy[0]), this.cps.map(cp => cp.xy[1])];
-		// this.xy = [(Math.min(...x_es) + Math.max(...x_es)) / 2, (Math.min(...x_es) + Math.max(...x_es)) / 2];
-
-		// xy_s = [0, 1].map(i => this.cps.map(cp => cp.xy[i]));
-		// this.xy = xy_s.map(vals => (Math.min(...vals) + Math.max(...vals)) / 2);
-
 		this.xy = [0, 1].map(i => {
 			let vals = this.cps.map(cp => cp.xy[i]);
 			return (Math.min(...vals) + Math.max(...vals)) / 2;
