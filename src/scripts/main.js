@@ -842,6 +842,7 @@ function deleteHandler(delbtn) {
 			else if (focobj_cls == ChemBond) kwargs = {del_bonds: new Set([focobj.id])};
 			else if (focobj_cls == Line) kwargs = {del_lines: new Set([focobj.id])};
 			else if (focobj_cls == Arrow) kwargs = {del_arrows: new Set([focobj.id])};
+			else if (focobj_cls == Polyline) kwargs = {del_polylines: new Set([focobj.id])};
 			dispatcher.do(kwargs);
 			refreshBondCutouts();
 		}
@@ -1166,7 +1167,7 @@ function lineHandler(btn, LineClass) {
 	}
 
 	// eslint-disable-next-line no-unused-vars
-	function enLine(event) { // Finish drawing bond
+	function enLine(event) { // Finish drawing line
 		window.removeEventListener('mouseup', enLine);
 		window.removeEventListener('mousemove', movLine);
 		document.getElementById(new_line_id).objref.eventsOn();
@@ -1175,10 +1176,12 @@ function lineHandler(btn, LineClass) {
 
 
 function multipointHandler(btn, LineClass) {
-	var pts, new_polyline_id;
+	let new_polyline_id;
+	let cmd = null;
+	let pts = [];
+	let new_cp_id = ControlPoint.getNewId();
 	btn.mask_g.addEventListener('click', crPolyine);
 
-	// eslint-disable-next-line no-unused-vars
 	function crPolyine(event) { // Create line. Called when the line button is cklicked.
 		btn.selectCond();
 		stNewPolyline(event);
@@ -1191,53 +1194,54 @@ function multipointHandler(btn, LineClass) {
 		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			let pt = getSvgPoint(event);
 			pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
-			pts.push([ControlPoint.getNewId(), ...pt]);
+			pts.push([new_cp_id, ...pt]); // Consumes new_cp_id
+			new_cp_id = ControlPoint.getNewId();
 			updatePolyline(pts);
 		}
 		else { // Line starts outside of canvas. Exit drawing.
 			window.removeEventListener('mousemove', movPolyline);
 			window.removeEventListener('mousedown', setPt);
 			document.removeEventListener('keydown', keyHandler);
-			const new_polyline = document.getElementById(new_polyline_id);
-			if (new_polyline != null) new_polyline.objref.eventsOn();
+			finishCurrPolyline();
 			btn.deselectCond(event);
 		}
 	}
 
 	function stNewPolyline() {
-		const new_polyline = document.getElementById(new_polyline_id);
-		if (new_polyline != null) new_polyline.objref.eventsOn();
+		finishCurrPolyline();
+		cmd = null;
 		pts = [];
 		new_polyline_id = LineClass.getNewId();
 	}
 
+	function finishCurrPolyline() {
+		if (cmd) editStructure(cmd[1]); // Undo
+		if (pts.length > 1) dispatcher.do(getKwargs(pts)); // Do by dispatcher
+	}
+
 	function keyHandler(event) {
 		event.preventDefault();
-		updatePolyline(pts);
 		if (event.keyCode === 9) stNewPolyline(); // Tab is pressed
 	}
 
 	function movPolyline(event) { // Move second end of the drawn bond
 		let pt = getSvgPoint(event);
 		pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
-		updatePolyline([...pts, [ControlPoint.getNewId(), ...pt]]);
+		updatePolyline([...pts, [new_cp_id, ...pt]]);
 	}
 
 	function updatePolyline(points) {
-		if (document.getElementById(new_polyline_id) != null) {
-			dispatcher.undo();
-			dispatcher.commands.pop();
-		}
+		if (cmd) editStructure(cmd[1]); // Undo
 		if (points.length > 1) {
-			const kwargs = {[LineClass.cr_cmd_name]: {[new_polyline_id]: [points]}};
-			dispatcher.do(kwargs);
+			const kwargs = getKwargs(points);
+			cmd = [kwargs, invertCmd(kwargs)];
+			editStructure(cmd[0]); // Do
 			document.getElementById(new_polyline_id).objref.eventsOff();
 		}
 	}
 
-	// eslint-disable-next-line no-unused-vars
-	function enLine(event) { // Finish drawing bond
-		window.removeEventListener('mousedown', setPt);
+	function getKwargs(points) {
+		return {[LineClass.cr_cmd_name]: {[new_polyline_id]: [points]}};
 	}
 }
 
