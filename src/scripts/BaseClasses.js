@@ -4,8 +4,33 @@ export const HIGHLIGHT = 2;
 export const SELECTHOLE = 3;
 
 
-export class IdHolder {
+export const registry = {
+	classes: {},
+
+	classes_vals: [],
+
+	register(cls) {
+		this.classes[cls.alias] = cls;
+		this.classes_vals.push(cls);
+		return true;
+	},
+
+	get citizens() {
+		return this.classes_vals.filter(cls => cls.citizen)
+	}
+}
+
+window.registry = registry; // !!! Temp, for debug !!!
+
+
+export class Registered {
+	static register() {registry.register(this)};
+}
+
+
+export class IdHolder extends Registered{
 	constructor(id) {
+		super();
 		this.id = id;
 	}
 

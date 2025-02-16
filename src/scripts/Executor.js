@@ -2,6 +2,7 @@ import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
 import {Line, Arrow, Polyline} from './ControlPoint.js';
 import {vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
+import {registry} from './BaseClasses.js';
 
 
 export const MOVE = 1;
@@ -17,39 +18,30 @@ const transform_funcs = Object.freeze({
 });
 
 
-export function editStructure({
-	new_atoms_data={}, new_bonds_data={},
-	del_atoms=new Set(), del_bonds=new Set(),
-	atoms_text={}, bonds_type={},
-	new_lines_data={}, new_arrows_data={}, new_polylines_data={},
-	del_lines=new Set(), del_arrows=new Set(), del_polylines=new Set(),
-	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
-}) {
-	// Split kwargs
-	let chem_kwargs = {
-		new_atoms_data: new_atoms_data , new_bonds_data: new_bonds_data,
-		del_atoms: del_atoms, del_bonds: del_bonds,
-		atoms_text: atoms_text, bonds_type: bonds_type,
-		transforms: new Array()
-	}
+export function editStructure({create={}, del={}, alter={}, transforms=new Array()}) {
+	const chem_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
+	const shape_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
 
-	let shape_kwargs = {
-		new_lines_data: new_lines_data, del_lines: del_lines,
-		new_arrows_data: new_arrows_data, del_arrows: del_arrows, 
-		new_polylines_data: new_polylines_data, del_polylines: del_polylines,
-		transforms: new Array()
-	}
+	for (const [subcmd_name, subcmd_val] of Object.entries(arguments[0])) {
+		if (subcmd_name == 'transforms') {
+			for (const [type, ids, params] of transforms) {
+				const chem_ids = new Set();
+				const shape_ids = new Set();
+				const id_sorter = {a: chem_ids, c: shape_ids};
+				ids.forEach(id => id_sorter[id[0]].add(id));
 
-	// Split transforms
-	for (const [type, ids, params] of transforms) {
-		let chem_ids = new Set();
-		let shape_ids = new Set();
-		let id_sorter = {a: chem_ids, c: shape_ids};
-		ids.forEach(id => id_sorter[id[0]].add(id));
-
-		// Puch if not redundant
-		if (chem_ids.size) chem_kwargs.transforms.push([type, chem_ids, params]);
-		if (shape_ids.size) shape_kwargs.transforms.push([type, shape_ids, params]);
+				// Puch if not redundant
+				if (chem_ids.size) chem_kwargs.transforms.push([type, chem_ids, params]);
+				if (shape_ids.size) shape_kwargs.transforms.push([type, shape_ids, params]);
+			}
+		}
+		else {
+			for (const [cls_alias, content] of Object.entries(subcmd_val)) {
+				const cls = registry.classes[cls_alias];
+				const is_shape = cls.shape || cls.control_point;
+				(is_shape ? shape_kwargs : chem_kwargs)[subcmd_name][cls_alias] = content;
+			}
+		}
 	}
 
 	editChem(chem_kwargs);
@@ -57,12 +49,7 @@ export function editStructure({
 }
 
 
-export function editChem({
-	new_atoms_data={}, new_bonds_data={},
-	del_atoms=new Set(), del_bonds=new Set(),
-	atoms_text={}, bonds_type={},
-	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
-}) {
+export function editChem({create={}, del={}, alter={}, transforms=new Array()}) {
 	var atoms_parse = new Set(),
 		atoms_render = new Set(),
 		atoms_auto_d_bond = new Set(),
@@ -74,13 +61,18 @@ export function editChem({
 		bonds_update_rect = new Set(),
 		bonds_scewed = new Set();
 
+	// Set empty collections by default
+	create = Object.assign({atoms: {}, bonds: {}}, create);
+	alter = Object.assign({atoms: {}, bonds: {}}, alter);
+	del = Object.assign({atoms: new Set(), bonds: new Set()}, del);
+
 	// Delete bonds
-	for (const bond_id of del_bonds) {
+	for (const bond_id of del.bonds) {
 		let bond = document.getElementById(bond_id).objref;
 		let bond_nodes = bond.nodes;
 		bond.delete();
 		for (const node of bond_nodes) {
-			if (!del_atoms.has(node.id)) {
+			if (!del.atoms.has(node.id)) {
 				atoms_parse.add(node);
 				if (node.isMethane()) atoms_text_me[node.id] = node.text;
 				atoms_auto_d_bond.add(node);
@@ -90,22 +82,23 @@ export function editChem({
 	}
 
 	// Delete atoms
-	for (const atom_id of del_atoms) {
+	for (const atom_id of del.atoms) {
 		document.getElementById(atom_id).objref.delete();
 	}
 
 	// Create atoms
-	for (const [id, data] of Object.entries(new_atoms_data)) {
+	for (const [id, data] of Object.entries(create.atoms)) {
 		atoms_parse.add(new ChemNode(id, ...data)); // data: [x, y, text]
 	}
 
 	// Create bonds
-	for (const [id, data] of Object.entries(new_bonds_data)) {
+	for (const [id, data] of Object.entries(create.bonds)) {
 		let bond = new ChemBond(id, ...data); // data: [node0, node1, type]
 		bonds_update_rect.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
-			let no_text = atoms_text[node.id] == '' || !(atoms_text[node.id] || node.text);
+			const new_text = alter.atoms[node.id] && alter.atoms[node.id].text;
+			const no_text = new_text == '' || !(new_text || node.text);
 			if (no_text && node.connections.length == 1) atoms_text_me[node.id] = node.text;
 			atoms_auto_d_bond.add(node);
 			if (no_text) atoms_refresh_tips.add(node);
@@ -114,7 +107,8 @@ export function editChem({
 	}
 
 	// Edit atoms
-	Object.assign(atoms_text_me, atoms_text);
+	Object.entries(alter.atoms).forEach(([id, attrs]) => atoms_text_me[id] = attrs.text);
+	// Object.assign(atoms_text_me, alter.atoms);
 	for (const [node_id, text] of Object.entries(atoms_text_me)) {
 		let node = document.getElementById(node_id).objref;
 		node.text = text;
@@ -127,9 +121,9 @@ export function editChem({
 	}
 
 	// Edit bonds
-	for (const [bond_id, type] of Object.entries(bonds_type)) {
+	for (const [bond_id, attrs] of Object.entries(alter.bonds)) {
 		let bond = document.getElementById(bond_id).objref;
-		bond.setType(type);
+		bond.setType(attrs.type);
 		bonds_d_adjust.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
@@ -226,48 +220,22 @@ export function editChem({
 }
 
 
-export function editShapes({
-	new_lines_data={}, new_arrows_data={}, new_polylines_data={},
-	del_lines=new Set(), del_arrows=new Set(), del_polylines=new Set(),
-	transforms=new Array() // [[type, {ids}, {params: vals}], ...]
-}) {
+export function editShapes({create={}, del={}, alter={}, transforms=new Array()}) {
 	var ctr_pts_render = new Set(),
 		shapes_render = new Set();
 
-	// Delete lines
-	for (const line_id of del_lines) {
-		document.getElementById(line_id).objref.delete();
+	for (const ids of Object.values(del)) {
+		for (const id of ids) {
+			document.getElementById(id).objref.delete();
+		}
 	}
 
-	// Delete arrows
-	for (const arrow_id of del_arrows) {
-		document.getElementById(arrow_id).objref.delete();
-	}
-
-	// Delete polylines
-	for (const polyline_id of del_polylines) {
-		document.getElementById(polyline_id).objref.delete();
-	}
-
-	// Create lines
-	for (const [id, data] of Object.entries(new_lines_data)) {
-		let new_line = new Line(id, ...data);
-		shapes_render.add(new_line);
-		new_line.cps.forEach(cp => ctr_pts_render.add(cp));
-	}
-
-	// Create arrows
-	for (const [id, data] of Object.entries(new_arrows_data)) {
-		let new_arrow = new Arrow(id, ...data);
-		shapes_render.add(new_arrow);
-		new_arrow.cps.forEach(cp => ctr_pts_render.add(cp));
-	}
-
-	// Create polylines
-	for (const [id, data] of Object.entries(new_polylines_data)) {
-		let new_polyline = new Polyline(id, ...data);
-		shapes_render.add(new_polyline);
-		new_polyline.cps.forEach(cp => ctr_pts_render.add(cp));
+	for (const [cls_alias, content] of Object.entries(create)) {
+		for (const [id, data] of Object.entries(content)) {
+			let new_shape = new (registry.classes[cls_alias])(id, ...data);
+			shapes_render.add(new_shape);
+			new_shape.cps.forEach(cp => ctr_pts_render.add(cp));
+		}
 	}
 
 	// Transforms

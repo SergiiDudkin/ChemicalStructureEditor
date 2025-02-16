@@ -36,9 +36,8 @@ export class ChemBond extends CanvasCitizen {
 	}
 
 	// Public info
-	static name = 'bonds';
-	static cr_cmd_name = 'new_bonds_data';
-	static del_cmd_name = 'del_bonds';
+	static alias = 'bonds';
+	
 	static movable = false;
 
 	static id_prefix = 'b';
@@ -110,6 +109,8 @@ export class ChemBond extends CanvasCitizen {
 	static eventsOffAll() {
 		this.parents[SENSOR].classList.add('sympoi');
 	};
+
+	static is_registered = this.register();
 
 	recalcDims() {
 		this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes

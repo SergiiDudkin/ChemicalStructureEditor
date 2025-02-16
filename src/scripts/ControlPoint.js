@@ -24,10 +24,13 @@ export class ControlPoint extends IdHolder {
 	static id_prefix = 'cp';
 
 	// Public info
-	static name = 'control_points';
+	static alias = 'control_points';
 	static movable = true;
 	static citizen = false;
 	static shape = false;
+	static control_point = true;
+
+	static is_registered = this.register();
 
 	setCtr(xy) {
 		this.xy = [...xy];
@@ -222,11 +225,11 @@ export class Line extends ShapeBase {
 	};
 
 	// Public info
-	static name = 'lines';
-	static cr_cmd_name = 'new_lines_data';
-	static del_cmd_name = 'del_lines';
+	static alias = 'lines';
 
 	static id_prefix = 'l';
+
+	static is_registered = this.register();
 
 	calcCoordinates() {
 		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
@@ -258,13 +261,13 @@ export class Arrow extends Line {
 	}
 
 	// Public info
-	static name = 'arrows';
-	static cr_cmd_name = 'new_arrows_data';
-	static del_cmd_name = 'del_arrows';
+	static alias = 'arrows';
 
 	static id_prefix = 'r';
 
 	static triangle = [[-15, -5], [0, 0], [-15, 5]];
+
+	static is_registered = this.register();
 
 	calcCoordinates() {
 		const vec = vecDif(this.cps[0].xy, this.cps[1].xy);
@@ -300,11 +303,11 @@ export class Polyline extends ShapeBase {
 	};
 
 	// Public info
-	static name = 'polylines';
-	static cr_cmd_name = 'new_polylines_data';
-	static del_cmd_name = 'del_polylines';
+	static alias = 'polylines';
 
 	static id_prefix = 'p';
+
+	static is_registered = this.register();
 
 	calcCoordinates() {
 		this.coords = [{points: this.cps.map(cp => cp.xy.join()).join(' ')}];

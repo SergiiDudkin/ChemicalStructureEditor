@@ -38,9 +38,7 @@ export class ChemNode extends CanvasCitizen {
 	}
 
 	// Public info
-	static name = 'atoms';
-	static cr_cmd_name = 'new_atoms_data';
-	static del_cmd_name = 'del_atoms';
+	static alias = 'atoms';
 
 	static id_prefix = 'a';
 
@@ -53,6 +51,8 @@ export class ChemNode extends CanvasCitizen {
 	static sel_r = 12; // Selection circle radius
 
 	static hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
+
+	static is_registered = this.register();
 
 	delete() {
 		if (this.select_circ) {
