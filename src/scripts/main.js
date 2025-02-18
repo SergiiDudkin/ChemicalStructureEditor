@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow, Polyline} from './ControlPoint.js';
+import {ControlPoint, Line, Arrow, Polyline, Polygon} from './ControlPoint.js';
 import {SENSOR, registry} from './BaseClasses.js';
 
 
@@ -409,6 +409,7 @@ var heptagonbtn = new SubButton(dropcycbtn,
 var linebtn = new RegularButton(flex_container, toBtnText('li'));
 var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
 var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
+var polygbtn = new RegularButton(flex_container, toBtnText('pg'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -2200,3 +2201,4 @@ polygonHandler(benzenebtn, 6, true);
 lineHandler(linebtn, Line);
 lineHandler(arrowbtn, Arrow);
 multipointHandler(polylinebtn, Polyline);
+multipointHandler(polygbtn, Polygon);

@@ -255,7 +255,7 @@ export class Arrow extends Line {
 	};
 
 	static parents = {
-		...super.parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
 		[SENSOR]: document.getElementById('sensors_r')
 	}
 
@@ -298,7 +298,7 @@ export class Polyline extends ShapeBase {
 
 	static sensor_flags = {
 		...super.sensor_flags,
-		is_line: true
+		is_polyline: true
 	};
 
 	// Public info
@@ -329,3 +329,27 @@ export class Polyline extends ShapeBase {
 	}
 }
 
+
+export class Polygon extends Polyline {
+	static parents = {
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		[SENSOR]: document.getElementById('sensors_y')
+	}
+
+	static sensor_flags = {
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
+		is_polygon: true
+	};
+
+	// Public info
+	static alias = 'polygons';
+
+	static id_prefix = 'y';
+
+	static is_registered = this.register();
+
+	createElements(layer_idx, attrs) {
+		attrs.fill = 'none';
+		return [attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[0]})];
+	}
+}
