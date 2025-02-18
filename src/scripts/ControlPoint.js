@@ -27,8 +27,7 @@ export class ControlPoint extends IdHolder {
 	static alias = 'control_points';
 	static movable = true;
 	static citizen = false;
-	static shape = false;
-	static control_point = true;
+	static shape = true;
 
 	static is_registered = this.register();
 
@@ -102,7 +101,7 @@ export class ShapeBase extends CanvasCitizen {
 	}
 
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SHAPE]: document.getElementById('shapes')
 	};
 
@@ -215,12 +214,12 @@ export class ShapeBase extends CanvasCitizen {
 
 export class Line extends ShapeBase {
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_l')
 	}
 
 	static sensor_flags = {
-		...this.prototype.constructor.sensor_flags,
+		...super.sensor_flags,
 		is_line: true
 	};
 
@@ -256,7 +255,7 @@ export class Arrow extends Line {
 	};
 
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_r')
 	}
 
@@ -293,12 +292,12 @@ export class Arrow extends Line {
 
 export class Polyline extends ShapeBase {
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_p')
 	}
 
 	static sensor_flags = {
-		...this.prototype.constructor.sensor_flags,
+		...super.sensor_flags,
 		is_line: true
 	};
 

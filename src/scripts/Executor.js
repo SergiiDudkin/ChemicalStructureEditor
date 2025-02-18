@@ -38,7 +38,7 @@ export function editStructure({create={}, del={}, alter={}, transforms=new Array
 		else {
 			for (const [cls_alias, content] of Object.entries(subcmd_val)) {
 				const cls = registry.classes[cls_alias];
-				const is_shape = cls.shape || cls.control_point;
+				const is_shape = cls.shape;
 				(is_shape ? shape_kwargs : chem_kwargs)[subcmd_name][cls_alias] = content;
 			}
 		}

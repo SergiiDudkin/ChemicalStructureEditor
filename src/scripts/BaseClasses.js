@@ -17,6 +17,18 @@ export const registry = {
 
 	get citizens() {
 		return this.classes_vals.filter(cls => cls.citizen)
+	},
+
+	get shapes() {
+		return this.classes_vals.filter(cls => cls.shape)
+	},
+
+	get notShapes() {
+		return this.classes_vals.filter(cls => !cls.shape)
+	},
+
+	get citizensShapes() {
+		return this.classes_vals.filter(cls => cls.citizen && cls.shape)
 	}
 }
 

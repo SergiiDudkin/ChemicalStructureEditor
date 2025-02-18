@@ -30,7 +30,7 @@ export class ChemBond extends CanvasCitizen {
 	}
 
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_b'),
 		[SHAPE]: document.getElementById('bondsall')
 	}

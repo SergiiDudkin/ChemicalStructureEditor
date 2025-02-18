@@ -1174,15 +1174,13 @@ function lineHandler(btn, LineClass) {
 
 
 function multipointHandler(btn, LineClass) {
-	let new_polyline_id;
-	let cmd = null;
-	let pts = [];
+	let new_polyline_id, cmd, pts
 	let new_cp_id = ControlPoint.getNewId();
+	resetDrawing();
 	btn.mask_g.addEventListener('click', crPolyine);
 
 	function crPolyine(event) { // Create line. Called when the line button is cklicked.
 		btn.selectCond();
-		stNewPolyline(event);
 		window.addEventListener('mousedown', setPt);
 		window.addEventListener('mousemove', movPolyline);
 		document.addEventListener('keydown', keyHandler);
@@ -1205,8 +1203,7 @@ function multipointHandler(btn, LineClass) {
 		}
 	}
 
-	function stNewPolyline() {
-		finishCurrPolyline();
+	function resetDrawing() {
 		cmd = null;
 		pts = [];
 		new_polyline_id = LineClass.getNewId();
@@ -1215,11 +1212,12 @@ function multipointHandler(btn, LineClass) {
 	function finishCurrPolyline() {
 		if (cmd) editStructure(cmd[1]); // Undo
 		if (pts.length > 1) dispatcher.do(getKwargs(pts)); // Do by dispatcher
+		resetDrawing();
 	}
 
 	function keyHandler(event) {
 		event.preventDefault();
-		if (event.keyCode === 9) stNewPolyline(); // Tab is pressed
+		if (event.keyCode === 9) finishCurrPolyline(); // Tab is pressed
 	}
 
 	function movPolyline(event) { // Move second end of the drawn bond
@@ -1656,10 +1654,12 @@ class SelectionBase {
 
 
 class SelectionShape extends SelectionBase {
-	static classes = [...this.prototype.constructor.classes, ControlPoint, Line, Arrow, Polyline];
+	static classes = [...super.classes,  ...registry.shapes];
+
+	static shapes_names = registry.citizensShapes.map(cls => cls.alias);
 
 	get shapes() {
-		return [...this.lines, ...this.arrows, ...this.polylines];
+		return this.constructor.shapes_names.map(name => this[name]).flat();
 	}
 
 	subSelect() {
@@ -1708,12 +1708,14 @@ class SelectionShape extends SelectionBase {
 
 
 class SelectionChem extends SelectionShape {
-	static classes = [...this.prototype.constructor.classes, ChemNode, ChemBond];
+	static classes = [...super.classes, ...registry.notShapes];
 
-	static event_handlers = {keyUpHandler: 'keyup', ...this.prototype.constructor.event_handlers};
+	static event_handlers = {...super.event_handlers, keyUpHandler: 'keyup'};
+
+	static atomsbonds_names = registry.notShapes.map(cls => cls.alias);
 
 	get atomsbonds() {
-		return [...this.atoms, ...this.bonds];
+		return this.constructor.atomsbonds_names.map(name => this[name]).flat();
 	}
 
 	setSelectedItem(item) {

@@ -32,7 +32,7 @@ export class ChemNode extends CanvasCitizen {
 	}
 
 	static parents = {
-		...this.prototype.constructor.parents, 
+		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_a'),
 		[SHAPE]: document.getElementById('atomsall')
 	}
