@@ -147,11 +147,14 @@ export class ShapeBase extends CanvasCitizen {
 	}
 
 	getData() {
-		throw new Error('Override the abstract method!');
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
 	}
 
 	recalcCtr() {
-		throw new Error('Override the abstract method!');
+		this.xy = [0, 1].map(i => {
+			let vals = this.cps.map(cp => cp.xy[i]);
+			return (Math.min(...vals) + Math.max(...vals)) / 2;
+		});
 	}
 
 	render() {
@@ -234,14 +237,6 @@ export class Line extends ShapeBase {
 		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
 	}
 
-	getData() {
-		return [this.cps.map(cp => [cp.id, ...cp.xy])];
-	}
-
-	recalcCtr() {
-		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
-	}
-
 	createElements(layer_idx, attrs) {
 		return [attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0]})];
 	}
@@ -259,7 +254,6 @@ export class Arrow extends Line {
 		[SENSOR]: document.getElementById('sensors_r')
 	}
 
-	// Public info
 	static alias = 'arrows';
 
 	static id_prefix = 'r';
@@ -301,7 +295,6 @@ export class Circle extends ShapeBase {
 		[SENSOR]: document.getElementById('sensors_i')
 	}
 
-	// Public info
 	static alias = 'circles';
 
 	static id_prefix = 'i';
@@ -310,10 +303,6 @@ export class Circle extends ShapeBase {
 
 	calcCoordinates() {
 		this.coords = [{cx: this.cps[0].xy[0], cy: this.cps[0].xy[1], r: vecLen(vecDif(...(this.cps.map(cp => cp.xy))))}];
-	}
-
-	getData() {
-		return [this.cps.map(cp => [cp.id, ...cp.xy])];
 	}
 
 	recalcCtr() {
@@ -338,7 +327,6 @@ export class Rectangle extends ShapeBase {
 		[SENSOR]: document.getElementById('sensors_e')
 	}
 
-	// Public info
 	static alias = 'rectangles';
 
 	static id_prefix = 'e';
@@ -349,14 +337,6 @@ export class Rectangle extends ShapeBase {
 		const x1 = this.cps[0].xy[0], y1 = this.cps[0].xy[1], x2 = this.cps[1].xy[0], y2 = this.cps[1].xy[1];
 		this.coords = [{x: Math.min(x1, x2), y: Math.min(y1, y2), 
 			width: Math.abs(x2 - x1), height: Math.abs(y2 - y1)}];
-	}
-
-	getData() {
-		return [this.cps.map(cp => [cp.id, ...cp.xy])];
-	}
-
-	recalcCtr() {
-		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
 	}
 
 	createElements(layer_idx, attrs) {
@@ -377,7 +357,6 @@ export class Polyline extends ShapeBase {
 		is_polyline: true
 	};
 
-	// Public info
 	static alias = 'polylines';
 
 	static id_prefix = 'p';
@@ -386,17 +365,6 @@ export class Polyline extends ShapeBase {
 
 	calcCoordinates() {
 		this.coords = [{points: this.cps.map(cp => cp.xy.join()).join(' ')}];
-	}
-
-	getData() {
-		return [this.cps.map(cp => [cp.id, ...cp.xy])];
-	}
-
-	recalcCtr() {
-		this.xy = [0, 1].map(i => {
-			let vals = this.cps.map(cp => cp.xy[i]);
-			return (Math.min(...vals) + Math.max(...vals)) / 2;
-		});
 	}
 
 	createElements(layer_idx, attrs) {
@@ -417,7 +385,6 @@ export class Polygon extends Polyline {
 		is_polygon: true
 	};
 
-	// Public info
 	static alias = 'polygons';
 
 	static id_prefix = 'y';
