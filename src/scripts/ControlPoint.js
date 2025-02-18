@@ -1,5 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
-import {unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
+import {vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
@@ -264,9 +264,9 @@ export class Arrow extends Line {
 
 	static id_prefix = 'r';
 
-	static triangle = [[-15, -5], [0, 0], [-15, 5]];
-
 	static is_registered = this.register();
+
+	static triangle = [[-15, -5], [0, 0], [-15, 5]];
 
 	calcCoordinates() {
 		const vec = vecDif(this.cps[0].xy, this.cps[1].xy);
@@ -286,6 +286,82 @@ export class Arrow extends Line {
 		let stroke_width = attrs['stroke-width'] - this.style['stroke-width'];
 		const triangle = attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[1], 'stroke-width': stroke_width});
 		return [line, triangle];
+	}
+}
+
+
+export class Circle extends ShapeBase {
+	static sensor_flags = {
+		...super.sensor_flags,
+		is_circle: true
+	};
+
+	static parents = {
+		...super.parents, 
+		[SENSOR]: document.getElementById('sensors_i')
+	}
+
+	// Public info
+	static alias = 'circles';
+
+	static id_prefix = 'i';
+
+	static is_registered = this.register();
+
+	calcCoordinates() {
+		this.coords = [{cx: this.cps[0].xy[0], cy: this.cps[0].xy[1], r: vecLen(vecDif(...(this.cps.map(cp => cp.xy))))}];
+	}
+
+	getData() {
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
+	}
+
+	recalcCtr() {
+		this.xy = [...this.cps[0].xy];
+	}
+
+	createElements(layer_idx, attrs) {
+		attrs.fill = 'none';
+		return [attachSvg(this.layers[layer_idx], 'circle', {...attrs, ...this.coords[0]})];
+	}
+}
+
+
+export class Rectangle extends ShapeBase {
+	static sensor_flags = {
+		...super.sensor_flags,
+		is_rectangle: true
+	};
+
+	static parents = {
+		...super.parents, 
+		[SENSOR]: document.getElementById('sensors_e')
+	}
+
+	// Public info
+	static alias = 'rectangles';
+
+	static id_prefix = 'e';
+
+	static is_registered = this.register();
+
+	calcCoordinates() {
+		const x1 = this.cps[0].xy[0], y1 = this.cps[0].xy[1], x2 = this.cps[1].xy[0], y2 = this.cps[1].xy[1];
+		this.coords = [{x: Math.min(x1, x2), y: Math.min(y1, y2), 
+			width: Math.abs(x2 - x1), height: Math.abs(y2 - y1)}];
+	}
+
+	getData() {
+		return [this.cps.map(cp => [cp.id, ...cp.xy])];
+	}
+
+	recalcCtr() {
+		this.xy = [(this.cps[0].xy[0] + this.cps[1].xy[0]) / 2, (this.cps[0].xy[1] + this.cps[1].xy[1]) / 2];
+	}
+
+	createElements(layer_idx, attrs) {
+		attrs.fill = 'none';
+		return [attachSvg(this.layers[layer_idx], 'rect', {...attrs, ...this.coords[0]})];
 	}
 }
 

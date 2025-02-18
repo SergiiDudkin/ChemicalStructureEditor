@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow, Polyline, Polygon} from './ControlPoint.js';
+import {ControlPoint, Line, Arrow, Circle, Rectangle, Polyline, Polygon} from './ControlPoint.js';
 import {SENSOR, registry} from './BaseClasses.js';
 
 
@@ -410,6 +410,8 @@ var linebtn = new RegularButton(flex_container, toBtnText('li'));
 var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
 var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
 var polygbtn = new RegularButton(flex_container, toBtnText('pg'));
+var circlebtn = new RegularButton(flex_container, toBtnText('ci'));
+var rectbtn = new RegularButton(flex_container, toBtnText('rc'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -2200,5 +2202,7 @@ polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
 lineHandler(linebtn, Line);
 lineHandler(arrowbtn, Arrow);
+lineHandler(circlebtn, Circle);
+lineHandler(rectbtn, Rectangle);
 multipointHandler(polylinebtn, Polyline);
 multipointHandler(polygbtn, Polygon);
