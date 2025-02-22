@@ -1,5 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
-import {vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec} from './Geometry.js';
+import {vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
@@ -346,7 +346,20 @@ export class Rectangle extends ShapeBase {
 }
 
 
-export class Polyline extends ShapeBase {
+export class MultipointShape extends ShapeBase {
+	static min_pt_cnt = 2; // Minimum number of control points to build the shape
+
+	static getNewAugCpId() {
+		return null;
+	}
+
+	static insertMidCp(cps, id) {
+		return cps;
+	}
+}
+
+
+export class Polyline extends MultipointShape {
 	static parents = {
 		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_p')
@@ -394,5 +407,47 @@ export class Polygon extends Polyline {
 	createElements(layer_idx, attrs) {
 		attrs.fill = 'none';
 		return [attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[0]})];
+	}
+}
+
+
+export class Curve extends MultipointShape {
+	static parents = {
+		...super.parents, 
+		[SENSOR]: document.getElementById('sensors_u')
+	}
+
+	static sensor_flags = {
+		...super.sensor_flags,
+		is_curve: true
+	};
+
+	static alias = 'curve';
+
+	static id_prefix = 'u';
+
+	static is_registered = this.register();
+
+	static min_pt_cnt = 3;
+
+	static getNewAugCpId() {
+		return ControlPoint.getNewId();
+	}
+
+	static insertMidCp(cps, id) {
+		const len = cps.length;
+		if (len > 3) cps.splice(len - 2, 0, [id, ...vecCtr(cps[len - 3].slice(1), cps[len - 2].slice(1))]);
+		return cps;
+	}
+
+	calcCoordinates() {
+		const res = [['M', ...this.cps[0].xy]];
+		for (var i = 1; i < this.cps.length - 1; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
+		this.coords = [{d: res.flat().join(' ')}];
+	}
+
+	createElements(layer_idx, attrs) {
+		attrs.fill = 'none';
+		return [attachSvg(this.layers[layer_idx], 'path', {...attrs, ...this.coords[0]})];
 	}
 }

@@ -48,6 +48,10 @@ export function vecDiv([x, y], divisor) { // Divide vector by scalar value
 	return [x / divisor, y / divisor];
 }
 
+export function vecCtr([x0, y0], [x1, y1]) {
+	return [(x0 + x1) / 2, (y0 + y1) / 2]
+}
+
 export function vecDotProd([x0, y0], [x1, y1]) { // Find dot product
 	return x0 * x1 + y0 * y1;
 }

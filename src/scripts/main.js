@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
-import {ControlPoint, Line, Arrow, Circle, Rectangle, Polyline, Polygon} from './ControlPoint.js';
+import {ControlPoint, Line, Arrow, Circle, Rectangle, Polyline, Polygon, Curve} from './ControlPoint.js';
 import {SENSOR, registry} from './BaseClasses.js';
 
 
@@ -412,6 +412,7 @@ var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
 var polygbtn = new RegularButton(flex_container, toBtnText('pg'));
 var circlebtn = new RegularButton(flex_container, toBtnText('ci'));
 var rectbtn = new RegularButton(flex_container, toBtnText('rc'));
+var curvbtn = new RegularButton(flex_container, toBtnText('cu'));
 
 
 var cnvclippath = document.getElementById('cnvclippath');
@@ -1176,9 +1177,10 @@ function lineHandler(btn, LineClass) {
 }
 
 
-function multipointHandler(btn, LineClass) {
-	let new_polyline_id, cmd, pts
+function multipointHandler(btn, ShapeCls) {
+	let new_polyline_id, cmd, cps
 	let new_cp_id = ControlPoint.getNewId();
+	let new_aug_cp_id = ShapeCls.getNewAugCpId();
 	resetDrawing();
 	btn.mask_g.addEventListener('click', crPolyine);
 
@@ -1189,13 +1191,12 @@ function multipointHandler(btn, LineClass) {
 		document.addEventListener('keydown', keyHandler);
 	}
 
-	function setPt(event) { // Start drawing line. Called when mouse button 1 is down.
-		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
-			let pt = getSvgPoint(event);
-			pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
-			pts.push([new_cp_id, ...pt]); // Consumes new_cp_id
+	function setPt(event) {
+		if (canvas.contains(event.target)) {
+			cps = getUpdatedCps(event);
 			new_cp_id = ControlPoint.getNewId();
-			updatePolyline(pts);
+			new_aug_cp_id = ShapeCls.getNewAugCpId();
+			updatePolyline(cps);
 		}
 		else { // Line starts outside of canvas. Exit drawing.
 			window.removeEventListener('mousemove', movPolyline);
@@ -1208,13 +1209,13 @@ function multipointHandler(btn, LineClass) {
 
 	function resetDrawing() {
 		cmd = null;
-		pts = [];
-		new_polyline_id = LineClass.getNewId();
+		cps = [];
+		new_polyline_id = ShapeCls.getNewId();
 	}
 
 	function finishCurrPolyline() {
 		if (cmd) editStructure(cmd[1]); // Undo
-		if (pts.length > 1) dispatcher.do(getKwargs(pts)); // Do by dispatcher
+		if (cps.length > 1) dispatcher.do(getKwargs(cps)); // Do by dispatcher
 		resetDrawing();
 	}
 
@@ -1223,15 +1224,20 @@ function multipointHandler(btn, LineClass) {
 		if (event.keyCode === 9) finishCurrPolyline(); // Tab is pressed
 	}
 
-	function movPolyline(event) { // Move second end of the drawn bond
+	function getUpdatedCps(event) {
 		let pt = getSvgPoint(event);
 		pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
-		updatePolyline([...pts, [new_cp_id, ...pt]]);
+		return ShapeCls.insertMidCp([...cps, [new_cp_id, ...pt]], new_aug_cp_id);
+	}
+
+	function movPolyline(event) { // Move second end of the drawn bond
+		const ps = getUpdatedCps(event);
+		updatePolyline(ps);
 	}
 
 	function updatePolyline(points) {
 		if (cmd) editStructure(cmd[1]); // Undo
-		if (points.length > 1) {
+		if (points.length >= ShapeCls.min_pt_cnt) {
 			const kwargs = getKwargs(points);
 			cmd = [kwargs, invertCmd(kwargs)];
 			editStructure(cmd[0]); // Do
@@ -1240,7 +1246,7 @@ function multipointHandler(btn, LineClass) {
 	}
 
 	function getKwargs(points) {
-		return {create: {[LineClass.alias]: {[new_polyline_id]: [points]}}};
+		return {create: {[ShapeCls.alias]: {[new_polyline_id]: [points]}}};
 	}
 }
 
@@ -2206,3 +2212,4 @@ lineHandler(circlebtn, Circle);
 lineHandler(rectbtn, Rectangle);
 multipointHandler(polylinebtn, Polyline);
 multipointHandler(polygbtn, Polygon);
+multipointHandler(curvbtn, Curve);
