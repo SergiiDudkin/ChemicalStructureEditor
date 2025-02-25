@@ -480,7 +480,7 @@ function invertCmd(kwargs_dir) {
 		}
 	}
 	if (kwargs_dir.transforms) {
-		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type, new Set(ids), transform_inverts[type](params)]);
+		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type, structuredClone(ids), transform_inverts[type](params)]);
 	}
 	return kwargs_rev;
 }
@@ -942,7 +942,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var pt = getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
-		editStructure({transforms: [[MOVE, new Set(cur_node_ids), {moving_vec: moving_vec}]]});
+		editStructure({transforms: [[MOVE, {atoms: new Set(cur_node_ids)}, {moving_vec: moving_vec}]]});
 	}
 
 	function setPolygon(event) { // Move cursor polygon
@@ -1526,7 +1526,9 @@ class SelectionBase {
 	}
 
 	paramsToTransform(action_type, params) {
-		let ids = new Set(this.constructor.classes.filter(cls => cls.movable).map(cls => this[cls.alias]).flat());
+		const ids = Object.fromEntries(
+			this.constructor.classes.filter(cls => cls.movable).map(cls => [cls.alias, new Set(this[cls.alias])])
+		);
 		return [action_type, ids, params];
 	}
 

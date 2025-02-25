@@ -25,27 +25,28 @@ export function editStructure({create={}, del={}, alter={}, transforms=new Array
 	for (const [subcmd_name, subcmd_val] of Object.entries(arguments[0])) {
 		if (subcmd_name == 'transforms') {
 			for (const [type, ids, params] of transforms) {
-				const chem_ids = new Set();
-				const shape_ids = new Set();
-				const id_sorter = {a: chem_ids, c: shape_ids};
-				ids.forEach(id => id_sorter[id[0]].add(id));
-
-				// Puch if not redundant
-				if (chem_ids.size) chem_kwargs.transforms.push([type, chem_ids, params]);
-				if (shape_ids.size) shape_kwargs.transforms.push([type, shape_ids, params]);
+				const [chem, shape] = sortoutClasses(ids);
+				chem_kwargs.transforms.push([type, chem, params]);
+				shape_kwargs.transforms.push([type, shape, params]);
 			}
 		}
 		else {
-			for (const [cls_alias, content] of Object.entries(subcmd_val)) {
-				const cls = registry.classes[cls_alias];
-				const is_shape = cls.shape;
-				(is_shape ? shape_kwargs : chem_kwargs)[subcmd_name][cls_alias] = content;
-			}
+			[chem_kwargs[subcmd_name], shape_kwargs[subcmd_name]] = sortoutClasses(subcmd_val);
 		}
 	}
 
 	editChem(chem_kwargs);
 	editShapes(shape_kwargs);
+}
+
+
+function sortoutClasses(obj) {
+	const chem = {};
+	const shape = {};
+	for (const [cls_alias, content] of Object.entries(obj)) {
+		(registry.classes[cls_alias].shape ? shape : chem)[cls_alias] = content;
+	}
+	return [chem, shape];
 }
 
 
@@ -108,7 +109,6 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Edit atoms
 	Object.entries(alter.atoms).forEach(([id, attrs]) => atoms_text_me[id] = attrs.text);
-	// Object.assign(atoms_text_me, alter.atoms);
 	for (const [node_id, text] of Object.entries(atoms_text_me)) {
 		let node = document.getElementById(node_id).objref;
 		node.text = text;
@@ -135,7 +135,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 	// Transforms
 	for (const [type, ids, params] of transforms) {
 		let mirrored_bonds = new Set();
-		for (const atom_id of ids) {
+		for (const atom_id of ids.atoms) {
 			const atom = document.getElementById(atom_id).objref;
 			atom.setCtr(transform_funcs[type](atom.xy, params));
 			atoms_render.add(atom);
@@ -239,12 +239,14 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 	}
 
 	// Transforms
-	for (const [type, ids, params] of transforms) {
-		for (const ctr_pt_id of ids) {
-			let ctr_pt = document.getElementById(ctr_pt_id).objref;
-			ctr_pt.setCtr(transform_funcs[type](ctr_pt.xy, params));
-			ctr_pts_render.add(ctr_pt);
-			shapes_render.add(ctr_pt.master);
+	for (const [type, classes, params] of transforms) {
+		for (const [cls_alias, ids] of Object.entries(classes)) {
+			for (const ctr_pt_id of ids) {
+				let ctr_pt = document.getElementById(ctr_pt_id).objref;
+				ctr_pt.setCtr(transform_funcs[type](ctr_pt.xy, params));
+				ctr_pts_render.add(ctr_pt);
+				shapes_render.add(ctr_pt.master);
+			}
 		}
 	}
 
