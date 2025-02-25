@@ -37,7 +37,7 @@ export class ChemBond extends CanvasCitizen {
 
 	// Public info
 	static alias = 'bonds';
-	
+
 	static movable = false;
 
 	static id_prefix = 'b';
@@ -164,6 +164,7 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	delete() {
+		super.delete();
 		if (this.select_rect) {
 			this.constructor.delSel.add(this.id);
 			this.deselect();

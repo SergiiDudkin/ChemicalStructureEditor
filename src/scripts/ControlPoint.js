@@ -61,6 +61,7 @@ export class ControlPoint extends IdHolder {
 	}
 
 	delete() {
+		super.delete();
 		this.shape.remove();
 		Object.keys(this).forEach(key => delete this[key]);
 	}
@@ -209,6 +210,7 @@ export class ShapeBase extends CanvasCitizen {
 	}
 
 	delete() {
+		super.delete();
 		Object.keys(LAYER_SPEC).forEach(layer => this.deleteLayer(layer));
 		this.cps.forEach(cp => cp.delete());
 	}

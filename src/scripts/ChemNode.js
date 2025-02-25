@@ -55,6 +55,7 @@ export class ChemNode extends CanvasCitizen {
 	static is_registered = this.register();
 
 	delete() {
+		super.delete();
 		if (this.select_circ) {
 			this.constructor.delSel.add(this.id);
 			this.deselect();

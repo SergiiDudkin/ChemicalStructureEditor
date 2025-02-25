@@ -36,7 +36,9 @@ window.registry = registry; // !!! Temp, for debug !!!
 
 
 export class Registered {
-	static register() {registry.register(this)};
+	static register() {
+		registry.register(this);
+	}
 }
 
 
@@ -44,9 +46,13 @@ export class IdHolder extends Registered{
 	constructor(id) {
 		super();
 		this.id = id;
+		this.constructor.ids.add(id);
 	}
 
-	static parents = {[SENSOR]: null}; // Reassign!
+	static register() {
+		super.register();
+		this.ids = new Set();
+	}
 
 	static counter = 0; // ID conuter
 
@@ -57,7 +63,7 @@ export class IdHolder extends Registered{
 	}
 
 	static getAllInstanceIDs() {
-		return new Set([...this.parents[SENSOR].children].map(el => el.objref.id));
+		return new Set(this.ids);
 	}
 
 	static getMaxId() {
@@ -66,6 +72,10 @@ export class IdHolder extends Registered{
 
 	static setMaxIdCounter() {
 		this.counter = Math.max(this.counter, this.getMaxId() + 1);
+	}
+
+	delete() {
+		this.constructor.ids.delete(this.id);
 	}
 }
 
@@ -87,5 +97,8 @@ export class CanvasCitizen extends IdHolder {
 	}
 
 	// Deleted elements while being selected
-	static delSel = new Set();
+	static register() {
+		super.register();
+		this.delSel = new Set();
+	}
 }
