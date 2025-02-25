@@ -451,3 +451,38 @@ export class Curve extends MultipointShape {
 		return [attachSvg(this.layers[layer_idx], 'path', {...attrs, ...this.coords[0]})];
 	}
 }
+
+
+export class SmoothShape extends Curve {
+	static parents = {
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		[SENSOR]: document.getElementById('sensors_m')
+	}
+
+	static sensor_flags = {
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
+		is_smooth: true
+	};
+
+	static alias = 'smooth';
+
+	static id_prefix = 'm';
+
+	static is_registered = this.register();
+
+	static min_pt_cnt = 6;
+
+	static insertMidCp(cps, id) {
+		const len = cps.length;
+		if (len >= 3) cps[len - 2] = [cps[len - 2][0], ...vecCtr(cps[len - 3].slice(1), cps[len - 1].slice(1))];
+		cps.push([id, ...vecCtr(cps[len - 1].slice(1), cps[0].slice(1))]);
+		return cps;
+	}
+
+	calcCoordinates() {
+		const len1m = this.cps.length - 1;
+		const res = [['M', ...this.cps[len1m].xy]];
+		for (var i = 0; i < len1m; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
+		this.coords = [{d: res.flat().join(' ')}];
+	}
+}
