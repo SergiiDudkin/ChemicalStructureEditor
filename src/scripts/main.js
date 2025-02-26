@@ -13,7 +13,7 @@ import {
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
 } from './Geometry.js';
 import {ControlPoint, Line, Arrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './ControlPoint.js';
-import {SENSOR, registry} from './BaseClasses.js';
+import {registry} from './BaseClasses.js';
 
 
 window.DEBUG = false;
@@ -74,7 +74,7 @@ document.getElementById('download-json').addEventListener('click', downloadJson)
 
 function blankCanvasCmd() {
 	const kwargs = {del: {}};
-	registry.citizens.forEach(cls => kwargs.del[cls.alias] = cls.getAllInstanceIDs());
+	registry.citizens.forEach(cls => kwargs.del[cls.alias] = new Set(cls.getAllInstanceIDs()));
 	return kwargs;
 }
 
@@ -1367,6 +1367,12 @@ class SelectLasso extends SelectShape {
 }
 
 
+function objsUnderShape(cls, cover) {
+	return cls.getAllInstanceIDs().filter(id => document.elementFromPoint(
+		...getScreenPoint(document.getElementById(id).objref.xy)) == cover);
+}
+
+
 class SelectionBase {
 	constructor(dispatcher) {
 		for (const [key, val] of Object.entries(this.constructor.event_handlers)) {
@@ -1411,11 +1417,6 @@ class SelectionBase {
 		undoRedo: null
 	}
 
-	static objsUnderShape(parent, covering_shape) {
-		return [...parent.children].map(el => el.objref)
-			.filter(el => document.elementFromPoint(...getScreenPoint(el.xy)) == covering_shape);
-	}
-
 	get selected_collections() {
 		return this.citizens.map(citizen => this[citizen.alias]);
 	}
@@ -1427,10 +1428,8 @@ class SelectionBase {
 
 	subSelect() {} // Helper
 
-	selectFromShape(covering_shape) {
-		for (const {alias, parents} of this.citizens) {
-			this[alias] = this.constructor.objsUnderShape(parents[SENSOR], covering_shape).map(item => item.id);
-		}
+	selectFromShape(cover) {
+		this.citizens.forEach(citizen => this[citizen.alias] = objsUnderShape(citizen, cover));
 		this.subSelect();
 	}
 

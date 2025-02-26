@@ -63,11 +63,11 @@ export class IdHolder extends Registered{
 	}
 
 	static getAllInstanceIDs() {
-		return new Set(this.ids);
+		return [...this.ids];
 	}
 
 	static getMaxId() {
-		return Math.max(...[...this.getAllInstanceIDs()].map(id => parseInt(id.slice(this.id_prefix.length))));
+		return Math.max(...this.getAllInstanceIDs().map(id => parseInt(id.slice(this.id_prefix.length))));
 	}
 
 	static setMaxIdCounter() {
@@ -96,9 +96,8 @@ export class CanvasCitizen extends IdHolder {
 		[SELECTHOLE]: document.getElementById('selectholes')
 	}
 
-	// Deleted elements while being selected
 	static register() {
 		super.register();
-		this.delSel = new Set();
+		this.delSel = new Set(); // Deleted elements while being selected
 	}
 }
