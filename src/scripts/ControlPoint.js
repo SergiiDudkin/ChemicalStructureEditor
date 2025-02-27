@@ -1,5 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
-import {vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr} from './Geometry.js';
+import {MOVE, ROTATE, SCALE, STRETCH, transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
@@ -33,6 +33,10 @@ export class ControlPoint extends IdHolder {
 
 	setCtr(xy) {
 		this.xy = [...xy];
+	}
+
+	transform(type, params) {
+		this.setCtr(transform_funcs[type](this.xy, params));
 	}
 
 	render() {
@@ -111,7 +115,7 @@ export class ShapeBase extends CanvasCitizen {
 	};
 
 	// Public info
-	static movable = false;
+	static movable = true;
 	static shape = true;
 
 	static default_style = {
@@ -156,6 +160,10 @@ export class ShapeBase extends CanvasCitizen {
 			let vals = this.cps.map(cp => cp.xy[i]);
 			return (Math.min(...vals) + Math.max(...vals)) / 2;
 		});
+	}
+
+	transform(type, params) {
+		this.cps.forEach(cp => cp.transform(type, params));
 	}
 
 	render() {

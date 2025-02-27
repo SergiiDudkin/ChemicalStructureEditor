@@ -152,3 +152,15 @@ export function checkIntersec(a_xy0, a_xy1, b_xy0, b_xy1) {
 	var has_common_point = (sign_a1_a0_b0 != sign_a1_a0_b1) && (sign_b1_b0_a0 != sign_b1_b0_a1);
 	return has_common_point && no_zero_angle && no_common_terminals;
 }
+
+export const MOVE = 1;
+export const ROTATE = 2;
+export const SCALE = 3;
+export const STRETCH = 4;
+
+export const transform_funcs = Object.freeze({
+	[MOVE]: (pt, {moving_vec}) => vecSum(pt, moving_vec),
+	[ROTATE]: (pt, {rot_angle, rot_ctr}) => rotateAroundCtr(pt, rot_angle, rot_ctr),
+	[SCALE]: (pt, {scale_factor, scale_ctr}) => scaleAroundCtr(pt, scale_factor, scale_ctr),
+	[STRETCH]: (pt, {stretch_factor, dir_angle, stretch_ctr}) => stretchAlongDir(pt, stretch_factor, dir_angle, stretch_ctr)
+});

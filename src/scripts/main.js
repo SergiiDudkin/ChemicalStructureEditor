@@ -1,6 +1,6 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {editStructure, MOVE, ROTATE, SCALE, STRETCH} from './Executor.js';
+import {editStructure} from './Executor.js';
 import {
 	styledict, styleToString, separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
 	computeElementalComposition
@@ -10,7 +10,7 @@ import {
 } from './Utils.js';
 import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
-	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec
+	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec, MOVE, ROTATE, SCALE, STRETCH
 } from './Geometry.js';
 import {ControlPoint, Line, Arrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './ControlPoint.js';
 import {registry} from './BaseClasses.js';
@@ -1426,16 +1426,12 @@ class SelectionBase {
 		this.activate();
 	}
 
-	subSelect() {} // Helper
-
 	selectFromShape(cover) {
 		this.citizens.forEach(citizen => this[citizen.alias] = objsUnderShape(citizen, cover));
-		this.subSelect();
 	}
 
 	activateFromIds(grouped_ids) {
 		Object.entries(grouped_ids).forEach(([group, ids]) => this[group] = ids);
-		this.subSelect();
 		this.activate();
 	}
 
@@ -1671,16 +1667,6 @@ class SelectionShape extends SelectionBase {
 
 	get shapes() {
 		return this.constructor.shapes_names.map(name => this[name]).flat();
-	}
-
-	subSelect() {
-		super.subSelect();
-		this.control_points = [...this.control_points, ...this.shapes.map(shape_id => document.getElementById(shape_id).objref.cps).flat().map(cp => cp.id)];
-	}
-
-	setSelectedItem(item) {
-		super.setSelectedItem(item);
-		this.subSelect();
 	}
 
 	prepareGroup() {

@@ -1,21 +1,8 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
 import {Line, Arrow, Polyline} from './ControlPoint.js';
-import {vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
+import {STRETCH, transform_funcs, vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 import {registry} from './BaseClasses.js';
-
-
-export const MOVE = 1;
-export const ROTATE = 2;
-export const SCALE = 3;
-export const STRETCH = 4;
-
-const transform_funcs = Object.freeze({
-	[MOVE]: (pt, {moving_vec}) => vecSum(pt, moving_vec),
-	[ROTATE]: (pt, {rot_angle, rot_ctr}) => rotateAroundCtr(pt, rot_angle, rot_ctr),
-	[SCALE]: (pt, {scale_factor, scale_ctr}) => scaleAroundCtr(pt, scale_factor, scale_ctr),
-	[STRETCH]: (pt, {stretch_factor, dir_angle, stretch_ctr}) => stretchAlongDir(pt, stretch_factor, dir_angle, stretch_ctr)
-});
 
 
 export function editStructure({create={}, del={}, alter={}, transforms=new Array()}) {
@@ -241,11 +228,17 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 	// Transforms
 	for (const [type, classes, params] of transforms) {
 		for (const [cls_alias, ids] of Object.entries(classes)) {
-			for (const ctr_pt_id of ids) {
-				let ctr_pt = document.getElementById(ctr_pt_id).objref;
-				ctr_pt.setCtr(transform_funcs[type](ctr_pt.xy, params));
-				ctr_pts_render.add(ctr_pt);
-				shapes_render.add(ctr_pt.master);
+			for (const item_id of ids) {
+				let item = document.getElementById(item_id).objref;
+				item.transform(type, params);
+				if (cls_alias == 'control_points') {
+					ctr_pts_render.add(item);
+					shapes_render.add(item.master);
+				}
+				else {
+					item.cps.forEach(cp => ctr_pts_render.add(cp));
+					shapes_render.add(item);
+				}
 			}
 		}
 	}
