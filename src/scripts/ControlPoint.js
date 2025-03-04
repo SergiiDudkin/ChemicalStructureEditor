@@ -1,5 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
-import {MOVE, ROTATE, SCALE, STRETCH, transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr} from './Geometry.js';
+import {MOVE, ROTATE, SCALE, STRETCH, transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, lineIntersec} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
@@ -67,6 +67,21 @@ export class ControlPoint extends IdHolder {
 	delete() {
 		super.delete();
 		this.shape.remove();
+
+		// cp_dependencies
+		// cp_funcs
+		// cp_args
+		delete cp_dependencies[this.id];
+		delete cp_funcs[this.id];
+		delete cp_args[this.id];
+		// cp_dependencies = Object.fromEntries(Object.entries(cp_dependencies).filter(ids => !ids.map(id => id == this.id).some()));
+
+		for (const [key, val] of Object.entries(cp_dependencies)) {
+			// const arr = val.map(id => id == this.id);
+			// const flag = arr.some();
+			// if (arr.some()) delete cp_dependencies[key];
+			if (val.some(id => id == this.id)) delete cp_dependencies[key];
+		}
 		Object.keys(this).forEach(key => delete this[key]);
 	}
 }
@@ -421,7 +436,39 @@ export class Polygon extends Polyline {
 }
 
 
+const START = 1;
+const END = 2;
+const CORNER = 3;
+const EDGE = 4;
+
+
+export const cp_dependencies = {}; // cp: [followers]
+export const cp_funcs = {}; // cp: func
+export const cp_args = {}; // cp: [args]
+
+
+function updateEdge(this_cp_id, cp0id, cp1id) {
+	const this_cp = document.getElementById(this_cp_id).objref;
+	const cp0xy = document.getElementById(cp0id).objref.xy;
+	const cp1xy = document.getElementById(cp1id).objref.xy;
+	this_cp.setCtr(vecSum(cp0xy, vecMul(vecDif(cp0xy, cp1xy), this_cp.ratio)));
+}
+
+
+function updateCorner(this_cp_id, cp0id, cp1id) {
+	const this_cp = document.getElementById(this_cp_id).objref;
+	const cp0 = document.getElementById(cp0id).objref;
+	const cp1 = document.getElementById(cp1id).objref;
+	this_cp.setCtr(lineIntersec(cp0.xy, vecSum(cp0.xy, cp0.dir), cp1.xy, vecSum(cp1.xy, cp1.dir)));
+}
+
+
 export class Curve extends MultipointShape {
+	constructor(id, cps_data) { // (id, [[id0, x0, y0], [id1, x1, y1]])
+		super(id, cps_data);
+		this.setCpFlags();
+	}
+
 	static parents = {
 		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_u')
@@ -459,6 +506,74 @@ export class Curve extends MultipointShape {
 	createElements(layer_idx, attrs) {
 		attrs.fill = 'none';
 		return [attachSvg(this.layers[layer_idx], 'path', {...attrs, ...this.coords[0]})];
+	}
+
+	setCpFlags() {
+		this.cp_flags = new Array(this.cps.length).fill(CORNER);
+		for (let i = 0; i < this.cps.length; i = i + 2) this.cp_flags[i] = EDGE;
+		this.cp_flags[0] = START;
+		this.cp_flags[this.cps.length - 1] = END;
+
+		// cp_dependencies
+		// cp_funcs
+		// cp_args
+
+		for (let i = 0; i < this.cps.length; i++) {
+			let curr_cp_flag = this.cp_flags[i];
+			let curr_cp = this.cps[i];
+			let curr_cp_id = curr_cp.id;
+			let prev_cp, next_cp, prev_cp_id, next_cp_id, prev_cp_flag, next_cp_flag;
+
+			if (i >= 1) {
+				prev_cp = this.cps[i-1];
+				prev_cp_id = prev_cp.id;
+				prev_cp_flag = this.cp_flags[i-1];
+			}
+			if (i <= this.cps.length - 2) {
+				next_cp = this.cps[i+1];
+				next_cp_id = next_cp.id;
+				next_cp_flag = this.cp_flags[i+1];
+			}
+			if (curr_cp_flag == CORNER) {
+				let followers = [];
+				if (prev_cp_flag == EDGE) followers.push(prev_cp_id);
+				if (next_cp_flag == EDGE) followers.push(next_cp_id);
+				if (followers.length) cp_dependencies[curr_cp_id] = followers;
+
+
+				cp_funcs[curr_cp_id] = updateCorner;
+				cp_args[curr_cp_id] = [prev_cp_id, next_cp_id];
+
+			}
+			if (curr_cp_flag == EDGE) {
+				cp_funcs[curr_cp_id] = updateEdge;
+				cp_args[curr_cp_id] = [prev_cp_id, next_cp_id];
+				curr_cp.ratio = vecLen(vecDif(prev_cp.xy, curr_cp.xy)) / vecLen(vecDif(prev_cp.xy, next_cp.xy));
+
+
+				// let followers = [];
+				// if (prev_cp_flag == CORNER) followers.push(prev_cp_id);
+				// if (next_cp_flag == CORNER) followers.push(next_cp_id);
+				curr_cp.dir = unitVec(vecDif(prev_cp.xy, next_cp.xy));
+				cp_dependencies[curr_cp_id] = [prev_cp_id, next_cp_id];
+			}
+			if (curr_cp_flag == START) {
+				curr_cp.dir = unitVec(vecDif(curr_cp.xy, next_cp.xy));
+			}
+			if (curr_cp_flag == END) {
+				curr_cp.dir = unitVec(vecDif(prev_cp.xy, curr_cp.xy));
+			}
+		}
+	}
+
+	// updateEdgeDirs() {
+	// 	this.cp_flags.forEach((flag, i) => {
+	// 		if 
+	// 	});
+	// }
+
+	adjustAdjacentCps() {
+
 	}
 }
 

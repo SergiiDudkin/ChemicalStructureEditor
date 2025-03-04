@@ -1,6 +1,6 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {Line, Arrow, Polyline} from './ControlPoint.js';
+import {cp_dependencies, cp_funcs, cp_args} from './ControlPoint.js';
 import {STRETCH, transform_funcs, vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 import {registry} from './BaseClasses.js';
 
@@ -227,6 +227,7 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 
 	// Transforms
 	for (const [type, classes, params] of transforms) {
+		let following_cps = new Set();
 		for (const [cls_alias, ids] of Object.entries(classes)) {
 			for (const item_id of ids) {
 				let item = document.getElementById(item_id).objref;
@@ -234,12 +235,19 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 				if (cls_alias == 'control_points') {
 					ctr_pts_render.add(item);
 					shapes_render.add(item.master);
+					if (item_id in cp_dependencies) {
+						cp_dependencies[item_id].forEach(id => {if (!ids.has(id)) following_cps.add(id)});
+					}
 				}
 				else {
 					item.cps.forEach(cp => ctr_pts_render.add(cp));
 					shapes_render.add(item);
 				}
 			}
+		}
+		for (const cp_id of following_cps) {
+			cp_funcs[cp_id](cp_id, ...cp_args[cp_id]);
+			ctr_pts_render.add(document.getElementById(cp_id).objref);
 		}
 	}
 
