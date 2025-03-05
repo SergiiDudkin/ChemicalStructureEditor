@@ -226,18 +226,21 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 
 	// Transforms
 	for (const [type, classes, params] of transforms) {
-		let following_cps = [];
-		let to_recalc_params = [];
-		let cps_all = new Set();
+		const following_cps = [];
+		const to_recalc_dir = [];
+		const to_recalc_ratio = [];
+		const cps_all = new Set();
 		for (const [cls_alias, ids] of Object.entries(classes)) {
 			for (const item_id of ids) {
-				let item = document.getElementById(item_id).objref;
+				const item = document.getElementById(item_id).objref;
 				item.transform(type, params);
 				if (cls_alias == 'control_points') {
 					cps_all.add(item);
 					shapes_render.add(item.master);
-					following_cps.push(item.getFollowers());
-					to_recalc_params.push(item.getRecalcs());
+					item.followers.forEach(cp => ctr_pts_render.add(cp))
+					following_cps.push(item.followers);
+					to_recalc_dir.push(item.to_recalc_dir);
+					to_recalc_ratio.push(item.to_recalc_ratio);
 				}
 				else {
 					item.cps.forEach(cp => cps_all.add(cp));
@@ -247,15 +250,10 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 		}
 		cps_all.forEach(cp => ctr_pts_render.add(cp));
 		for (const cp of new Set(following_cps.flat())) {
-			if (!cps_all.has(cp)) {
-				cp.follow();
-				to_recalc_params.push(cp.getRecalcs());
-				ctr_pts_render.add(cp);
-			}
+			if (!cps_all.has(cp)) cp.follow();
 		}
-		for (const cp of new Set(to_recalc_params.flat())) {
-			cp.recalcParams();
-		}
+		new Set(to_recalc_dir.flat()).forEach(cp => cp.recalcDir());
+		new Set(to_recalc_ratio.flat()).forEach(cp => cp.recalcRatio());
 	}
 
 	for (const shape of shapes_render) {

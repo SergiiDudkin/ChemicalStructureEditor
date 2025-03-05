@@ -15,6 +15,11 @@ export class ControlPoint extends IdHolder {
 		this.shape.is_shape = true;
 		this.shape.is_cp = true;
 
+		// Placeholders
+		this.followers = [];
+		this.to_recalc_dir = [];
+		this.to_recalc_ratio = [];
+
 		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
 		this.shape.addEventListener('mousedown', this.focus);
 	}
@@ -33,14 +38,6 @@ export class ControlPoint extends IdHolder {
 
 	setCtr(xy) {
 		this.xy = [...xy];
-	}
-
-	getFollowers() {
-		return [];
-	}
-
-	getRecalcs() {
-		return [];
 	}
 
 	transform(type, params) {
@@ -95,8 +92,17 @@ class ControlPointInner extends ControlPoint {
 
 
 class ControlPointEdge extends ControlPointInner {
-	recalcParams() {
+	idsToObjs() {
+		super.idsToObjs();
+		this.followers = [this.prev, this.next];
+		this.to_recalc_ratio = [...new Set(this.followers.map(cp => [cp.prev, cp.next]).flat().filter(cp => cp instanceof ControlPointEdge))];
+	}
+
+	recalcDir() {
 		this.dir = unitVec(vecDif(this.prev.xy, this.next.xy));
+	}
+
+	recalcRatio() {
 		const vec_tot = vecDif(this.prev.xy, this.next.xy);
 		const vec_part = vecDif(this.prev.xy, this.xy);
 		this.ratio = Math.sign(vecDotProd(vec_part, vec_tot)) * (vecLen(vec_part) / vecLen(vec_tot));
@@ -105,29 +111,19 @@ class ControlPointEdge extends ControlPointInner {
 	follow() {
 		this.setCtr(vecSum(this.prev.xy, vecMul(vecDif(this.prev.xy, this.next.xy), this.ratio)));
 	}
-
-	getFollowers() {
-		return [this.prev, this.next];
-	}
-
-	getRecalcs() {
-		return [this];
-	}
 }
 
 
 class ControlPointCorner extends ControlPointInner {
+	idsToObjs() {
+		super.idsToObjs();
+		this.followers = [this.prev, this.next].filter(cp => !(cp instanceof ControlPointTerminal));
+		this.to_recalc_dir = [this.prev, this.next];
+	}
+
 	follow() {
 		this.setCtr(lineIntersec(this.prev.xy, vecSum(this.prev.xy, this.prev.dir), 
 			this.next.xy, vecSum(this.next.xy, this.next.dir)));
-	}
-
-	getFollowers() {
-		return [this.prev, this.next].filter(cp => !(cp instanceof ControlPointTerminal));
-	}
-
-	getRecalcs() {
-		return [this.prev, this.next];
 	}
 }
 
@@ -138,21 +134,13 @@ class ControlPointTerminal extends ControlPoint {
 		this.adj_cp_ids = [adj_cp_id];
 	}
 
-	transform(type, params) {
-		super.transform(type, params);
-		return [this];
-	}
-
 	idsToObjs() {
 		this.adj = document.getElementById(this.adj_cp_ids[0]).objref;
+		this.to_recalc_dir = [this];
 	}
 
-	recalcParams() {
+	recalcDir() {
 		this.dir = unitVec(vecDif(this.xy, this.adj.xy));
-	}
-
-	getRecalcs() {
-		return [this];
 	}
 }
 
@@ -555,7 +543,8 @@ export class Curve extends MultipointShape {
 		}
 		this.cps.push(new ControlPointTerminal(...cps_data[cps_data.length - 1], this, cps_data[cps_data.length - 2][0]));
 		this.cps.forEach(cp => cp.idsToObjs());
-		for (let i = 0; i < cps_data.length; i = i + 2) this.cps[i].recalcParams();
+		for (let i = 0; i < cps_data.length; i = i + 2) this.cps[i].recalcDir();
+		for (let i = 2; i < cps_data.length - 2; i = i + 2) this.cps[i].recalcRatio();
 	}
 }
 
