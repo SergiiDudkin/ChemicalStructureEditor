@@ -187,7 +187,7 @@ body {
 	stroke-width: 1;
 	fill: none;
 	cursor: pointer;
-	opacity: 0;
+	opacity: 50;
 }
 .control-point-opaque {
 	stroke: gray;

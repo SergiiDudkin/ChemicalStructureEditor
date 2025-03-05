@@ -56,7 +56,7 @@ export function vecDotProd([x0, y0], [x1, y1]) { // Find dot product
 	return x0 * x1 + y0 * y1;
 }
 
-function vecCrossProd([x0, y0], [x1, y1]) { // Find dot product
+function vecCrossProd([x0, y0], [x1, y1]) { // Find cross product
 	return x0 * y1 - x1 * y0;
 }
 

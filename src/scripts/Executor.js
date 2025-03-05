@@ -1,6 +1,5 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {cp_dependencies, cp_funcs, cp_args} from './ControlPoint.js';
 import {STRETCH, transform_funcs, vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
 import {registry} from './BaseClasses.js';
 
@@ -227,27 +226,35 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 
 	// Transforms
 	for (const [type, classes, params] of transforms) {
-		let following_cps = new Set();
+		let following_cps = [];
+		let to_recalc_params = [];
+		let cps_all = new Set();
 		for (const [cls_alias, ids] of Object.entries(classes)) {
 			for (const item_id of ids) {
 				let item = document.getElementById(item_id).objref;
 				item.transform(type, params);
 				if (cls_alias == 'control_points') {
-					ctr_pts_render.add(item);
+					cps_all.add(item);
 					shapes_render.add(item.master);
-					if (item_id in cp_dependencies) {
-						cp_dependencies[item_id].forEach(id => {if (!ids.has(id)) following_cps.add(id)});
-					}
+					following_cps.push(item.getFollowers());
+					to_recalc_params.push(item.getRecalcs());
 				}
 				else {
-					item.cps.forEach(cp => ctr_pts_render.add(cp));
+					item.cps.forEach(cp => cps_all.add(cp));
 					shapes_render.add(item);
 				}
 			}
 		}
-		for (const cp_id of following_cps) {
-			cp_funcs[cp_id](cp_id, ...cp_args[cp_id]);
-			ctr_pts_render.add(document.getElementById(cp_id).objref);
+		cps_all.forEach(cp => ctr_pts_render.add(cp));
+		for (const cp of new Set(following_cps.flat())) {
+			if (!cps_all.has(cp)) {
+				cp.follow();
+				to_recalc_params.push(cp.getRecalcs());
+				ctr_pts_render.add(cp);
+			}
+		}
+		for (const cp of new Set(to_recalc_params.flat())) {
+			cp.recalcParams();
 		}
 	}
 
