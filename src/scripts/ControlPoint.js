@@ -523,6 +523,11 @@ export class Curve extends MultipointShape {
 		return cps;
 	}
 
+	transform(type, params) {
+		super.transform(type, params);
+		if (type == ROTATE || type == STRETCH) this.recalcDir();
+	}
+
 	calcCoordinates() {
 		const res = [['M', ...this.cps[0].xy]];
 		for (var i = 1; i < this.cps.length - 1; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
@@ -543,8 +548,12 @@ export class Curve extends MultipointShape {
 		}
 		this.cps.push(new ControlPointTerminal(...cps_data[cps_data.length - 1], this, cps_data[cps_data.length - 2][0]));
 		this.cps.forEach(cp => cp.idsToObjs());
-		for (let i = 0; i < cps_data.length; i = i + 2) this.cps[i].recalcDir();
+		this.recalcDir();
 		for (let i = 2; i < cps_data.length - 2; i = i + 2) this.cps[i].recalcRatio();
+	}
+
+	recalcDir() {
+		for (let i = 0; i < this.cps.length; i = i + 2) this.cps[i].recalcDir();
 	}
 }
 
