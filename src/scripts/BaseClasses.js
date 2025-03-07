@@ -32,8 +32,6 @@ export const registry = {
 	}
 }
 
-window.registry = registry; // !!! Temp, for debug !!!
-
 
 export class Registered {
 	static register() {
@@ -101,3 +99,6 @@ export class CanvasCitizen extends IdHolder {
 		this.delSel = new Set(); // Deleted elements while being selected
 	}
 }
+
+
+window.registry = registry; // !!! Temp, for debug !!!

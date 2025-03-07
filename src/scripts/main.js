@@ -441,8 +441,18 @@ function hideGrid() {
 	canvbckgrnd.setAttribute('fill', 'white');
 }
 
+function showControlPoints() {
+	document.styleSheets[0].cssRules[2].style.opacity = 0.4;
+}
+
+function hideControlPoints() {
+	document.styleSheets[0].cssRules[2].style.opacity = 0;
+}
+
 window.showChessGrid = showChessGrid;
 window.hideGrid = hideGrid;
+window.showControlPoints = showControlPoints;
+window.hideControlPoints = hideControlPoints;
 
 
 const transform_inverts = Object.freeze({

@@ -10,7 +10,7 @@ export class ControlPoint extends IdHolder {
 		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
 
 		this.shape = attachSvg(this.constructor.parents[SENSOR], this.constructor.tag, 
-			{width: 10, height: 10, class: 'control-point', id: id});
+			{width: 10, height: 10, class: 'var-opaq', id: id});
 		this.shape.objref = this;
 		this.shape.is_shape = true;
 		this.shape.is_cp = true;
@@ -19,9 +19,6 @@ export class ControlPoint extends IdHolder {
 		this.followers = [];
 		this.to_recalc_dir = [];
 		this.to_recalc_ratio = [];
-
-		['focus', 'blur'].forEach(method => this[method] = this[method].bind(this));
-		this.shape.addEventListener('mousedown', this.focus);
 	}
 
 	static parents = {[SENSOR]: document.getElementById('control_points')};
@@ -57,18 +54,6 @@ export class ControlPoint extends IdHolder {
 	eventsOff() {
 		this.shape.classList.add('sympoi');
 	};
-
-	focus() {
-		this.shape.classList.remove('control-point');
-		this.shape.classList.add('control-point-opaque');
-		window.addEventListener('mouseup', this.blur);
-	}
-
-	blur() {
-		window.removeEventListener('mouseup', this.blur);
-		this.shape.classList.remove('control-point-opaque');
-		this.shape.classList.add('control-point');
-	}
 
 	delete() {
 		super.delete();

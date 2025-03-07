@@ -183,23 +183,10 @@ body {
 	display: none;
 }
 .control-point {
-	stroke: gray;
-	stroke-width: 1;
-	fill: none;
+	fill: gray;
 	cursor: pointer;
-	opacity: 50;
 }
-.control-point-opaque {
-	stroke: gray;
-	stroke-width: 1;
-	fill: blue;
-	cursor: pointer;
-	opacity: 1;
-}
-.opaque {
-	opacity: 1;
-}
-.control-point:hover {
+.var-opaq:hover {
 	fill: blue;
 	opacity: 1;
 }
