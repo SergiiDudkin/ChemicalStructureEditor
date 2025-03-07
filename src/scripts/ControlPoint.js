@@ -374,6 +374,17 @@ export class Circle extends ShapeBase {
 
 	static is_registered = this.register();
 
+	transform(type, params) {
+		if (type == STRETCH) {
+			const cp_dif = vecDif(this.cps[0].xy, this.cps[1].xy);
+			this.cps[0].transform(type, params);
+			this.cps[1].setCtr(vecSum(this.cps[0].xy, cp_dif));
+		}
+		else {
+			super.transform(type, params);
+		}
+	}
+
 	calcCoordinates() {
 		this.coords = [{cx: this.cps[0].xy[0], cy: this.cps[0].xy[1], r: vecLen(vecDif(...(this.cps.map(cp => cp.xy))))}];
 	}
