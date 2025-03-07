@@ -92,9 +92,12 @@ class ControlPointInner extends ControlPoint {
 
 
 class ControlPointEdge extends ControlPointInner {
-	idsToObjs() {
-		super.idsToObjs();
+	postInit() {
 		this.followers = [this.prev, this.next];
+		let a = this.followers.map(cp => [cp.prev, cp.next]).flat().filter(cp => cp instanceof ControlPointEdge);
+		if (a.length == 2) {
+			1 + 1;
+		}
 		this.to_recalc_ratio = [...new Set(this.followers.map(cp => [cp.prev, cp.next]).flat().filter(cp => cp instanceof ControlPointEdge))];
 	}
 
@@ -115,8 +118,7 @@ class ControlPointEdge extends ControlPointInner {
 
 
 class ControlPointCorner extends ControlPointInner {
-	idsToObjs() {
-		super.idsToObjs();
+	postInit() {
 		this.followers = [this.prev, this.next].filter(cp => !(cp instanceof ControlPointTerminal));
 		this.to_recalc_dir = [this.prev, this.next];
 	}
@@ -136,6 +138,9 @@ class ControlPointTerminal extends ControlPoint {
 
 	idsToObjs() {
 		this.adj = document.getElementById(this.adj_cp_ids[0]).objref;
+	}
+
+	postInit() {
 		this.to_recalc_dir = [this];
 	}
 
@@ -547,13 +552,13 @@ export class Curve extends MultipointShape {
 			);
 		}
 		this.cps.push(new ControlPointTerminal(...cps_data[cps_data.length - 1], this, cps_data[cps_data.length - 2][0]));
-		this.cps.forEach(cp => cp.idsToObjs());
-		this.recalcDir();
-		for (let i = 2; i < cps_data.length - 2; i = i + 2) this.cps[i].recalcRatio();
+		this.invokeControlPointMethods(['idsToObjs', 'postInit', 'recalcDir', 'recalcRatio']);
 	}
 
-	recalcDir() {
-		for (let i = 0; i < this.cps.length; i = i + 2) this.cps[i].recalcDir();
+	invokeControlPointMethods(methods) {
+		for (const method of methods) {
+			this.cps.forEach(cp => {if (cp[method]) cp[method]()});
+		}
 	}
 }
 
@@ -589,5 +594,16 @@ export class SmoothShape extends Curve {
 		const res = [['M', ...this.cps[len1m].xy]];
 		for (var i = 0; i < len1m; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
 		this.coords = [{d: res.flat().join(' ')}];
+	}
+
+	setControlPoints(cps_data) {
+		this.cps = [];
+		const len = cps_data.length;
+		for (let i = 0; i < cps_data.length; i++) {
+			this.cps.push(new (i % 2 ? ControlPointEdge : ControlPointCorner)(
+				...cps_data[i], this, cps_data[(len + i - 1) % len][0], cps_data[(len + i + 1) % len][0])
+			);
+		}
+		this.invokeControlPointMethods(['idsToObjs', 'postInit', 'recalcDir', 'recalcRatio']);
 	}
 }

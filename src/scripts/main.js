@@ -1132,78 +1132,78 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 }
 
 
-function lineHandler(btn, LineClass) {
+function twoPointHandler(btn, ShapeCls) {
 	var pt0, new_line_id, new_cp0_id, new_cp1_id;
-	btn.mask_g.addEventListener('click', crLine);
+	btn.mask_g.addEventListener('click', createShape);
 
 	// eslint-disable-next-line no-unused-vars
-	function crLine(event) { // Create line. Called when the line button is cklicked.
+	function createShape(event) { // Create line. Called when the line button is cklicked.
 		btn.selectCond();
-		window.addEventListener('mousedown', stLine);
+		window.addEventListener('mousedown', startShape);
 	}
 
-	function stLine(event) { // Start drawing line. Called when mouse button 1 is down.
+	function startShape(event) { // Start drawing line. Called when mouse button 1 is down.
 		if (canvas.contains(event.target)) { // Line starts within the canvas. Continue drawing.
 			pt0 = getSvgPoint(event);
 			if (event.shiftKey) pt0 = pt0.map(val => Math.round(val / 10) * 10);
-			new_line_id = LineClass.getNewId();
+			new_line_id = ShapeCls.getNewId();
 			new_cp0_id = ControlPoint.getNewId();
 			new_cp1_id = ControlPoint.getNewId();
-			movLine(event);
-			window.addEventListener('mousemove', movLine);
-			window.addEventListener('mouseup', enLine);
+			moveShape(event);
+			window.addEventListener('mousemove', moveShape);
+			window.addEventListener('mouseup', finishShape);
 		}
 		else { // Line starts outside of canvas. Exit drawing.
-			window.removeEventListener('mousemove', movLine);
-			window.removeEventListener('mousedown', stLine);
+			window.removeEventListener('mousemove', moveShape);
+			window.removeEventListener('mousedown', startShape);
 			btn.deselectCond(event);
 		}
 	}
 
-	function movLine(event) { // Move second end of the drawn bond
+	function moveShape(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = getSvgPoint(event);
 		if (event.shiftKey) pt1 = pt1.map(val => Math.round(val / 10) * 10);
-		let kwargs = {create: {[LineClass.alias]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}}};
+		let kwargs = {create: {[ShapeCls.alias]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}}};
 		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
 
 	// eslint-disable-next-line no-unused-vars
-	function enLine(event) { // Finish drawing line
-		window.removeEventListener('mouseup', enLine);
-		window.removeEventListener('mousemove', movLine);
+	function finishShape(event) { // Finish drawing line
+		window.removeEventListener('mouseup', finishShape);
+		window.removeEventListener('mousemove', moveShape);
 		document.getElementById(new_line_id).objref.eventsOn();
 	}
 }
 
 
 function multipointHandler(btn, ShapeCls) {
-	let new_polyline_id, cmd, cps
+	let new_shape_id, cmd, cps;
 	let new_cp_id = ControlPoint.getNewId();
 	let new_aug_cp_id = ShapeCls.getNewAugCpId();
 	resetDrawing();
-	btn.mask_g.addEventListener('click', crPolyine);
+	btn.mask_g.addEventListener('click', createShape);
 
-	function crPolyine(event) { // Create line. Called when the line button is cklicked.
+	function createShape(event) { // Create shape. Invoked when the corresponding button is cklicked.
 		btn.selectCond();
-		window.addEventListener('mousedown', setPt);
-		window.addEventListener('mousemove', movPolyline);
+		window.addEventListener('mousedown', setPoint);
+		window.addEventListener('mousemove', moveShape);
 		document.addEventListener('keydown', keyHandler);
 	}
 
-	function setPt(event) {
+	function setPoint(event) {
 		if (canvas.contains(event.target)) {
 			cps = getUpdatedCps(event);
 			new_cp_id = ControlPoint.getNewId();
 			new_aug_cp_id = ShapeCls.getNewAugCpId();
-			updatePolyline(cps);
+			updateShape(cps);
 		}
-		else { // Line starts outside of canvas. Exit drawing.
-			window.removeEventListener('mousemove', movPolyline);
-			window.removeEventListener('mousedown', setPt);
+		else { // SHape starts outside of canvas. Exit drawing.
+			window.removeEventListener('mousemove', moveShape);
+			window.removeEventListener('mousedown', setPoint);
 			document.removeEventListener('keydown', keyHandler);
-			finishCurrPolyline();
+			finishCurrShape();
 			btn.deselectCond(event);
 		}
 	}
@@ -1211,18 +1211,18 @@ function multipointHandler(btn, ShapeCls) {
 	function resetDrawing() {
 		cmd = null;
 		cps = [];
-		new_polyline_id = ShapeCls.getNewId();
+		new_shape_id = ShapeCls.getNewId();
 	}
 
-	function finishCurrPolyline() {
+	function finishCurrShape() {
 		if (cmd) editStructure(cmd[1]); // Undo
-		if (cps.length > 1) dispatcher.do(getKwargs(cps)); // Do by dispatcher
+		if (cps.length >= ShapeCls.min_pt_cnt) dispatcher.do(getKwargs(cps)); // Do by dispatcher
 		resetDrawing();
 	}
 
 	function keyHandler(event) {
 		event.preventDefault();
-		if (event.keyCode === 9) finishCurrPolyline(); // Tab is pressed
+		if (event.keyCode === 9) finishCurrShape(); // Tab is pressed
 	}
 
 	function getUpdatedCps(event) {
@@ -1231,23 +1231,23 @@ function multipointHandler(btn, ShapeCls) {
 		return ShapeCls.insertMidCp([...cps, [new_cp_id, ...pt]], new_aug_cp_id);
 	}
 
-	function movPolyline(event) { // Move second end of the drawn bond
+	function moveShape(event) { // Move second end of the drawn bond
 		const ps = getUpdatedCps(event);
-		updatePolyline(ps);
+		updateShape(ps);
 	}
 
-	function updatePolyline(points) {
+	function updateShape(points) {
 		if (cmd) editStructure(cmd[1]); // Undo
 		if (points.length >= ShapeCls.min_pt_cnt) {
 			const kwargs = getKwargs(points);
 			cmd = [kwargs, invertCmd(kwargs)];
 			editStructure(cmd[0]); // Do
-			document.getElementById(new_polyline_id).objref.eventsOff();
+			document.getElementById(new_shape_id).objref.eventsOff();
 		}
 	}
 
 	function getKwargs(points) {
-		return {create: {[ShapeCls.alias]: {[new_polyline_id]: [points]}}};
+		return {create: {[ShapeCls.alias]: {[new_shape_id]: [points]}}};
 	}
 }
 
@@ -2194,10 +2194,10 @@ polygonHandler(pentagonbtn, 5);
 polygonHandler(hexagonbtn, 6);
 polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
-lineHandler(linebtn, Line);
-lineHandler(arrowbtn, Arrow);
-lineHandler(circlebtn, Circle);
-lineHandler(rectbtn, Rectangle);
+twoPointHandler(linebtn, Line);
+twoPointHandler(arrowbtn, Arrow);
+twoPointHandler(circlebtn, Circle);
+twoPointHandler(rectbtn, Rectangle);
 multipointHandler(polylinebtn, Polyline);
 multipointHandler(polygbtn, Polygon);
 multipointHandler(curvbtn, Curve);
