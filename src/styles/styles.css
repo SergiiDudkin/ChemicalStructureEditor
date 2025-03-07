@@ -84,12 +84,6 @@ body {
 	opacity: 1;
 	cursor: pointer;
 }
-/*.ag:hover .chemtxt {
-	filter: none;
-}
-.bg:hover {
-	cursor: pointer;
-}*/
 .hlcirc {
 	stroke: blue;
 	stroke-width: 2.2;

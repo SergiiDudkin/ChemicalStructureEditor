@@ -207,8 +207,8 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 
 export function editShapes({create={}, del={}, alter={}, transforms=new Array()}) {
-	var ctr_pts_render = new Set(),
-		shapes_render = new Set();
+	var cps_to_render = new Set(),
+		shapes_to_render = new Set();
 
 	for (const ids of Object.values(del)) {
 		for (const id of ids) {
@@ -219,48 +219,48 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 	for (const [cls_alias, content] of Object.entries(create)) {
 		for (const [id, data] of Object.entries(content)) {
 			let new_shape = new (registry.classes[cls_alias])(id, ...data);
-			shapes_render.add(new_shape);
-			new_shape.cps.forEach(cp => ctr_pts_render.add(cp));
+			shapes_to_render.add(new_shape);
+			new_shape.cps.forEach(cp => cps_to_render.add(cp));
 		}
 	}
 
 	// Transforms
 	for (const [type, classes, params] of transforms) {
-		const following_cps = [];
-		const to_recalc_dir = [];
-		const to_recalc_ratio = [];
-		const cps_all = new Set();
+		const shapes = new Set();
+		const cps = new Set();
+		const following_cps = new Set();
+		const to_recalc_dir = new Set();
+		const to_recalc_ratio = new Set();
+
 		for (const [cls_alias, ids] of Object.entries(classes)) {
 			for (const item_id of ids) {
 				const item = document.getElementById(item_id).objref;
 				item.transform(type, params);
-				if (cls_alias == 'control_points') {
-					cps_all.add(item);
-					shapes_render.add(item.master);
-					item.followers.forEach(cp => ctr_pts_render.add(cp))
-					following_cps.push(item.followers);
-					to_recalc_dir.push(item.to_recalc_dir);
-					to_recalc_ratio.push(item.to_recalc_ratio);
-				}
-				else {
-					item.cps.forEach(cp => cps_all.add(cp));
-					shapes_render.add(item);
-				}
+				(cls_alias == 'control_points' ? cps : shapes).add(item);
 			}
 		}
-		cps_all.forEach(cp => ctr_pts_render.add(cp));
-		for (const cp of new Set(following_cps.flat())) {
-			if (!cps_all.has(cp)) cp.follow();
+		for (const cp of cps) {
+			shapes_to_render.add(cp.master);
+			cp.followers.forEach(cp_ => cps_to_render.add(cp_));
+			cp.followers.forEach(cp_ => following_cps.add(cp_));
+			cp.to_recalc_dir.forEach(cp_ => to_recalc_dir.add(cp_));
+			cp.to_recalc_ratio.forEach(cp_ => to_recalc_ratio.add(cp_));
 		}
-		new Set(to_recalc_dir.flat()).forEach(cp => cp.recalcDir());
-		new Set(to_recalc_ratio.flat()).forEach(cp => cp.recalcRatio());
+		for (const shape of shapes) {
+			shapes_to_render.add(shape);
+			shape.cps.forEach(cp => cps.add(cp));
+		}
+		cps.forEach(cp => cps_to_render.add(cp));
+		following_cps.forEach(cp => {if (!cps.has(cp)) cp.follow()});
+		to_recalc_dir.forEach(cp => cp.recalcDir());
+		to_recalc_ratio.forEach(cp => cp.recalcRatio());
 	}
 
-	for (const shape of shapes_render) {
+	for (const shape of shapes_to_render) {
 		shape.render();
 	}
 
-	for (const ctr_pt of ctr_pts_render) {
-		ctr_pt.render();
+	for (const cp of cps_to_render) {
+		cp.render();
 	}
 }

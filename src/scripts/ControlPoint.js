@@ -515,7 +515,7 @@ export class Curve extends MultipointShape {
 
 	transform(type, params) {
 		super.transform(type, params);
-		if (type == ROTATE || type == STRETCH) this.recalcDir();
+		if (type == ROTATE || type == STRETCH) this.invokeControlPointMethods(['recalcDir']);
 	}
 
 	calcCoordinates() {
