@@ -1,5 +1,5 @@
 import {attachSvg, setAttrsSvg} from './Utils.js';
-import {ROTATE, STRETCH, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, rotateAroundCtr} from './Geometry.js';
+import {MOVE, ROTATE, STRETCH, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, rotateAroundCtr, stretchAlongDir} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
 import {ControlPoint, ControlPointEdge, ControlPointCorner, ControlPointTerminal} from './ControlPoint.js'
 
@@ -294,10 +294,18 @@ export class Rectangle extends ShapeBase {
 	transform(type, params) {
 		if (type == STRETCH) {
 			const remainder = Math.abs((params.dir_angle - this.abs_rot_ang) % (Math.PI * 0.5));
-			if (Math.min(remainder, Math.PI * 0.5 - remainder) > 10e-8) return;
+			if (Math.min(remainder, Math.PI * 0.5 - remainder) < 10e-8) {
+				super.transform(type, params);
+			}
+			else {
+				const new_ctr = stretchAlongDir(this.xy, params.stretch_factor, params.dir_angle, params.stretch_ctr);
+				super.transform(MOVE, {moving_vec: vecDif(this.xy, new_ctr)});
+			}
 		}
-		if (type == ROTATE) this.abs_rot_ang += params.rot_angle;
-		super.transform(type, params);
+		else {
+			if (type == ROTATE) this.abs_rot_ang += params.rot_angle;
+			super.transform(type, params);
+		}
 	}
 
 	calcCoordinates() {
