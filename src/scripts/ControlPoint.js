@@ -232,16 +232,9 @@ export class ShapeBase extends CanvasCitizen {
 	render() {
 		this.recalcCtr();
 		this.calcCoordinates();
-
-		// // Follow coordinates
-		// for (const layer of this.layers) {
-		// 	if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
-		// }
 		this.followCoords();
-
 		this.createLayer(SHAPE);
 		this.createLayer(SENSOR);
-
 		if (this.constructor.delSel.has(this.id)) {
 			this.select();
 			this.constructor.delSel.delete(this.id);
