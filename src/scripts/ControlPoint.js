@@ -1,5 +1,5 @@
 import {CtrRect, attachSvg, setAttrsSvg} from './Utils.js';
-import {MOVE, ROTATE, SCALE, STRETCH, transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, lineIntersec, vecDotProd} from './Geometry.js';
+import {MOVE, ROTATE, SCALE, STRETCH, transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, lineIntersec, vecDotProd, rotateAroundCtr} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen, IdHolder} from './BaseClasses.js';
 
 
@@ -233,10 +233,11 @@ export class ShapeBase extends CanvasCitizen {
 		this.recalcCtr();
 		this.calcCoordinates();
 
-		// Follow coordinates
-		for (const layer of this.layers) {
-			if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
-		}
+		// // Follow coordinates
+		// for (const layer of this.layers) {
+		// 	if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
+		// }
+		this.followCoords();
 
 		this.createLayer(SHAPE);
 		this.createLayer(SENSOR);
@@ -244,6 +245,12 @@ export class ShapeBase extends CanvasCitizen {
 		if (this.constructor.delSel.has(this.id)) {
 			this.select();
 			this.constructor.delSel.delete(this.id);
+		}
+	}
+
+	followCoords() {
+		for (const layer of this.layers) {
+			if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
 		}
 	}
 
@@ -401,6 +408,11 @@ export class Circle extends ShapeBase {
 
 
 export class Rectangle extends ShapeBase {
+	constructor(id, cps_data, abs_rot_ang=0) {
+		super(id, cps_data);
+		this.abs_rot_ang = abs_rot_ang;
+	}
+
 	static sensor_flags = {
 		...super.sensor_flags,
 		is_rectangle: true
@@ -417,15 +429,39 @@ export class Rectangle extends ShapeBase {
 
 	static is_registered = this.register();
 
+	transform(type, params) {
+		if (type == STRETCH) {
+			const remainder = Math.abs((params.dir_angle - this.abs_rot_ang) % (Math.PI * 0.5));
+			if (Math.min(remainder, Math.PI * 0.5 - remainder) > 10e-8) return;
+		}
+		if (type == ROTATE) this.abs_rot_ang += params.rot_angle;
+		super.transform(type, params);
+	}
+
 	calcCoordinates() {
-		const x1 = this.cps[0].xy[0], y1 = this.cps[0].xy[1], x2 = this.cps[1].xy[0], y2 = this.cps[1].xy[1];
+		const orig_cps = this.cps.map(cp => rotateAroundCtr(cp.xy, -this.abs_rot_ang, this.xy));
+		const x1 = orig_cps[0][0], y1 = orig_cps[0][1], x2 = orig_cps[1][0], y2 = orig_cps[1][1];
 		this.coords = [{x: Math.min(x1, x2), y: Math.min(y1, y2), 
 			width: Math.abs(x2 - x1), height: Math.abs(y2 - y1)}];
 	}
 
+	followCoords() {
+		super.followCoords();
+		for (const layer of this.layers) {
+			if (layer) layer.firstChild.transform.baseVal[0].setRotate(this.abs_rot_ang * 180 / Math.PI, ...this.xy);
+		}
+	}
+
+	getData() {
+		return [...super.getData(), this.abs_rot_ang];
+	}
+
 	createElements(layer_idx, attrs) {
 		attrs.fill = 'none';
-		return [attachSvg(this.layers[layer_idx], 'rect', {...attrs, ...this.coords[0]})];
+		const rect = attachSvg(this.layers[layer_idx], 'rect', {...attrs, ...this.coords[0]});
+		rect.transform.baseVal.appendItem(rect.ownerSVGElement.createSVGTransform());
+		rect.transform.baseVal[0].setRotate(this.abs_rot_ang * 180 / Math.PI, ...this.xy);
+		return [rect];
 	}
 }
 
