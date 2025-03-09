@@ -1,7 +1,7 @@
 import {attachSvg, setAttrsSvg} from './Utils.js';
 import {MOVE, ROTATE, STRETCH, vecLen, unitVec, vecDif, vecSum, vecMul, rotateVec, vecCtr, rotateAroundCtr, stretchAlongDir} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
-import {ControlPoint, ControlPointEdge, ControlPointCorner, ControlPointTerminal} from './ControlPoint.js'
+import {ControlPoint, ControlPointEdge, ControlPointCorner, ControlPointTerminal} from './ControlPoints.js'
 
 
 const LAYER_SPEC = Object.freeze({

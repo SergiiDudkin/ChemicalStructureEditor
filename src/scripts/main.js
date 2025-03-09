@@ -12,7 +12,7 @@ import {
 	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec, MOVE, ROTATE, SCALE, STRETCH
 } from './Geometry.js';
-import {ControlPoint} from './ControlPoint.js';
+import {ControlPoint} from './ControlPoints.js';
 import {Line, Arrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
 import {registry} from './BaseClasses.js';
 
