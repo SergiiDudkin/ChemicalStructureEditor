@@ -407,17 +407,24 @@ var heptagonbtn = new SubButton(dropcycbtn,
 	`<polygon points="15.0,27.7 5.1,22.9 2.6,12.2 9.5,3.6 20.5,3.6 27.4,12.2 24.9,22.9" stroke="black" stroke-width="2"
 	fill="none" />`
 );
-var linebtn = new RegularButton(flex_container, toBtnText('li'));
-var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
-var doublearrowbtn = new RegularButton(flex_container, toBtnText('da'));
-var resonancearrowbtn = new RegularButton(flex_container, toBtnText('ra'));
-var retroarrowbtn = new RegularButton(flex_container, toBtnText('rt'));
-var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
-var polygbtn = new RegularButton(flex_container, toBtnText('pg'));
-var circlebtn = new RegularButton(flex_container, toBtnText('ci'));
-var rectbtn = new RegularButton(flex_container, toBtnText('rc'));
-var curvbtn = new RegularButton(flex_container, toBtnText('cu'));
-var smoothbtn = new RegularButton(flex_container, toBtnText('sm'));
+
+var droparrowsbtn = new DropButton(flex_container, toBtnText('as'));
+var arrowbtn = new SubButton(droparrowsbtn, toBtnText('ar'));
+var doublearrowbtn = new SubButton(droparrowsbtn, toBtnText('da'));
+var resonancearrowbtn = new SubButton(droparrowsbtn, toBtnText('ra'));
+var retroarrowbtn = new SubButton(droparrowsbtn, toBtnText('rt'));
+droparrowsbtn.focusSubbtn(arrowbtn);
+
+var dropshapesbtn = new DropButton(flex_container, toBtnText('sh'));
+var linebtn = new SubButton(dropshapesbtn, toBtnText('li'));
+var polylinebtn = new SubButton(dropshapesbtn, toBtnText('po'));
+var polygbtn = new SubButton(dropshapesbtn, toBtnText('pg'));
+var circlebtn = new SubButton(dropshapesbtn, toBtnText('ci'));
+var rectbtn = new SubButton(dropshapesbtn, toBtnText('rc'));
+var curvbtn = new SubButton(dropshapesbtn, toBtnText('cu'));
+var smoothbtn = new SubButton(dropshapesbtn, toBtnText('sm'));
+dropshapesbtn.focusSubbtn(linebtn);
+
 
 
 var cnvclippath = document.getElementById('cnvclippath');
