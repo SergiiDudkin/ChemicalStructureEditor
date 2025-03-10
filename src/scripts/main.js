@@ -13,7 +13,7 @@ import {
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec, MOVE, ROTATE, SCALE, STRETCH
 } from './Geometry.js';
 import {ControlPoint} from './ControlPoints.js';
-import {Line, Arrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
+import {Line, Arrow, DoubleArrow, ResonanceArrow, RetroArrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
 import {registry} from './BaseClasses.js';
 
 
@@ -409,6 +409,9 @@ var heptagonbtn = new SubButton(dropcycbtn,
 );
 var linebtn = new RegularButton(flex_container, toBtnText('li'));
 var arrowbtn = new RegularButton(flex_container, toBtnText('ar'));
+var doublearrowbtn = new RegularButton(flex_container, toBtnText('da'));
+var resonancearrowbtn = new RegularButton(flex_container, toBtnText('ra'));
+var retroarrowbtn = new RegularButton(flex_container, toBtnText('rt'));
 var polylinebtn = new RegularButton(flex_container, toBtnText('po'));
 var polygbtn = new RegularButton(flex_container, toBtnText('pg'));
 var circlebtn = new RegularButton(flex_container, toBtnText('ci'));
@@ -2207,6 +2210,9 @@ polygonHandler(heptagonbtn, 7);
 polygonHandler(benzenebtn, 6, true);
 twoPointHandler(linebtn, Line);
 twoPointHandler(arrowbtn, Arrow);
+twoPointHandler(doublearrowbtn, DoubleArrow);
+twoPointHandler(resonancearrowbtn, ResonanceArrow);
+twoPointHandler(retroarrowbtn, RetroArrow);
 twoPointHandler(circlebtn, Circle);
 twoPointHandler(rectbtn, Rectangle);
 multipointHandler(polylinebtn, Polyline);
