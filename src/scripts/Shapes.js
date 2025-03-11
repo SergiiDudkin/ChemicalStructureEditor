@@ -163,11 +163,6 @@ export class Line extends ShapeBase {
 		[SENSOR]: document.getElementById('sensors_l')
 	}
 
-	static sensor_flags = {
-		...super.sensor_flags,
-		is_line: true
-	};
-
 	// Public info
 	static alias = 'lines';
 
@@ -186,11 +181,6 @@ export class Line extends ShapeBase {
 
 
 export class Arrow extends Line {
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
-		is_arrow: true
-	};
-
 	static parents = {
 		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
 		[SENSOR]: document.getElementById('sensors_r')
@@ -235,11 +225,6 @@ export class Arrow extends Line {
 
 
 export class DoubleArrow extends Arrow {
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).sensor_flags,
-		is_darrow: true
-	};
-
 	static parents = {
 		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents, 
 		[SENSOR]: document.getElementById('sensors_da')
@@ -274,11 +259,6 @@ export class DoubleArrow extends Arrow {
 
 
 export class ResonanceArrow extends Arrow {
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).sensor_flags,
-		is_rarrow: true
-	};
-
 	static parents = {
 		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents, 
 		[SENSOR]: document.getElementById('sensors_re')
@@ -320,11 +300,6 @@ export class ResonanceArrow extends Arrow {
 
 
 export class RetroArrow extends Line {
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
-		is_tarrow: true
-	};
-
 	static parents = {
 		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
 		[SENSOR]: document.getElementById('sensors_rt')
@@ -366,11 +341,6 @@ export class RetroArrow extends Line {
 
 
 export class Circle extends ShapeBase {
-	static sensor_flags = {
-		...super.sensor_flags,
-		is_circle: true
-	};
-
 	static parents = {
 		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_i')
@@ -413,11 +383,6 @@ export class Rectangle extends ShapeBase {
 		super(id, cps_data);
 		this.abs_rot_ang = abs_rot_ang;
 	}
-
-	static sensor_flags = {
-		...super.sensor_flags,
-		is_rectangle: true
-	};
 
 	static parents = {
 		...super.parents, 
@@ -494,11 +459,6 @@ export class Polyline extends MultipointShape {
 		[SENSOR]: document.getElementById('sensors_p')
 	}
 
-	static sensor_flags = {
-		...super.sensor_flags,
-		is_polyline: true
-	};
-
 	static alias = 'polylines';
 
 	static id_prefix = 'p';
@@ -522,11 +482,6 @@ export class Polygon extends Polyline {
 		[SENSOR]: document.getElementById('sensors_y')
 	}
 
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
-		is_polygon: true
-	};
-
 	static alias = 'polygons';
 
 	static id_prefix = 'y';
@@ -545,11 +500,6 @@ export class Curve extends MultipointShape {
 		...super.parents, 
 		[SENSOR]: document.getElementById('sensors_u')
 	}
-
-	static sensor_flags = {
-		...super.sensor_flags,
-		is_curve: true
-	};
 
 	static alias = 'curve';
 
@@ -609,11 +559,6 @@ export class SmoothShape extends Curve {
 		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
 		[SENSOR]: document.getElementById('sensors_m')
 	}
-
-	static sensor_flags = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).sensor_flags,
-		is_smooth: true
-	};
 
 	static alias = 'smooth';
 
