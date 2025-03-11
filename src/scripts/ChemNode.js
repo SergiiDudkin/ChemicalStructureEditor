@@ -52,8 +52,6 @@ export class ChemNode extends CanvasCitizen {
 
 	static hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
-	static is_registered = this.register();
-
 	delete() {
 		super.delete();
 		if (this.select_circ) {
@@ -224,3 +222,5 @@ export class ChemNode extends CanvasCitizen {
 		}
 	};
 }
+
+ChemNode.register();

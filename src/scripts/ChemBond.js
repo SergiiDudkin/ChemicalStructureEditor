@@ -110,8 +110,6 @@ export class ChemBond extends CanvasCitizen {
 		this.parents[SENSOR].classList.add('sympoi');
 	};
 
-	static is_registered = this.register();
-
 	recalcDims() {
 		this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 		this.len = vecLen(this.difxy); // Distance between nodes
@@ -468,3 +466,5 @@ export class ChemBond extends CanvasCitizen {
 		}
 	};
 }
+
+ChemBond.register();

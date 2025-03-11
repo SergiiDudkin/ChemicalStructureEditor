@@ -31,8 +31,6 @@ export class ControlPoint extends IdHolder {
 	static citizen = false;
 	static shape = true;
 
-	static is_registered = this.register();
-
 	setCtr(xy) {
 		this.xy = [...xy];
 	}
@@ -61,6 +59,8 @@ export class ControlPoint extends IdHolder {
 		Object.keys(this).forEach(key => delete this[key]);
 	}
 }
+
+ControlPoint.register();
 
 
 class ControlPointInner extends ControlPoint {

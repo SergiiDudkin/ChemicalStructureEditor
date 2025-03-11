@@ -168,8 +168,6 @@ export class Line extends ShapeBase {
 
 	static id_prefix = 'l';
 
-	static is_registered = this.register();
-
 	calcCoordinates() {
 		this.coords = [{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]}];
 	}
@@ -189,8 +187,6 @@ export class Arrow extends Line {
 	static alias = 'arrows';
 
 	static id_prefix = 'r';
-
-	static is_registered = this.register();
 
 	getMarkerId(layer_idx) {
 		return `m${layer_idx}-${this.id}`
@@ -234,8 +230,6 @@ export class DoubleArrow extends Arrow {
 
 	static id_prefix = 'da';
 
-	static is_registered = this.register();
-
 	calcCoordinates() {
 		const vec = vecDif(this.cps[0].xy, this.cps[1].xy);
 		const uv = unitVec(vec);
@@ -267,8 +261,6 @@ export class ResonanceArrow extends Arrow {
 	static alias = 'arrowsre';
 
 	static id_prefix = 're';
-
-	static is_registered = this.register();
 
 	createMarker(layer_idx, attrs) {
 		this.marker = attachSvg(attachSvg(this.layers[layer_idx], 'defs'), 'marker', {
@@ -309,8 +301,6 @@ export class RetroArrow extends Line {
 
 	static id_prefix = 'rt';
 
-	static is_registered = this.register();
-
 	static triangle = [[-10, -20], [0, 0], [-10, 20]];
 
 	calcCoordinates() {
@@ -349,8 +339,6 @@ export class Circle extends ShapeBase {
 	static alias = 'circles';
 
 	static id_prefix = 'i';
-
-	static is_registered = this.register();
 
 	transform(type, params) {
 		if (type == STRETCH) {
@@ -392,8 +380,6 @@ export class Rectangle extends ShapeBase {
 	static alias = 'rectangles';
 
 	static id_prefix = 'e';
-
-	static is_registered = this.register();
 
 	transform(type, params) {
 		if (type == STRETCH) {
@@ -463,8 +449,6 @@ export class Polyline extends MultipointShape {
 
 	static id_prefix = 'p';
 
-	static is_registered = this.register();
-
 	calcCoordinates() {
 		this.coords = [{points: this.cps.map(cp => cp.xy.join()).join(' ')}];
 	}
@@ -486,8 +470,6 @@ export class Polygon extends Polyline {
 
 	static id_prefix = 'y';
 
-	static is_registered = this.register();
-
 	createElements(layer_idx, attrs) {
 		attrs.fill = 'none';
 		return [attachSvg(this.layers[layer_idx], 'polygon', {...attrs, ...this.coords[0]})];
@@ -504,8 +486,6 @@ export class Curve extends MultipointShape {
 	static alias = 'curve';
 
 	static id_prefix = 'u';
-
-	static is_registered = this.register();
 
 	static min_pt_cnt = 3;
 
@@ -564,8 +544,6 @@ export class SmoothShape extends Curve {
 
 	static id_prefix = 'm';
 
-	static is_registered = this.register();
-
 	static min_pt_cnt = 6;
 
 	static insertMidCp(cps, id) {
@@ -593,3 +571,5 @@ export class SmoothShape extends Curve {
 		this.invokeControlPointMethods(['idsToObjs', 'postInit', 'recalcDir', 'recalcRatio']);
 	}
 }
+
+[Line, Arrow, DoubleArrow, ResonanceArrow, RetroArrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape].forEach(cls => cls.register());
