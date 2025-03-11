@@ -13,7 +13,8 @@ import {
 	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, checkIntersec, MOVE, ROTATE, SCALE, STRETCH
 } from './Geometry.js';
 import {ControlPoint} from './ControlPoints.js';
-import {Line, Arrow, DoubleArrow, ResonanceArrow, RetroArrow, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
+import {Line, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
+import {Arrow, DoubleArrow, ResonanceArrow, RetroArrow} from './Arrows.js';
 import {registry} from './BaseClasses.js';
 
 
