@@ -325,16 +325,21 @@ const flex_container = document.getElementsByClassName('flex-container')[0];
 const elbtnseq = ['C', 'H', 'O', 'N', 'S'];
 
 const selectbtn = new DropButton(flex_container, `
-	<line style="fill:none;stroke:black;stroke-width:2;" x1="15" y1="7" x2="15" y2="23"/>
-	<line style="fill:none;stroke:black;stroke-width:2;" x1="7" y1="15" x2="23" y2="15"/>
-	<polygon points="3,15 7.5,10.5 7.5,19.5 "/>
-	<polygon points="27,15 22.5,19.5 22.5,10.5 "/>
-	<polygon points="15,27 10.5,22.5 19.5,22.5 "/>
-	<polygon points="15,3 19.5,7.5 10.5,7.5 "/>
+	<polygon stroke="none" fill="black" points="9.1,4 9.2,24.2 13.5,21.5 15.6,27.2 19.4,25.8 17.3,20.1 22.3,19.3"></polygon>
 `);
-const selrebtn = new SubButton(selectbtn, toBtnText('re'));
-const sellabtn = new SubButton(selectbtn, toBtnText('la'));
-const selmobtn = new SubButton(selectbtn, toBtnText('mo'));
+const selrebtn = new SubButton(selectbtn, `
+	<rect stroke="black" fill="none" stroke-width="2" x="3" y="7" width="24" height="16" stroke-dasharray="4" stroke-dashoffset="2"></rect>
+`);
+const sellabtn = new SubButton(selectbtn, `
+	<path stroke="black" fill="none" stroke-width="2" d="M 15 3 Q 3 3 3 15 Q 3 27 10.5 27 Q 18 27 18 22 Q 18 17 22 17.3 Q 26 17.6 26.5 10.3 Q 27 3 15 3" stroke-dasharray="3.9"></path>
+`);
+const selmobtn = new SubButton(selectbtn, `
+	<line stroke="black" stroke-width="2" x1="5" y1="19" x2="15" y2="11"></line>
+	<line stroke="black" stroke-width="2" x1="25" y1="19" x2="15" y2="11"></line>
+	<circle stroke="none" cx="15" cy="11" r="6"></circle>
+	<circle stroke="none" cx="5" cy="19" r="3"></circle>
+	<circle stroke="none" cx="25" cy="19" r="3"></circle>
+`);
 selectbtn.focusSubbtn(selrebtn);
 
 const dropelbtn = new DropButton(flex_container, `
@@ -412,21 +417,59 @@ const heptagonbtn = new SubButton(dropcycbtn,
 );
 dropcycbtn.focusSubbtn(benzenebtn);
 
-const droparrowsbtn = new DropButton(flex_container, toBtnText('as'));
-const arrowbtn = new SubButton(droparrowsbtn, toBtnText('ar'));
-const doublearrowbtn = new SubButton(droparrowsbtn, toBtnText('da'));
-const resonancearrowbtn = new SubButton(droparrowsbtn, toBtnText('ra'));
-const retroarrowbtn = new SubButton(droparrowsbtn, toBtnText('rt'));
+const droparrowsbtn = new DropButton(flex_container, `
+	<line stroke="black" stroke-width="2" x1="5" y1="15" x2="19" y2="15"></line>
+	<polygon stroke="none" points="18,11 18,19 28,15"></polygon>
+	<polygon stroke="none" points="3,11 5,15 3,19 10,19 12,15 10,11"></polygon>
+`);
+const arrowbtn = new SubButton(droparrowsbtn, `
+	<line stroke="black" fill="black" stroke-width="2" x1="2" y1="15" x2="19" y2="15"></line>
+	<polygon stroke="none" fill="black" points="18,11 18,19 28,15"></polygon>
+`);
+const doublearrowbtn = new SubButton(droparrowsbtn, `
+	<line stroke="black" stroke-width="2" x1="2" y1="11" x2="19" y2="11"></line>
+	<line stroke="black" stroke-width="2" x1="27" y1="19" x2="11" y2="19"></line>
+	<polygon stroke="none" fill="black" points="18,7 18,15 28,11"></polygon>
+	<polygon stroke="none" fill="black" points="12,15 12,23 2,19"></polygon>
+`);
+const resonancearrowbtn = new SubButton(droparrowsbtn, `
+	<line stroke="black" stroke-width="2" x1="3" y1="15" x2="27" y2="15"></line>
+	<polyline stroke="black" fill="none" stroke-width="2" points="8,10 3,15 8,20"></polyline>
+	<polyline stroke="black" fill="none" stroke-width="2" points="22,10 27,15 22,20"></polyline>
+`);
+const retroarrowbtn = new SubButton(droparrowsbtn, `
+	<line stroke="black" stroke-width="2" x1="3" y1="19" x2="25" y2="19"></line>
+	<line stroke="black" stroke-width="2" x1="3" y1="11" x2="25" y2="11"></line>
+	<polyline stroke="black" fill="none" stroke-width="2" points="23,7 27,15 23,23"></polyline>
+`);
 droparrowsbtn.focusSubbtn(arrowbtn);
 
-const dropshapesbtn = new DropButton(flex_container, toBtnText('sh'));
-const linebtn = new SubButton(dropshapesbtn, toBtnText('li'));
-const polylinebtn = new SubButton(dropshapesbtn, toBtnText('po'));
-const polygbtn = new SubButton(dropshapesbtn, toBtnText('pg'));
-const circlebtn = new SubButton(dropshapesbtn, toBtnText('ci'));
-const rectbtn = new SubButton(dropshapesbtn, toBtnText('rc'));
-const curvbtn = new SubButton(dropshapesbtn, toBtnText('cu'));
-const smoothbtn = new SubButton(dropshapesbtn, toBtnText('sm'));
+const dropshapesbtn = new DropButton(flex_container, `
+	<circle cx="20" cy="17" r="8"></circle>
+	<rect stroke="white" stroke-width="1" x="2" y="14" width="15" height="13"></rect>
+	<polygon stroke="white" stroke-width="1" points="14,2 22,19 6,19"></polygon>
+`);
+const linebtn = new SubButton(dropshapesbtn, `
+	<line stroke="black" stroke-width="2" x1="2" y1="15" x2="28" y2="15"></line>
+`);
+const circlebtn = new SubButton(dropshapesbtn, `
+	<circle stroke="black" fill="none" stroke-width="2" cx="15" cy="15" r="11"></circle>
+`);
+const rectbtn = new SubButton(dropshapesbtn, `
+	<rect stroke="black" fill="none" stroke-width="2" x="3" y="7" width="24" height="16"></rect>
+`);
+const polylinebtn = new SubButton(dropshapesbtn, `
+	<polyline stroke="black" fill="none" stroke-width="2" points="3,27 8,5 18,21 27,15"></polyline>
+`);
+const polygbtn = new SubButton(dropshapesbtn, `
+<polygon stroke="black" fill="none" stroke-width="2"  points="3,6 10,3 16,10 27,7 27,19 19,27 7,27 9,19"></polygon>
+`);
+const curvbtn = new SubButton(dropshapesbtn, `
+	<path stroke="black" fill="none" stroke-width="2" d="M 3 27 Q 5 3 9 3 Q 12 3 15.5 16 Q 19 29 20.5 20 Q 22 11 27 14"></path>
+`);
+const smoothbtn = new SubButton(dropshapesbtn, `
+	<path stroke="black" fill="none" stroke-width="2"  d="M 12 8 Q 3 0 3 14 Q 3 27 10.2 25.58 Q 17 24 20.4 25.9 Q 26 29 26.4 16.9 Q 27 2 23 10 Q 20.3 15.3 12 8"></path>
+`);
 dropshapesbtn.focusSubbtn(linebtn);
 
 
