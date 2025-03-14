@@ -1,5 +1,5 @@
-import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
+import {ChemBond} from './ChemBond.js';
 import {editStructure} from './Executor.js';
 import {
 	styledict, styleToString, separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
@@ -1772,7 +1772,7 @@ class SelectionShape extends SelectionBase {
 
 
 class SelectionChem extends SelectionShape {
-	static classes = [...super.classes, ...registry.notShapes];
+	static classes = [...super.classes, ...registry.notShapes.toSorted((a, b) => (b === ChemNode) - (a === ChemNode))];
 
 	static event_handlers = {...super.event_handlers, keyUpHandler: 'keyup'};
 
