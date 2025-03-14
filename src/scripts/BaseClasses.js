@@ -35,6 +35,7 @@ export const registry = {
 
 export class Registered {
 	static register() {
+		this.clsInit();
 		registry.register(this);
 	}
 }
@@ -47,14 +48,12 @@ export class IdHolder extends Registered{
 		this.constructor.ids.add(id);
 	}
 
-	static register() {
-		super.register();
+	static id_prefix = ''; // Reassign!
+
+	static clsInit() {
+		this.counter = 0; // ID conuter
 		this.ids = new Set();
 	}
-
-	static counter = 0; // ID conuter
-
-	static id_prefix = ''; // Reassign!
 
 	static getNewId() {
 		return this.id_prefix + this.counter++;
@@ -94,8 +93,8 @@ export class CanvasCitizen extends IdHolder {
 		[SELECTHOLE]: document.getElementById('selectholes')
 	}
 
-	static register() {
-		super.register();
+	static clsInit() {
+		super.clsInit();
 		this.delSel = new Set(); // Deleted elements while being selected
 	}
 }
