@@ -277,12 +277,16 @@ export class Rectangle extends ShapeBase {
 export class MultipointShape extends ShapeBase {
 	static min_pt_cnt = 2; // Minimum number of control points to build the shape
 
-	static getNewAugCpId() {
-		return null;
-	}
-
 	static insertMidCp(cps, id) {
 		return cps;
+	}
+
+	static reserveId() {
+		this.new_id = this.getNewId();
+	}
+
+	static reserveCpIds() {
+		this.new_cp_id = ControlPoint.getNewId();
 	}
 }
 
@@ -337,13 +341,14 @@ export class Curve extends MultipointShape {
 
 	static min_pt_cnt = 3;
 
-	static getNewAugCpId() {
-		return ControlPoint.getNewId();
+	static reserveCpIds() {
+		super.reserveCpIds();
+		this.aug_cp_id = ControlPoint.getNewId();
 	}
 
-	static insertMidCp(cps, id) {
+	static insertMidCp(cps) {
 		const len = cps.length;
-		if (len > 3) cps.splice(len - 2, 0, [id, ...vecCtr(cps[len - 3].slice(1), cps[len - 2].slice(1))]);
+		if (len > 3) cps.splice(len - 2, 0, [this.constructor.aug_cp_id, ...vecCtr(cps[len - 3].slice(1), cps[len - 2].slice(1))]);
 		return cps;
 	}
 
@@ -394,10 +399,10 @@ export class SmoothShape extends Curve {
 
 	static min_pt_cnt = 6;
 
-	static insertMidCp(cps, id) {
+	static insertMidCp(cps) {
 		const len = cps.length;
 		if (len >= 3) cps[len - 2] = [cps[len - 2][0], ...vecCtr(cps[len - 3].slice(1), cps[len - 1].slice(1))];
-		cps.push([id, ...vecCtr(cps[len - 1].slice(1), cps[0].slice(1))]);
+		cps.push([this.constructor.aug_cp_id, ...vecCtr(cps[len - 1].slice(1), cps[0].slice(1))]);
 		return cps;
 	}
 

@@ -90,6 +90,8 @@ function openJsonFile(event) {
 		dispatcher.do(kwargs);
 		refreshBondCutouts();
 		registry.classes_vals.forEach(cls => cls.setMaxIdCounter());
+		registry.classes_vals.forEach(cls => {if (cls.reserveCpIds) cls.reserveCpIds()});
+		registry.classes_vals.forEach(cls => {if (cls.reserveId) cls.reserveId()});
 		document.getElementById('file-input').value = null;
 	});
 	reader.readAsText(file);
@@ -1246,9 +1248,8 @@ function twoPointHandler(btn, ShapeCls) {
 
 
 function multipointHandler(btn, ShapeCls) {
-	let new_shape_id, cmd, cps;
-	let new_cp_id = ControlPoint.getNewId();
-	let new_aug_cp_id = ShapeCls.getNewAugCpId();
+	let cmd, cps;
+	ShapeCls.reserveCpIds();
 	resetDrawing();
 	btn.mask_g.addEventListener('click', createShape);
 
@@ -1262,8 +1263,7 @@ function multipointHandler(btn, ShapeCls) {
 	function setPoint(event) {
 		if (canvas.contains(event.target)) {
 			cps = getUpdatedCps(event);
-			new_cp_id = ControlPoint.getNewId();
-			new_aug_cp_id = ShapeCls.getNewAugCpId();
+			ShapeCls.reserveCpIds();
 			updateShape(cps);
 		}
 		else { // SHape starts outside of canvas. Exit drawing.
@@ -1278,13 +1278,13 @@ function multipointHandler(btn, ShapeCls) {
 	function resetDrawing() {
 		cmd = null;
 		cps = [];
-		new_shape_id = ShapeCls.getNewId();
+		ShapeCls.reserveId();
 	}
 
 	function finishCurrShape() {
 		if (cmd) editStructure(cmd[1]); // Undo
 		if (cps.length >= ShapeCls.min_pt_cnt) dispatcher.do(getKwargs(cps)); // Do by dispatcher
-		resetDrawing();
+		if (cmd) resetDrawing();
 	}
 
 	function keyHandler(event) {
@@ -1295,7 +1295,7 @@ function multipointHandler(btn, ShapeCls) {
 	function getUpdatedCps(event) {
 		let pt = getSvgPoint(event);
 		pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
-		return ShapeCls.insertMidCp([...cps, [new_cp_id, ...pt]], new_aug_cp_id);
+		return ShapeCls.insertMidCp([...cps, [ShapeCls.new_cp_id, ...pt]]);
 	}
 
 	function moveShape(event) { // Move second end of the drawn bond
@@ -1309,12 +1309,12 @@ function multipointHandler(btn, ShapeCls) {
 			const kwargs = getKwargs(points);
 			cmd = [kwargs, invertCmd(kwargs)];
 			editStructure(cmd[0]); // Do
-			document.getElementById(new_shape_id).objref.eventsOff();
+			document.getElementById(ShapeCls.new_id).objref.eventsOff();
 		}
 	}
 
 	function getKwargs(points) {
-		return {create: {[ShapeCls.alias]: {[new_shape_id]: [points]}}};
+		return {create: {[ShapeCls.alias]: {[ShapeCls.new_id]: [points]}}};
 	}
 }
 
