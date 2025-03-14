@@ -9,7 +9,7 @@ export class ControlPoint extends IdHolder {
 		this.setCtr([cx, cy]);
 		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
 
-		this.shape = attachSvg(this.constructor.parents[SENSOR], this.constructor.tag, 
+		this.shape = attachSvg(this.constructor.parents[SENSOR], 'rect', 
 			{width: 10, height: 10, class: 'var-opaq', id: id});
 		this.shape.objref = this;
 		this.shape.is_shape = true;
@@ -22,7 +22,6 @@ export class ControlPoint extends IdHolder {
 	}
 
 	static parents = {[SENSOR]: document.getElementById('control_points')};
-	static tag = 'rect';
 	static id_prefix = 'cp';
 
 	// Public info
