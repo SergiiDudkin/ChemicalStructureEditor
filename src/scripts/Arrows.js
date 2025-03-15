@@ -1,22 +1,21 @@
 import {attachSvg} from './Utils.js';
 import {unitVec, vecDif, vecSum, vecMul, rotateVec, rot90cw} from './Geometry.js';
 import {SENSOR} from './BaseClasses.js';
-import {ControlPoint} from './ControlPoints.js'
 import {Line} from './Shapes.js';
 
 
 export class Arrow extends Line {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents,
 		[SENSOR]: document.getElementById('sensors_r')
-	}
+	};
 
 	static alias = 'arrows';
 
 	static id_prefix = 'r';
 
 	getMarkerId(layer_idx) {
-		return `m${layer_idx}-${this.id}`
+		return `m${layer_idx}-${this.id}`;
 	}
 
 	createMarker(layer_idx, attrs) {
@@ -40,7 +39,8 @@ export class Arrow extends Line {
 	}
 
 	createElements(layer_idx, attrs) {
-		const line = attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0], 'marker-end': `url(#${this.getMarkerId(layer_idx)})`});
+		const line = attachSvg(this.layers[layer_idx], 'line',
+			{...attrs, ...this.coords[0], 'marker-end': `url(#${this.getMarkerId(layer_idx)})`});
 		this.createMarker(layer_idx, attrs);
 		return [line];
 	}
@@ -49,9 +49,9 @@ export class Arrow extends Line {
 
 export class DoubleArrow extends Arrow {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents,
 		[SENSOR]: document.getElementById('sensors_da')
-	}
+	};
 
 	static alias = 'arrows2x';
 
@@ -72,7 +72,8 @@ export class DoubleArrow extends Arrow {
 	}
 
 	createElements(layer_idx, attrs) {
-		const lines = [0, 1].map(i => attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[i], 'marker-end': `url(#${this.getMarkerId(layer_idx)})`}));
+		const lines = [0, 1].map(i => attachSvg(this.layers[layer_idx], 'line',
+			{...attrs, ...this.coords[i], 'marker-end': `url(#${this.getMarkerId(layer_idx)})`}));
 		this.createMarker(layer_idx, attrs);
 		return lines;
 	}
@@ -81,9 +82,9 @@ export class DoubleArrow extends Arrow {
 
 export class ResonanceArrow extends Arrow {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(Object.getPrototypeOf(this))).parents,
 		[SENSOR]: document.getElementById('sensors_re')
-	}
+	};
 
 	static alias = 'arrowsre';
 
@@ -100,7 +101,6 @@ export class ResonanceArrow extends Arrow {
 	}
 
 	calcCoordinates() {
-		const vec = vecDif(this.cps[0].xy, this.cps[1].xy);
 		this.coords = [
 			{x1: this.cps[0].xy[0], y1: this.cps[0].xy[1], x2: this.cps[1].xy[0], y2: this.cps[1].xy[1]},
 		];
@@ -108,7 +108,7 @@ export class ResonanceArrow extends Arrow {
 
 	createElements(layer_idx, attrs) {
 		const marker_ref = `url(#${this.getMarkerId(layer_idx)})`;
-		const line = attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0], 
+		const line = attachSvg(this.layers[layer_idx], 'line', {...attrs, ...this.coords[0],
 			'marker-start': marker_ref, 'marker-end': marker_ref});
 		this.createMarker(layer_idx, attrs);
 		return [line];
@@ -118,9 +118,9 @@ export class ResonanceArrow extends Arrow {
 
 export class RetroArrow extends Line {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents,
 		[SENSOR]: document.getElementById('sensors_rt')
-	}
+	};
 
 	static alias = 'arrowsrt';
 

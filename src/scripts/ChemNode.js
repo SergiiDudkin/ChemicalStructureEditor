@@ -1,7 +1,7 @@
 import {ChemBond} from './ChemBond.js';
 import {textTermBuilder, treeToFormula, buildBracketTree, tokenize} from './ChemParser.js';
 import {attachSvg} from './Utils.js';
-import {lineIntersec, vecSum, vecDif, cosVec, angleVec} from './Geometry.js';
+import {lineIntersec, vecDif, cosVec, angleVec} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
 
 
@@ -32,10 +32,10 @@ export class ChemNode extends CanvasCitizen {
 	}
 
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_a'),
 		[SHAPE]: document.getElementById('atomsall')
-	}
+	};
 
 	// Public info
 	static alias = 'atoms';
@@ -121,7 +121,7 @@ export class ChemNode extends CanvasCitizen {
 			this.select_circ.setAttribute('cy', y);
 			this.masksel_circ.setAttribute('cx', x);
 			this.masksel_circ.setAttribute('cy', y);
-		}	
+		}
 	}
 
 	select() {

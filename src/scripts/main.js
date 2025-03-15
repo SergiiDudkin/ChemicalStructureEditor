@@ -90,8 +90,8 @@ function openJsonFile(event) {
 		dispatcher.do(kwargs);
 		refreshBondCutouts();
 		registry.classes_vals.forEach(cls => cls.setMaxIdCounter());
-		registry.classes_vals.forEach(cls => {if (cls.reserveCpIds) cls.reserveCpIds()});
-		registry.classes_vals.forEach(cls => {if (cls.reserveId) cls.reserveId()});
+		registry.classes_vals.forEach(cls => {if (cls.reserveCpIds) cls.reserveCpIds();});
+		registry.classes_vals.forEach(cls => {if (cls.reserveId) cls.reserveId();});
 		document.getElementById('file-input').value = null;
 	});
 	reader.readAsText(file);
@@ -327,13 +327,16 @@ const flex_container = document.getElementsByClassName('flex-container')[0];
 const elbtnseq = ['C', 'H', 'O', 'N', 'S'];
 
 const selectbtn = new DropButton(flex_container, `
-	<polygon stroke="none" fill="black" points="9.1,4 9.2,24.2 13.5,21.5 15.6,27.2 19.4,25.8 17.3,20.1 22.3,19.3"></polygon>
+	<polygon stroke="none" fill="black" points="9.1,4 9.2,24.2 13.5,21.5 15.6,27.2 19.4,25.8 17.3,20.1 22.3,19.3">
+	</polygon>
 `);
 const selrebtn = new SubButton(selectbtn, `
-	<rect stroke="black" fill="none" stroke-width="2" x="3" y="7" width="24" height="16" stroke-dasharray="4" stroke-dashoffset="2"></rect>
+	<rect stroke="black" fill="none" stroke-width="2" x="3" y="7" width="24" height="16" stroke-dasharray="4"
+	stroke-dashoffset="2"></rect>
 `);
 const sellabtn = new SubButton(selectbtn, `
-	<path stroke="black" fill="none" stroke-width="2" d="M 15 3 Q 3 3 3 15 Q 3 27 10.5 27 Q 18 27 18 22 Q 18 17 22 17.3 Q 26 17.6 26.5 10.3 Q 27 3 15 3" stroke-dasharray="3.9"></path>
+	<path stroke="black" fill="none" stroke-width="2" d="M 15 3 Q 3 3 3 15 Q 3 27 10.5 27 Q 18 27 18 22 Q 18 17 22 17.3
+	Q 26 17.6 26.5 10.3 Q 27 3 15 3" stroke-dasharray="3.9"></path>
 `);
 const selmobtn = new SubButton(selectbtn, `
 	<line stroke="black" stroke-width="2" x1="5" y1="19" x2="15" y2="11"></line>
@@ -467,10 +470,12 @@ const polygbtn = new SubButton(dropshapesbtn, `
 <polygon stroke="black" fill="none" stroke-width="2"  points="3,6 10,3 16,10 27,7 27,19 19,27 7,27 9,19"></polygon>
 `);
 const curvbtn = new SubButton(dropshapesbtn, `
-	<path stroke="black" fill="none" stroke-width="2" d="M 3 27 Q 5 3 9 3 Q 12 3 15.5 16 Q 19 29 20.5 20 Q 22 11 27 14"></path>
+	<path stroke="black" fill="none" stroke-width="2" d="M 3 27 Q 5 3 9 3 Q 12 3 15.5 16 Q 19 29 20.5 20 Q 22 11 27 14">
+	</path>
 `);
 const smoothbtn = new SubButton(dropshapesbtn, `
-	<path stroke="black" fill="none" stroke-width="2"  d="M 12 8 Q 3 0 3 14 Q 3 27 10.2 25.58 Q 17 24 20.4 25.9 Q 26 29 26.4 16.9 Q 27 2 23 10 Q 20.3 15.3 12 8"></path>
+	<path stroke="black" fill="none" stroke-width="2"  d="M 12 8 Q 3 0 3 14 Q 3 27 10.2 25.58 Q 17 24 20.4 25.9 Q 26 29
+	26.4 16.9 Q 27 2 23 10 Q 20.3 15.3 12 8"></path>
 `);
 dropshapesbtn.focusSubbtn(linebtn);
 
@@ -518,7 +523,8 @@ const transform_inverts = Object.freeze({
 	[MOVE]: ({moving_vec}) => ({moving_vec: vecMul(moving_vec, -1)}),
 	[ROTATE]: ({rot_angle, rot_ctr}) => ({rot_angle: -rot_angle, rot_ctr: rot_ctr.slice()}),
 	[SCALE]: ({scale_factor, scale_ctr}) => ({scale_factor: 1 / scale_factor, scale_ctr: scale_ctr.slice()}),
-	[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => ({stretch_factor: 1 / stretch_factor, dir_angle: dir_angle + Math.PI, stretch_ctr: stretch_ctr.slice()})
+	[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => ({stretch_factor: 1 / stretch_factor,
+		dir_angle: dir_angle + Math.PI, stretch_ctr: stretch_ctr.slice()})
 });
 
 function invertCmd(kwargs_dir) {
@@ -542,6 +548,7 @@ function invertCmd(kwargs_dir) {
 			for (const [id, new_attrs] of Object.entries(content)) {
 				kwargs_rev.alter[cls_alias][id] = {};
 				const obj = document.getElementById(id).objref;
+				// eslint-disable-next-line no-unused-vars
 				for (const [key, val] of Object.entries(new_attrs)) {
 					kwargs_rev.alter[cls_alias][id][key] = obj[key];
 				}
@@ -549,13 +556,15 @@ function invertCmd(kwargs_dir) {
 		}
 	}
 	if (kwargs_dir.transforms) {
-		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type, structuredClone(ids), transform_inverts[type](params)]);
+		kwargs_rev.transforms = kwargs_dir.transforms.toReversed().map(([type, ids, params]) => [type,
+			structuredClone(ids), transform_inverts[type](params)]);
 	}
 	return kwargs_rev;
 }
 
 
 class Dispatcher {
+	// eslint-disable-next-line no-unused-vars
 	constructor(executor, inverter, postaction = () => void 0, callback = (cmd, is_undo) => void 0) {
 		this.commands = [];
 		this.ptr = 0;
@@ -669,7 +678,7 @@ function getBondEnd(event, pt0) {
 }
 
 function pickMol(chemobj) {
-	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0])
+	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
 	return {atoms: atoms, bonds: bonds};
 }
 
@@ -802,7 +811,7 @@ function chemNodeHandler(elbtn) {
 			kwargs.create = {
 				atoms: {[new_node1id]: [...getDiscreteBondEnd(pt0, difxy), atomtext]},
 				bonds: {[new_bond_id]: [node0_id, new_node1id, 1]}
-			}
+			};
 			if (!node0_is_new) kwargs.alter = {atoms: {[node0_id]: {text: old_atomtext}}};
 		}
 		else kwargs.alter = {atoms: {[node0_id]: {text: new_atomtext}}};
@@ -1133,6 +1142,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		}
 
 		var non_sp3_ring = new Set();
+		// eslint-disable-next-line no-unused-vars
 		for (const [id, data] of Object.entries(new_bonds_data)) {
 			if (ChemBond.mult[data[2]] >= 2) {
 				non_sp3_ring.add(data[0]);
@@ -1143,7 +1153,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		var bonds_type = {};
 		var casted_types = {};
 		for (const [id, data] of Object.entries(new_bonds_data)) {
-			let is_pseudo_double = non_sp3_ring.has(data[0]) && non_sp3_ring.has(data[1])
+			let is_pseudo_double = non_sp3_ring.has(data[0]) && non_sp3_ring.has(data[1]);
 			for (let i = 0; i < 2; i++) {
 				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
@@ -1155,8 +1165,8 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 				if (old_bond) {
 					delete new_bonds_data[id];
 					var new_type_casted = old_bond.getNodeIdx(node0) ? 8 : 10;
-					if (is_pseudo_double && 
-						old_bond.type != new_type_casted && 
+					if (is_pseudo_double &&
+						old_bond.type != new_type_casted &&
 						ChemBond.auto_d_bonds.includes(old_bond.type)
 					) bonds_type[old_bond.id] = {type: new_type_casted};
 					var both_sp3 = nodes.every(node => node.hasNoMultBonds());
@@ -1253,6 +1263,7 @@ function multipointHandler(btn, ShapeCls) {
 	resetDrawing();
 	btn.mask_g.addEventListener('click', createShape);
 
+	// eslint-disable-next-line no-unused-vars
 	function createShape(event) { // Create shape. Invoked when the corresponding button is cklicked.
 		btn.selectCond();
 		window.addEventListener('mousedown', setPoint);
@@ -1482,7 +1493,7 @@ class SelectionBase {
 		finishMoving: null,
 		deactivate: null,
 		undoRedo: null
-	}
+	};
 
 	get selected_collections() {
 		return this.citizens.map(citizen => this[citizen.alias]);
@@ -1572,7 +1583,7 @@ class SelectionBase {
 	moving(event) { // Active moving
 		this.corrPtSpecialCase(event);
 		var moving_vec = vecDif(this.mo_st, this.corrected_point);
-		
+
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = this.corrected_point;
 		this.relocatingItems(MOVE, {moving_vec: moving_vec});
@@ -1599,6 +1610,7 @@ class SelectionBase {
 		editStructure(kwargs);
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	augmentCmd(kwargs_dir, kwargs_rev) {} // Helper
 
 	finishRelocatingItems(action_type, params) {
@@ -1652,6 +1664,7 @@ class SelectionBase {
 		return id_map;
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	updateNewCopySubIds(id_map) {} // Helper
 
 	activateFromPasteKwargs(kwargs) {
@@ -1700,6 +1713,7 @@ class SelectionBase {
 				this.addTransformTool();
 			}
 			else if (this.transform_tool) {
+				// eslint-disable-next-line no-unused-vars
 				cmd.transforms.forEach(([type, ids, params]) => this.transform_tool.enum_funcs[type](params));
 			}
 			else {
@@ -1738,7 +1752,7 @@ class SelectionShape extends SelectionBase {
 
 	prepareGroup() {
 		super.prepareGroup();
-		this.pointed_cp = pickCp(this.pt)
+		this.pointed_cp = pickCp(this.pt);
 	}
 
 	initCtrPtErrSpecialCase() {
@@ -1762,8 +1776,9 @@ class SelectionShape extends SelectionBase {
 
 	updateNewCopySubIds(id_map) { // Get new IDs for control points
 		for (const cls of this.citizens.filter(cls => cls.shape)) {
+			// eslint-disable-next-line no-unused-vars
 			for (const [id, data] of Object.entries(this.clipboard.kwargs.create[cls.alias])) {
-				data[0].forEach(cp_data => cp_data[0] = ControlPoint.getNewId())
+				data[0].forEach(cp_data => cp_data[0] = ControlPoint.getNewId());
 			}
 		}
 		super.updateNewCopySubIds(id_map);
@@ -1823,7 +1838,10 @@ class SelectionChem extends SelectionShape {
 			atoms: new Set([target_node.id]), // Target atom
 			bonds: new Set(Object.keys(bonds_data)) // Bonds of the target atom
 		};
-		kwargs.alter = {atoms: {[this.pointed_atom.id]: {text: target_node.text}}}; // Apply target atom's text to the pointed atom
+
+		// Apply target atom's text to the pointed atom
+		kwargs.alter = {atoms: {[this.pointed_atom.id]: {text: target_node.text}}};
+
 		kwargs.create = {bonds: {}};
 		for (const [id, data] of Object.entries(bonds_data)) {
 			if (data[0] == target_node.id) data[0] = this.pointed_atom.id;
@@ -1848,7 +1866,8 @@ class SelectionChem extends SelectionShape {
 			let pt = getSvgPoint(event);
 			let to_join = event.shiftKey && event.target.is_atom;
 			let to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
-			let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt, this.pointed_atom.xy));
+			let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt,
+				this.pointed_atom.xy));
 
 			if (!skip) {
 				if ((this.join_cmd && !to_join) || to_rejoin) this.disjoinMols();
@@ -1935,6 +1954,7 @@ class SelectionChem extends SelectionShape {
 		const kwargs = super.getCopyKwargs();
 		if (this.bonds.length && this.clipboard == null) {
 			kwargs.create.bonds = Object.fromEntries(Object.entries(kwargs.create.bonds)
+				// eslint-disable-next-line no-unused-vars
 				.filter(([id, data]) => data[0] in kwargs.create.atoms && data[1] in kwargs.create.atoms)
 			);
 		}
@@ -1942,6 +1962,7 @@ class SelectionChem extends SelectionShape {
 	}
 
 	updateNewCopySubIds(id_map) { // Replace IDs for atoms in bonds data
+		// eslint-disable-next-line no-unused-vars
 		for (const [id, data] of Object.entries(this.clipboard.kwargs.create.bonds)) {
 			data[0] = id_map[data[0]];
 			data[1] = id_map[data[1]];
@@ -2015,7 +2036,8 @@ class TransformTool extends DeletableAbortable {
 			[MOVE]: ({moving_vec}) => this.translate(moving_vec),
 			[ROTATE]: ({rot_angle, rot_ctr}) => this.rotate(rot_angle, rot_ctr),
 			[SCALE]: ({scale_factor, scale_ctr}) => this.scale(scale_factor, scale_ctr),
-			[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => this.stretch(stretch_factor, dir_angle, stretch_ctr)
+			[STRETCH]: ({stretch_factor, dir_angle, stretch_ctr}) => this.stretch(stretch_factor, dir_angle,
+				stretch_ctr)
 		});
 	}
 

@@ -49,7 +49,7 @@ export function vecDiv([x, y], divisor) { // Divide vector by scalar value
 }
 
 export function vecCtr([x0, y0], [x1, y1]) {
-	return [(x0 + x1) / 2, (y0 + y1) / 2]
+	return [(x0 + x1) / 2, (y0 + y1) / 2];
 }
 
 export function vecDotProd([x0, y0], [x1, y1]) { // Find dot product
@@ -162,5 +162,6 @@ export const transform_funcs = Object.freeze({
 	[MOVE]: (pt, {moving_vec}) => vecSum(pt, moving_vec),
 	[ROTATE]: (pt, {rot_angle, rot_ctr}) => rotateAroundCtr(pt, rot_angle, rot_ctr),
 	[SCALE]: (pt, {scale_factor, scale_ctr}) => scaleAroundCtr(pt, scale_factor, scale_ctr),
-	[STRETCH]: (pt, {stretch_factor, dir_angle, stretch_ctr}) => stretchAlongDir(pt, stretch_factor, dir_angle, stretch_ctr)
+	[STRETCH]: (pt, {stretch_factor, dir_angle, stretch_ctr}) => stretchAlongDir(pt, stretch_factor, dir_angle,
+		stretch_ctr)
 });

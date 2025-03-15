@@ -1,9 +1,10 @@
 import {ChemBond} from './ChemBond.js';
 import {ChemNode} from './ChemNode.js';
-import {STRETCH, transform_funcs, vecSum, rotateAroundCtr, scaleAroundCtr, stretchAlongDir} from './Geometry.js';
+import {STRETCH, transform_funcs} from './Geometry.js';
 import {registry} from './BaseClasses.js';
 
 
+// eslint-disable-next-line no-unused-vars
 export function editStructure({create={}, del={}, alter={}, transforms=new Array()}) {
 	const chem_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
 	const shape_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
@@ -206,6 +207,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 }
 
 
+// eslint-disable-next-line no-unused-vars
 export function editShapes({create={}, del={}, alter={}, transforms=new Array()}) {
 	var cps_to_render = new Set(),
 		shapes_to_render = new Set();
@@ -251,7 +253,7 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 			shape.cps.forEach(cp => cps.add(cp));
 		}
 		cps.forEach(cp => cps_to_render.add(cp));
-		following_cps.forEach(cp => {if (!cps.has(cp)) cp.follow()});
+		following_cps.forEach(cp => {if (!cps.has(cp)) cp.follow();});
 		to_recalc_dir.forEach(cp => cp.recalcDir());
 		to_recalc_ratio.forEach(cp => cp.recalcRatio());
 	}

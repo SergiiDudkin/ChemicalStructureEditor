@@ -1,12 +1,12 @@
 import {attachSvg, setAttrsSvg} from './Utils.js';
 import {MOVE, ROTATE, STRETCH, vecLen, vecDif, vecSum, vecCtr, rotateAroundCtr, stretchAlongDir} from './Geometry.js';
 import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
-import {ControlPoint, ControlPointEdge, ControlPointCorner, ControlPointTerminal} from './ControlPoints.js'
+import {ControlPoint, ControlPointEdge, ControlPointCorner, ControlPointTerminal} from './ControlPoints.js';
 
 
 const LAYER_SPEC = Object.freeze({
 	[SENSOR]: {
-		override: {'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'}, 
+		override: {'stroke-linecap': 'round', 'stroke-linejoin': 'round', stroke: 'blue', fill: 'blue'},
 		vals: {extra_width: 6}
 	},
 	[SHAPE]: {
@@ -38,7 +38,7 @@ export class ShapeBase extends CanvasCitizen {
 	}
 
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SHAPE]: document.getElementById('shapes')
 	};
 
@@ -48,6 +48,7 @@ export class ShapeBase extends CanvasCitizen {
 
 	// Public info
 	static movable = true;
+
 	static shape = true;
 
 	static default_style = {
@@ -112,7 +113,7 @@ export class ShapeBase extends CanvasCitizen {
 
 	followCoords() {
 		for (const layer of this.layers) {
-			if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]))
+			if (layer) [...layer.children].forEach((el, i) => setAttrsSvg(el, this.coords[i]));
 		}
 	}
 
@@ -128,6 +129,7 @@ export class ShapeBase extends CanvasCitizen {
 		}
 	}
 
+	// eslint-disable-next-line no-unused-vars
 	createElements(layer_idx, attrs) {
 		throw new Error('Override the abstract method!');
 	}
@@ -159,9 +161,9 @@ export class ShapeBase extends CanvasCitizen {
 
 export class Line extends ShapeBase {
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_l')
-	}
+	};
 
 	// Public info
 	static alias = 'lines';
@@ -180,9 +182,9 @@ export class Line extends ShapeBase {
 
 export class Circle extends ShapeBase {
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_i')
-	}
+	};
 
 	static alias = 'circles';
 
@@ -200,7 +202,8 @@ export class Circle extends ShapeBase {
 	}
 
 	calcCoordinates() {
-		this.coords = [{cx: this.cps[0].xy[0], cy: this.cps[0].xy[1], r: vecLen(vecDif(...(this.cps.map(cp => cp.xy))))}];
+		this.coords = [{cx: this.cps[0].xy[0], cy: this.cps[0].xy[1],
+			r: vecLen(vecDif(...(this.cps.map(cp => cp.xy))))}];
 	}
 
 	recalcCtr() {
@@ -221,9 +224,9 @@ export class Rectangle extends ShapeBase {
 	}
 
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_e')
-	}
+	};
 
 	static alias = 'rectangles';
 
@@ -249,7 +252,7 @@ export class Rectangle extends ShapeBase {
 	calcCoordinates() {
 		const orig_cps = this.cps.map(cp => rotateAroundCtr(cp.xy, -this.abs_rot_ang, this.xy));
 		const x1 = orig_cps[0][0], y1 = orig_cps[0][1], x2 = orig_cps[1][0], y2 = orig_cps[1][1];
-		this.coords = [{x: Math.min(x1, x2), y: Math.min(y1, y2), 
+		this.coords = [{x: Math.min(x1, x2), y: Math.min(y1, y2),
 			width: Math.abs(x2 - x1), height: Math.abs(y2 - y1)}];
 	}
 
@@ -277,7 +280,7 @@ export class Rectangle extends ShapeBase {
 export class MultipointShape extends ShapeBase {
 	static min_pt_cnt = 2; // Minimum number of control points to build the shape
 
-	static insertMidCp(cps, id) {
+	static insertMidCp(cps) {
 		return cps;
 	}
 
@@ -293,9 +296,9 @@ export class MultipointShape extends ShapeBase {
 
 export class Polyline extends MultipointShape {
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_p')
-	}
+	};
 
 	static alias = 'polylines';
 
@@ -314,9 +317,9 @@ export class Polyline extends MultipointShape {
 
 export class Polygon extends Polyline {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents,
 		[SENSOR]: document.getElementById('sensors_y')
-	}
+	};
 
 	static alias = 'polygons';
 
@@ -331,9 +334,9 @@ export class Polygon extends Polyline {
 
 export class Curve extends MultipointShape {
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_u')
-	}
+	};
 
 	static alias = 'curve';
 
@@ -348,7 +351,8 @@ export class Curve extends MultipointShape {
 
 	static insertMidCp(cps) {
 		const len = cps.length;
-		if (len > 3) cps.splice(len - 2, 0, [this.constructor.aug_cp_id, ...vecCtr(cps[len - 3].slice(1), cps[len - 2].slice(1))]);
+		if (len > 3) cps.splice(len - 2, 0, [this.constructor.aug_cp_id, ...vecCtr(cps[len - 3].slice(1),
+			cps[len - 2].slice(1))]);
 		return cps;
 	}
 
@@ -375,13 +379,14 @@ export class Curve extends MultipointShape {
 				...cps_data[i], this, cps_data[i - 1][0], cps_data[i + 1][0])
 			);
 		}
-		this.cps.push(new ControlPointTerminal(...cps_data[cps_data.length - 1], this, cps_data[cps_data.length - 2][0]));
+		this.cps.push(new ControlPointTerminal(...cps_data[cps_data.length - 1], this,
+			cps_data[cps_data.length - 2][0]));
 		this.invokeControlPointMethods(['idsToObjs', 'postInit', 'recalcDir', 'recalcRatio']);
 	}
 
 	invokeControlPointMethods(methods) {
 		for (const method of methods) {
-			this.cps.forEach(cp => {if (cp[method]) cp[method]()});
+			this.cps.forEach(cp => {if (cp[method]) cp[method]();});
 		}
 	}
 }
@@ -389,9 +394,9 @@ export class Curve extends MultipointShape {
 
 export class SmoothShape extends Curve {
 	static parents = {
-		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents, 
+		...Object.getPrototypeOf(Object.getPrototypeOf(this)).parents,
 		[SENSOR]: document.getElementById('sensors_m')
-	}
+	};
 
 	static alias = 'smooth';
 

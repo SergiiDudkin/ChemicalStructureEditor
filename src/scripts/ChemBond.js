@@ -3,7 +3,7 @@ import {
 	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector, unitVec
 } from './Geometry.js';
 import {getColor} from './Debug.js';
-import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
+import {SENSOR, SHAPE, CanvasCitizen} from './BaseClasses.js';
 
 
 export class ChemBond extends CanvasCitizen {
@@ -14,6 +14,7 @@ export class ChemBond extends CanvasCitizen {
 
 		this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: this.constructor.sel_h});
 		this.backrect.shape.is_bond = true;
+		this.backrect.shape.is_chem = true;
 		this.backrect.shape.objref = this;
 
 		Object.assign(this, this.constructor.default_style);
@@ -30,10 +31,10 @@ export class ChemBond extends CanvasCitizen {
 	}
 
 	static parents = {
-		...super.parents, 
+		...super.parents,
 		[SENSOR]: document.getElementById('sensors_b'),
 		[SHAPE]: document.getElementById('bondsall')
-	}
+	};
 
 	// Public info
 	static alias = 'bonds';

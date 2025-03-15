@@ -16,21 +16,21 @@ export const registry = {
 	},
 
 	get citizens() {
-		return this.classes_vals.filter(cls => cls.citizen)
+		return this.classes_vals.filter(cls => cls.citizen);
 	},
 
 	get shapes() {
-		return this.classes_vals.filter(cls => cls.shape)
+		return this.classes_vals.filter(cls => cls.shape);
 	},
 
 	get notShapes() {
-		return this.classes_vals.filter(cls => !cls.shape)
+		return this.classes_vals.filter(cls => !cls.shape);
 	},
 
 	get citizensShapes() {
-		return this.classes_vals.filter(cls => cls.citizen && cls.shape)
+		return this.classes_vals.filter(cls => cls.citizen && cls.shape);
 	}
-}
+};
 
 
 export class Registered {
@@ -82,7 +82,7 @@ export class CanvasCitizen extends IdHolder {
 	static movable = true;
 
 	static citizen = true;
-	
+
 	static shape = false;
 
 	// Parent elements
@@ -91,7 +91,7 @@ export class CanvasCitizen extends IdHolder {
 		[SHAPE]: null,
 		[HIGHLIGHT]: document.getElementById('selecthighlight'),
 		[SELECTHOLE]: document.getElementById('selectholes')
-	}
+	};
 
 	static clsInit() {
 		super.clsInit();
