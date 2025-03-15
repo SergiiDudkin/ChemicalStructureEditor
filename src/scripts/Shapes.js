@@ -351,7 +351,7 @@ export class Curve extends MultipointShape {
 
 	static insertMidCp(cps) {
 		const len = cps.length;
-		if (len > 3) cps.splice(len - 2, 0, [this.constructor.aug_cp_id, ...vecCtr(cps[len - 3].slice(1),
+		if (len > 3) cps.splice(len - 2, 0, [this.aug_cp_id, ...vecCtr(cps[len - 3].slice(1),
 			cps[len - 2].slice(1))]);
 		return cps;
 	}
@@ -407,7 +407,7 @@ export class SmoothShape extends Curve {
 	static insertMidCp(cps) {
 		const len = cps.length;
 		if (len >= 3) cps[len - 2] = [cps[len - 2][0], ...vecCtr(cps[len - 3].slice(1), cps[len - 1].slice(1))];
-		cps.push([this.constructor.aug_cp_id, ...vecCtr(cps[len - 1].slice(1), cps[0].slice(1))]);
+		cps.push([this.aug_cp_id, ...vecCtr(cps[len - 1].slice(1), cps[0].slice(1))]);
 		return cps;
 	}
 
