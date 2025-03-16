@@ -4,7 +4,7 @@ This is yet another molecule editor. It is platform-independent, and runs in a w
 convenient drawing of publication quality structures, paying great attention to aesthetics. A nice looking structure 
 is achieved by the comprehensive logic behind atom and bond auto positioning, alignments and shape computations.
 
-![App, general view](assets/images/CSE.png)
+![App, general view](assets/images/cse.png)
 
 # Browser compatibility
 Tested on **Google Chrome** and **Mozilla Firefox**.
@@ -35,7 +35,7 @@ The transform tool consists of the circle, 8 corner squares, 8 side rectangles, 
 [figure](assets/images/transform_tool.png) above).
 
 ### Rotating
-Click on the circle ![Circle](assets/images/circle.png), drag and drop. The selection will follow the direction of the cursor. If the 
+Click on the circle ![Circle](assets/images/circle_widget.png), drag and drop. The selection will follow the direction of the cursor. If the 
 `Shift` key is pressed, the rotation angle is forced to be discrete with 5 ° resolution.
 
 ### Scaling
@@ -58,15 +58,15 @@ atoms and bonds, so the transform operation can be executed precisely around the
 * Cut: `Ctrl + X`
 * Delete: `Ctrl + Del` or `Ctrl + Bksp`
 
-## ![Rectangle button](assets/images/select_rect.png) Rectangle 
+## ![Rectangle selection button](assets/images/select_rect.png) Rectangle 
 The tool selects atoms and bonds within a rectangular area. To specify this area, click on mouse left button, drag and 
 drop. Clicking on atom or bond allows dragging and dropping only this element without selecting it.
 
-## ![Lasso button](assets/images/select_lasso.png) Lasso
+## ![Lasso selection button](assets/images/select_lasso.png) Lasso
 The tool selects atoms and bonds within an arbitrary shaped area. To specify this area, click on mouse left button, lead 
 around and drop. Clicking on atom or bond allows dragging and dropping only this element without selecting it.
 
-## ![Molecule button](assets/images/select_mol.png) Molecule
+## ![Molecule selection button](assets/images/select_mol.png) Molecule
 The tool selects the entire molecule. Just click on any atom or bond of the molecule.
 
 # ![Atom menu](assets/images/atom.png) Atom dropdown menu 
@@ -145,6 +145,39 @@ the side where the cycle should be placed. Notice that the carbocycle atoms are 
 its atom overlaps or very close to an already existing one, they will be merged. Multiple benzene rings can be fused as 
 well.
 
+
+# ![Arrow menu](assets/images/arrows.png) Arrows dropdown menu 
+The arrow menu contains the four most frequently used arrows:
+
+![Reaction arrow button](assets/images/reaction_arrow.png)
+![Equilibrium arrow button](assets/images/equilibrium_arrow.png)
+![Resonance arrow button](assets/images/resonance_arrow.png)
+![Retro arrow button](assets/images/retro_arrow.png)
+
+Reaction, equilibrium, resonance and retro reaction arrow respectively. Press the left mouse button to start drawing, 
+drug and release to finish. Position, length and direction of an arrow can be adjusted by dragging and dropping of 
+control points.
+
+# ![Shape menu](assets/images/shapes.png) Shapes dropdown menu 
+The shape menu contains the seven most frequently used shapes:
+
+![Line button](assets/images/line.png)
+![Circle button](assets/images/circle.png)
+![Rectangle button](assets/images/rectangle.png)
+![Polyline button](assets/images/polyline.png)
+![Polygon button](assets/images/polygon.png)
+![Curve button](assets/images/curve.png)
+![Smooth shape button](assets/images/smooth_shape.png)
+
+Line, circle, rectangle, polyline, polygon curve and smooth shape respectively. To draw line, circle or rectangle, 
+press the left mouse button to start drawing, drug and release to finish. To draw polyline, polygon curve or smooth 
+shape, click multiple times on the canvas to set control points. Press `Tab` key to finish the current shape. Polyline and 
+polygon require at least two control points; curve and smooth shape require at least three control points. Control 
+points define the appearance of shape. Each shape can be modified by dragging and dropping the control points. Curves 
+and smooth shapes are inscribed into the corresponding polylines and polygons defined by control points. Additional 
+control points define the points of tangency. Circles cannot be stretched. Rectangles can be stretched in the 
+directions parallel to their edges. 
+
 # Undo, redo
 The app fully supports this functionality. Use `Ctrl + Z` and `Ctrl + Y` (or `Ctrl + Shift + Z`) for undo and redo 
 respectively.
@@ -166,7 +199,7 @@ Open previously saved JSON file.
 Please use `Cmd` key instead of `Ctrl`.
 
 # Roadmap
-* Arrows, lines and simple SVG shapes
+* Adjustable canvas and zooming
 * Text and its formatting
 * Charges and radicals
 * Templates, including the custom ones
