@@ -12,6 +12,9 @@
 			cursor: default;
 			opacity: 0;
 		}
+		.var-opaq {
+			opacity: 0;
+		}
 	</style>
 	<link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
@@ -21,10 +24,10 @@
 			<svg id="filters" width="36" height="36" display="block"> <!-- Just blank space and container for filters -->
 				<defs>
 					<filter id="shadow">
-						<feDropShadow flood-opacity="0.5" dx="3" dy="3" stdDeviation="1.5"/>
+						<feDropShadow flood-opacity="0.5" dx="3" dy="3" stdDeviation="1.5" />
 					</filter>
 					<filter id="okshadow">
-						<feDropShadow flood-opacity="0.5" dx="2" dy="2" stdDeviation="1.5"/>
+						<feDropShadow flood-opacity="0.5" dx="2" dy="2" stdDeviation="1.0" />
 					</filter>
 				</defs>
 			</svg>
@@ -48,7 +51,7 @@
 						<div class="dropdown-btn">Save as .mol</div>
 						<div id="open-json" class="dropdown-btn">
 							<span>Open .json file</span>
-							<input type="file" accept=".json" id="file-input" class="dropdown-btn"/>
+							<input type="file" accept=".json" id="file-input" class="dropdown-btn" />
 						</div>						
 					</div>
 				</div>
@@ -65,40 +68,68 @@
 			<div id="canvas-container">
 				<svg id="canvas" width="670" height="570" display="block"> <!-- Main canvas -->
 					<g filter="url(#shadow)">
-						<rect id="canvbckgrnd" class="brick" x="0" y="0" width="666" height="566" fill="white" clip-path="url(#cnvclip)" />
+						<rect id="canvbckgrnd" x="0" y="0" width="666" height="566" fill-opacity="0.9" clip-path="url(#cnvclip)" fill="white"/>
 					</g>
 					<g id="drawings" clip-path="url(#cnvclip)" >
-						<g id="sensors_b"></g>
-						<g id="sensors_a"></g>
+						<g id="sensors">
+							<g id="sensors_b"></g>
+							<g id="sensors_a"></g>
+							<g id="sensors_l"></g>
+							<g id="sensors_r"></g>
+							<g id="sensors_da"></g>
+							<g id="sensors_re"></g>
+							<g id="sensors_rt"></g>
+							<g id="sensors_p"></g>
+							<g id="sensors_y"></g>
+							<g id="sensors_i"></g>
+							<g id="sensors_e"></g>
+							<g id="sensors_u"></g>
+							<g id="sensors_m"></g>
+							<g id="control_points"></g>
+						</g>
 						<g id="selection">
 							<g id="selecthighlight" mask="url(#selectmask)"></g>
-							<mask id="selectmask">
+							<mask id="selectmask" maskUnits="userSpaceOnUse">
 								<rect width="100%" height="100%" fill="white"></rect>
 								<g id="selectholes"></g>
 							</mask>
 						</g>
 						<g id="bondsall"></g>
 						<g id="atomsall"></g>
+						<g id="shapes"></g>
 						<g id="utils"></g>
 						<g id="debug"></g>
 					</g>
 					<defs id="bondcutouts"></defs>
 					<defs id="bondpatterns"></defs>
-					<clipPath id="cnvclip">
-						<path id="cnvclippath" clip-rule="evenodd" />
-					</clipPath>
+					<defs id="cnvdefs">
+						<clipPath id="cnvclip">
+							<path id="cnvclippath" clip-rule="evenodd" />
+						</clipPath>
+						<pattern id="chessgrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+							<rect x="0" y="0" width="10" height="10" fill="white"></rect>
+							<rect x="10" y="0" width="10" height="10" fill="white" fill-opacity="0.9"></rect>
+							<rect x="10" y="10" width="10" height="10" fill="white"></rect>
+							<rect x="0" y="10" width="10" height="10" fill="white" fill-opacity="0.9"></rect>
+						</pattern>
+					</defs>
+					<defs id="markers"></defs>
 				</svg>
 			</div>
 		</div>
 	</div>
-	<script type="module" src="scripts/Utils.js"></script>
-	<script type="module" src="scripts/Debug.js"></script>
 	<script type="module" src="scripts/Geometry.js"></script>
+	<script type="module" src="scripts/Utils.js"></script>
+	<script type="module" src="scripts/BaseClasses.js"></script>
+	<script type="module" src="scripts/ControlPoints.js"></script>
+	<script type="module" src="scripts/Shapes.js"></script>
+	<script type="module" src="scripts/Arrows.js"></script>
 	<script type="module" src="scripts/ChemData.js"></script>
 	<script type="module" src="scripts/ChemParser.js"></script>
 	<script type="module" src="scripts/ChemNode.js"></script>
 	<script type="module" src="scripts/ChemBond.js"></script>
 	<script type="module" src="scripts/Executor.js"></script>
+	<script type="module" src="scripts/Debug.js"></script>
 	<script type="module" src="scripts/main.js"></script>
 </body>
 </html>

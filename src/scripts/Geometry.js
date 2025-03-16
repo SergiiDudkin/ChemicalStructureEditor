@@ -28,7 +28,8 @@ export function findDist(xy0, xy1) { // Find distance between two points
 }
 
 export function unitVec(xy) { // Find unit vector
-	return vecDiv(xy, vecLen(xy));
+	const vec_len = vecLen(xy);
+	return vec_len ? vecDiv(xy, vecLen(xy)) : [1, 0];
 }
 
 export function vecSum([x0, y0], [x1, y1]) { // Add vectors
@@ -47,11 +48,15 @@ export function vecDiv([x, y], divisor) { // Divide vector by scalar value
 	return [x / divisor, y / divisor];
 }
 
+export function vecCtr([x0, y0], [x1, y1]) {
+	return [(x0 + x1) / 2, (y0 + y1) / 2];
+}
+
 export function vecDotProd([x0, y0], [x1, y1]) { // Find dot product
 	return x0 * x1 + y0 * y1;
 }
 
-function vecCrossProd([x0, y0], [x1, y1]) { // Find dot product
+function vecCrossProd([x0, y0], [x1, y1]) { // Find cross product
 	return x0 * y1 - x1 * y0;
 }
 
@@ -147,3 +152,16 @@ export function checkIntersec(a_xy0, a_xy1, b_xy0, b_xy1) {
 	var has_common_point = (sign_a1_a0_b0 != sign_a1_a0_b1) && (sign_b1_b0_a0 != sign_b1_b0_a1);
 	return has_common_point && no_zero_angle && no_common_terminals;
 }
+
+export const MOVE = 1;
+export const ROTATE = 2;
+export const SCALE = 3;
+export const STRETCH = 4;
+
+export const transform_funcs = Object.freeze({
+	[MOVE]: (pt, {moving_vec}) => vecSum(pt, moving_vec),
+	[ROTATE]: (pt, {rot_angle, rot_ctr}) => rotateAroundCtr(pt, rot_angle, rot_ctr),
+	[SCALE]: (pt, {scale_factor, scale_ctr}) => scaleAroundCtr(pt, scale_factor, scale_ctr),
+	[STRETCH]: (pt, {stretch_factor, dir_angle, stretch_ctr}) => stretchAlongDir(pt, stretch_factor, dir_angle,
+		stretch_ctr)
+});

@@ -72,22 +72,16 @@ body {
 	fill: blue;
 	opacity: 0;
 }
-.anode:hover {
-	opacity: 1;
-	cursor: pointer;
-}
-.ag:hover .chemtxt {
-	filter: none;
-}
 .brect {
 	fill: blue;
 	opacity: 0;
 }
-.brect:hover {
+.anode:hover {
 	opacity: 1;
 	cursor: pointer;
 }
-.bg:hover {
+.brect:hover {
+	opacity: 1;
 	cursor: pointer;
 }
 .hlcirc {
@@ -157,12 +151,15 @@ body {
 }
 #selectholes {
 	fill: black;
+	stroke: black;
+	stroke-width: 0;
 }
 #selection:hover {
 	cursor: pointer;
 }
 #selection:hover #selectholes {
 	fill: white;
+	stroke: white;
 }
 #selecthighlight {
 	fill: blue;
@@ -176,7 +173,22 @@ body {
 .transformjig:hover, .jigforcehover {
 	fill: blue;
 }
-
 #file-input {
 	display: none;
+}
+.control-point {
+	fill: gray;
+	cursor: pointer;
+}
+.var-opaq:hover {
+	fill: blue;
+	opacity: 1;
+}
+.sensor-line {
+	stroke: blue;
+	opacity: 0;
+}
+.sensor-line:hover {
+	opacity: 1;
+	cursor: pointer;
 }

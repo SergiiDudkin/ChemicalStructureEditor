@@ -1,18 +1,20 @@
 import {attachSvg, OffsetRect} from './Utils.js';
 import {
-	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector
+	lineIntersec, vecLen, findDist, vecSum, vecDif, vecMul, vecDiv, sinVec, angleVec, rot90cw, angleBisector, unitVec
 } from './Geometry.js';
 import {getColor} from './Debug.js';
+import {SENSOR, SHAPE, CanvasCitizen} from './BaseClasses.js';
 
 
-export class ChemBond {
+export class ChemBond extends CanvasCitizen {
 	constructor(id, node0, node1, type) {
-		this.id = id;
+		super(id);
 
-		this.g = attachSvg(document.getElementById('bondsall'), 'g', {class: 'bg'});
+		this.g = attachSvg(this.constructor.parents[SHAPE], 'g');
 
 		this.backrect = new OffsetRect('sensors_b', 0, 0, {id: id, class: 'brect', height: this.constructor.sel_h});
 		this.backrect.shape.is_bond = true;
+		this.backrect.shape.is_chem = true;
 		this.backrect.shape.objref = this;
 
 		Object.assign(this, this.constructor.default_style);
@@ -28,7 +30,18 @@ export class ChemBond {
 		}
 	}
 
-	static counter = 0;
+	static parents = {
+		...super.parents,
+		[SENSOR]: document.getElementById('sensors_b'),
+		[SHAPE]: document.getElementById('bondsall')
+	};
+
+	// Public info
+	static alias = 'bonds';
+
+	static movable = false;
+
+	static id_prefix = 'b';
 
 	static default_style = {
 		color: 'black',
@@ -42,8 +55,6 @@ export class ChemBond {
 	static sel_h = 12; // Selection rectangle height
 
 	static min_offset = 5;
-
-	static delSel = new Set(); // Bonds deleted while selected
 
 	/*	Bond types:
 	0 - hydrogen bond
@@ -92,22 +103,18 @@ export class ChemBond {
 
 	static auto_d_bonds = 		    [11, 12, 13, 14];
 
-	static getNewId() {
-		return 'b' + this.counter++;
-	};
-
 	static eventsOnAll() {
-		document.getElementById('sensors_b').classList.remove('sympoi');
+		this.parents[SENSOR].classList.remove('sympoi');
 	};
 
 	static eventsOffAll() {
-		document.getElementById('sensors_b').classList.add('sympoi');
+		this.parents[SENSOR].classList.add('sympoi');
 	};
 
 	recalcDims() {
 		this.difxy = vecDif(...this.getNodeCenters()); // Vector between nodes
 		this.len = vecLen(this.difxy); // Distance between nodes
-		this.uv = vecDiv(this.difxy, this.len); // Unit vector
+		this.uv = unitVec(this.difxy); // Unit vector
 		this.ouva = rot90cw(this.uv); // Orthohonal unit vector ACW
 		this.rotang = Math.atan2(...this.uv.toReversed()); // Rotation angle of the bond
 		this.recalcLims();
@@ -156,6 +163,7 @@ export class ChemBond {
 	};
 
 	delete() {
+		super.delete();
 		if (this.select_rect) {
 			this.constructor.delSel.add(this.id);
 			this.deselect();
@@ -167,15 +175,6 @@ export class ChemBond {
 		delete this.nodes;
 		this.deletePattern();
 		this.deleteMask();
-	};
-
-	translate(moving_vec) {
-		for (const line of this.lines) {
-			for (const tip of line) {
-				tip.forEach((pt, i) => tip[i] = vecSum(pt, moving_vec)); // Move poligon corners
-			}
-		}
-		this.recalcLims();
 	};
 
 	posDouble() {
@@ -453,6 +452,10 @@ export class ChemBond {
 		this.backrect.shape.classList.add('sympoi');
 	};
 
+	getData() {
+		return [...this.nodes.map(node => node.id), this.type];
+	};
+
 	refreshSelectRect() {
 		if (this.select_rect && !this.offsets.includes(undefined)) {
 			var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(
@@ -464,3 +467,5 @@ export class ChemBond {
 		}
 	};
 }
+
+ChemBond.register();

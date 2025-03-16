@@ -1,13 +1,13 @@
 import {ChemBond} from './ChemBond.js';
 import {textTermBuilder, treeToFormula, buildBracketTree, tokenize} from './ChemParser.js';
 import {attachSvg} from './Utils.js';
-import {lineIntersec, vecSum, cosVec, angleVec} from './Geometry.js';
+import {lineIntersec, vecDif, cosVec, angleVec} from './Geometry.js';
+import {SENSOR, SHAPE, HIGHLIGHT, SELECTHOLE, CanvasCitizen} from './BaseClasses.js';
 
 
-export class ChemNode {
+export class ChemNode extends CanvasCitizen {
 	constructor(id, x, y, text) {
-		this.id = id;
-		this.highlights = document.getElementById('selecthighlight');
+		super(id);
 
 		this.style = {};
 		Object.assign(this.style, this.constructor.default_style);
@@ -15,11 +15,12 @@ export class ChemNode {
 		this.connections = [];
 		this.select_circ = null;
 
-		this.g = attachSvg(document.getElementById('atomsall'), 'g', {class: 'ag'});
+		this.g = attachSvg(this.constructor.parents[SHAPE], 'g');
 
-		this.backcircle = attachSvg(document.getElementById('sensors_a'), 'circle',
+		this.backcircle = attachSvg(this.constructor.parents[SENSOR], 'circle',
 			{id: id, class: 'anode', r: this.constructor.sel_r, cx: x, cy: y});
 		this.backcircle.is_atom = true;
+		this.backcircle.is_chem = true;
 		this.backcircle.objref = this;
 
 		this.xy = [x, y];
@@ -30,7 +31,16 @@ export class ChemNode {
 		}
 	}
 
-	static counter = 0;
+	static parents = {
+		...super.parents,
+		[SENSOR]: document.getElementById('sensors_a'),
+		[SHAPE]: document.getElementById('atomsall')
+	};
+
+	// Public info
+	static alias = 'atoms';
+
+	static id_prefix = 'a';
 
 	static default_style = {
 		fill: 'black',
@@ -42,13 +52,8 @@ export class ChemNode {
 
 	static hmaxtab = {'': 0, 'C': 4, 'H': 1, 'N': 3, 'O': 2, 'S': 2, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1, 'Mg': 2};
 
-	static delSel = new Set(); // Nodes deleted while selected
-
-	static getNewId() {
-		return 'a' + this.counter++;
-	};
-
 	delete() {
+		super.delete();
 		if (this.select_circ) {
 			this.constructor.delSel.add(this.id);
 			this.deselect();
@@ -98,13 +103,13 @@ export class ChemNode {
 		this.formula = target_text ? treeToFormula(this.bracket_tree) : {C: 1, H: Math.max(4 - used_valency, 0)};
 	};
 
-	translate(moving_vec) {
-		var [dx, dy] = moving_vec;
-		var [x, y] = this.xy;
-		this.xy = vecSum(this.xy, moving_vec);
+	setCtr(xy) {
+		var [dx, dy] = vecDif(this.xy, xy);
+		let [x, y] = xy;
+		this.xy = [...xy]; // Copy the array
 
-		this.backcircle.setAttribute('cx', x + dx);
-		this.backcircle.setAttribute('cy', y + dy);
+		this.backcircle.setAttribute('cx', x);
+		this.backcircle.setAttribute('cy', y);
 
 		for (var textnode of this.g.childNodes) {
 			textnode.setAttribute('x', parseFloat(textnode.getAttribute('x')) + dx);
@@ -112,18 +117,18 @@ export class ChemNode {
 		}
 
 		if (this.select_circ != null) {
-			this.select_circ.setAttribute('cx', x + dx);
-			this.select_circ.setAttribute('cy', y + dy);
-			this.masksel_circ.setAttribute('cx', x + dx);
-			this.masksel_circ.setAttribute('cy', y + dy);
+			this.select_circ.setAttribute('cx', x);
+			this.select_circ.setAttribute('cy', y);
+			this.masksel_circ.setAttribute('cx', x);
+			this.masksel_circ.setAttribute('cy', y);
 		}
-	};
+	}
 
 	select() {
 		this.eventsOff();
-		this.select_circ = attachSvg(this.highlights, 'circle', {'cx': this.xy[0], 'cy': this.xy[1],
+		this.select_circ = attachSvg(this.constructor.parents[HIGHLIGHT], 'circle', {'cx': this.xy[0], 'cy': this.xy[1],
 			'r': this.constructor.sel_r});
-		this.masksel_circ = attachSvg(document.getElementById('selectholes'), 'circle',
+		this.masksel_circ = attachSvg(this.constructor.parents[SELECTHOLE], 'circle',
 			{'cx': this.xy[0], 'cy': this.xy[1], 'r': this.constructor.sel_r - 1.5});
 	};
 
@@ -143,18 +148,22 @@ export class ChemNode {
 		this.backcircle.classList.add('sympoi');
 	};
 
+	getData() {
+		return [...this.xy, this.text];
+	};
+
 	promoteMaskSel() {
 		this.eventsOff();
 		this.masksel_circ.remove();
 		this.masksel_circ.setAttribute('fill', 'black');
-		document.getElementById('selectmask').appendChild(this.masksel_circ);
+		this.constructor.parents[SELECTHOLE].parentNode.appendChild(this.masksel_circ);
 	};
 
 	demoteMaskSel() {
 		this.eventsOn();
 		this.masksel_circ.remove();
 		this.masksel_circ.removeAttribute('fill');
-		document.getElementById('selectholes').appendChild(this.masksel_circ);
+		this.constructor.parents[SELECTHOLE].appendChild(this.masksel_circ);
 	};
 
 	renderText() {
@@ -190,7 +199,7 @@ export class ChemNode {
 
 	computeBondsJunc(bond0, bond1) {
 		var cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
-		if (Math.abs(cos_a) > Math.cos(Math.PI / 24)) {
+		if (Math.abs(cos_a) > Math.cos(Math.PI / 24) || !bond0.len || !bond1.len) {
 			bond0.setHalfButt(this, true);
 			bond1.setHalfButt(this, false);
 		}
@@ -213,3 +222,5 @@ export class ChemNode {
 		}
 	};
 }
+
+ChemNode.register();
