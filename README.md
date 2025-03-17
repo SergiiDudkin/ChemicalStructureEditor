@@ -198,6 +198,26 @@ Open previously saved JSON file.
 # MacOS
 Please use `Cmd` key instead of `Ctrl`.
 
+# Console commands
+Some functionalities still cannot be accessed via UI, but are available from the browser console.
+
+`console.log(selection.computeMolInfo());`  
+Compute brutto formula, Fw and elemental composition of the selected chemical moiety. If nothing is selected, 
+this function returns result for all atoms on the canvas.
+
+`showChessGrid();`  
+Show snap grid. The actual snapping effect takes place while manipulating with control points while the `Shift` key is 
+ON (please hold the button).
+
+`hideGrid();`  
+Hide the snap grid.
+
+`showControlPoints();`  
+Display all control points. Normally they are invisible and appear as blue squares while being hovered.
+
+`hideControlPoints();`  
+Hide all control points.
+
 # Roadmap
 * Adjustable canvas and zooming
 * Text and its formatting
