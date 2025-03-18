@@ -29,7 +29,7 @@ var matrixrf, wmax; // Variables
 function indentHtml(el) {
 	if (el.childElementCount) {
 		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n')
-			.replaceAll(/^/gm, '\t') + '\n';
+			.replaceAll(/^/gm, '\t').replaceAll(/(?<=tspan\>)\s+(?=\<tspan)/gm, '') + '\n';
 	}
 	return el.outerHTML;
 }
