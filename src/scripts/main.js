@@ -27,11 +27,12 @@ var matrixrf, wmax; // Variables
 
 
 function indentHtml(el) {
+	if (el.tagName == 'text' && !el.textContent.trim()) return '';
 	if (el.childElementCount) {
 		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n')
 			.replaceAll(/^/gm, '\t').replaceAll(/(?<=tspan\>)\s+(?=\<tspan)/gm, '') + '\n';
 	}
-	return el.outerHTML;
+	return el.outerHTML.replaceAll(/\<g\>\s+\<\/g\>/gm, '').replaceAll(/\n\s+\n/gm, '');
 }
 
 function downloadSvg() { // Download .svg
