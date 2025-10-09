@@ -455,31 +455,6 @@ const smoothbtn = new SubButton(dropshapesbtn, `
 dropshapesbtn.focusSubbtn(linebtn);
 
 
-// var cnvclippath = document.getElementById('cnvclippath');
-// function clipCnv(extra='') {
-// 	cnvclippath.setAttribute('d', `M 0 0 H ${wmax - 2} V 564 H 0 Z ${extra}`);
-// }
-
-// // Resize the canvas
-// function svgWidth(event) { // eslint-disable-line no-unused-vars
-// 	wmax = mainframe.offsetWidth - 36;
-// 	canvbckgrnd.setAttribute("width", wmax);
-// 	canvas.setAttribute("width", wmax + 4);
-// 	clipCnv();
-// 	matrixrf = canvas.getScreenCTM().inverse();
-// }
-// svgWidth();
-// window.addEventListener('resize', svgWidth);
-// window.addEventListener('scroll', () => matrixrf = canvas.getScreenCTM().inverse());
-
-// function showChessGrid() {
-// 	canvbckgrnd.setAttribute('fill', 'url(#chessgrid)');
-// }
-
-// function hideGrid() {
-// 	canvbckgrnd.setAttribute('fill', 'white');
-// }
-
 function showControlPoints() {
 	document.styleSheets[0].cssRules[2].style.opacity = 0.4;
 }
@@ -589,20 +564,6 @@ class Dispatcher {
 
 var dispatcher = new Dispatcher(editStructure, invertCmd, refreshBondCutouts);
 
-
-// function getSvgPoint(event) {
-// 	var {x, y} = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrixrf);
-// 	return [x, y];
-// }
-
-// function getScreenPoint([svg_x, svg_y]) {
-// 	var {x, y} = new DOMPoint(svg_x, svg_y).matrixTransform(matrixrf.inverse());
-// 	return [x, y];
-// }
-
-// function clampToCnv([x, y]) {
-// 	return [Math.min(Math.max(x, 0), wmax), Math.min(Math.max(y, 0), 564)];
-// }
 
 function getCursorAtom(event, atomtext) {
 	var cursoratom = new ChemNode('cursoratom', ...newcnv.clampEventToCnv(event), '@' + atomtext);
