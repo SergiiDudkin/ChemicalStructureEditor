@@ -1,5 +1,6 @@
 import {MOVE, ROTATE, SCALE, STRETCH, vecMul, checkIntersec} from './Geometry.js';
 import {editStructure} from './Executor.js';
+import {gatherData} from './Utils.js';
 
 
 const transform_inverts = Object.freeze({

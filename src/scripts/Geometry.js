@@ -122,6 +122,11 @@ export function angleBisector(xy0, xy1) { // Not normalized, no direction contro
 	return vecSum(unitVec(xy0), unitVec(xy1));
 }
 
+export function discreteAngle(angle, discr_deg) {
+	const discr_rad = discr_deg * Math.PI / 180;
+	return Math.round(angle / discr_rad) * discr_rad;
+}
+
 export function polygonAngle(num) {
 	return Math.PI * (1 - 2 / num);
 }

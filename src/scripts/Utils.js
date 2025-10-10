@@ -136,3 +136,10 @@ export class CtrPolygon extends CtrShape {
 export function excludeNonExisting(el_ids) {
 	return [...el_ids].filter(el_id => document.getElementById(el_id));
 }
+
+
+export function gatherData(ids=new Set()) {
+	let data = {};
+	ids.forEach(id => data[id] = document.getElementById(id).objref.getData());
+	return data;
+}
