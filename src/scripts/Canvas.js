@@ -1,4 +1,4 @@
-class CnvCtrl {
+class Canvas {
 	constructor() {
 		this.svg = document.getElementById('canvas');
 		this.canvbckgrnd = document.getElementById('canvbckgrnd');
@@ -122,4 +122,4 @@ function rectToPath(x0, y0, x1, y1) {
 }
 
 
-export const newcnv = new CnvCtrl();
+export const cnv = new Canvas();

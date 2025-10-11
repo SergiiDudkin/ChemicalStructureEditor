@@ -1,5 +1,5 @@
 import {makeSvg, attachSvg} from './Utils.js';
-import {newcnv} from './Canvas.js';
+import {cnv} from './Canvas.js';
 
 
 class BaseButton {
@@ -157,13 +157,13 @@ class DropButton extends BaseButton {
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
-		this.clip_path_num = newcnv.clipRect(0, this.cut_top, this.cut_right, this.cut_bottom);
+		this.clip_path_num = cnv.clipRect(0, this.cut_top, this.cut_right, this.cut_bottom);
 		this.collapsed = false;
 		if (this.active) this.deselect();
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
-		newcnv.unclip(this.clip_path_num);
+		cnv.unclip(this.clip_path_num);
 		this.clip_path_num = null;
 		this.collapsed = true;
 		if (this.active) this.select();

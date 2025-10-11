@@ -1,4 +1,4 @@
-import {newcnv} from './Canvas.js';
+import {cnv} from './Canvas.js';
 import {Indicator} from './Indicator.js';
 import {MOVE, ROTATE, SCALE, STRETCH, vecDif, rotateAroundCtr, vecDotProd, stretchAlongDir, vecSum, vecMul, unitVec, scaleAroundCtr, discreteAngle} from './Geometry.js';
 import {DeletableAbortable, attachSvg, CtrRect, CtrCircle, CtrPolygon} from './Utils.js';
@@ -73,13 +73,13 @@ export class TransformTool extends DeletableAbortable {
 		event.stopPropagation();
 		this.indicator = new Indicator(this.parent_id);
 		this.accum_rot_angle = 0;
-		this.rot_st = Math.atan2(...vecDif(this.pivot.xy, newcnv.getSvgPoint(event)).toReversed());
+		this.rot_st = Math.atan2(...vecDif(this.pivot.xy, cnv.getSvgPoint(event)).toReversed());
 		window.addEventListener('mousemove', this.rotating, this.signal_opt);
 		window.addEventListener('mouseup', this.finishRotating, this.signal_opt);
 	}
 
 	rotating(event) {
-		var rot_angle = Math.atan2(...vecDif(this.pivot.xy, newcnv.getSvgPoint(event)).toReversed()) - this.rot_st;
+		var rot_angle = Math.atan2(...vecDif(this.pivot.xy, cnv.getSvgPoint(event)).toReversed()) - this.rot_st;
 		if (event.shiftKey) {
 			var new_accum_rot_angle = discreteAngle(this.accum_rot_angle + rot_angle, 5);
 			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? new_accum_rot_angle - this.accum_rot_angle : 0;
@@ -111,7 +111,7 @@ export class TransformTool extends DeletableAbortable {
 		this.indicator = new Indicator(this.parent_id);
 		this.accum_factor = 1;
 		this.curr_jig = event.target.objref;
-		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, newcnv.getSvgPoint(event));
+		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, cnv.getSvgPoint(event));
 		window.addEventListener('mousemove', this.scaling, this.signal_opt);
 		window.addEventListener('mouseup', this.finishScaling, this.signal_opt);
 	}
@@ -145,7 +145,7 @@ export class TransformTool extends DeletableAbortable {
 		this.accum_factor = 1;
 		this.curr_jig = event.target.objref;
 		this.dir_angle = Math.atan2(...vecDif(this.xy, this.curr_jig.xy).toReversed());
-		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, newcnv.getSvgPoint(event));
+		this.init_ctr_pt_error = vecDif(this.curr_jig.xy, cnv.getSvgPoint(event));
 		window.addEventListener('mousemove', this.stretching, this.signal_opt);
 		window.addEventListener('mouseup', this.finishStretching, this.signal_opt);
 	}
@@ -178,14 +178,14 @@ export class TransformTool extends DeletableAbortable {
 	startMovingPivot(event) {
 		event.stopPropagation();
 		this.indicator = new Indicator(this.parent_id);
-		this.init_ctr_pt_error = vecDif(this.pivot.xy, newcnv.getSvgPoint(event));
+		this.init_ctr_pt_error = vecDif(this.pivot.xy, cnv.getSvgPoint(event));
 		this.jigs.slice(1).forEach(jig => jig.shape.classList.add('sympoi'));
 		window.addEventListener('mousemove', this.movingPivot, this.signal_opt);
 		window.addEventListener('mouseup', this.finishMovingPivot, this.signal_opt);
 	}
 
 	movingPivot(event) {
-		var corrected_point = vecDif(this.init_ctr_pt_error, newcnv.getSvgPoint(event));
+		var corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
 		if (event.shiftKey) {
 			this.pivot.shape.classList.add('sympoi', 'jigforcehover');
 			this.selection.eventsOff();
@@ -210,7 +210,7 @@ export class TransformTool extends DeletableAbortable {
 
 	// Utils
 	getFactor() {
-		var corrected_point = vecDif(this.init_ctr_pt_error, newcnv.getSvgPoint(event));
+		var corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
 		var transform_vec = vecDif(this.pivot.xy, corrected_point);
 		var ref_vec = vecDif(this.pivot.xy, this.curr_jig.xy);
 		var dir_vec = vecDif(this.xy, this.curr_jig.xy);

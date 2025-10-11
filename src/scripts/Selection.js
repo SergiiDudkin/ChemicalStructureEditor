@@ -3,11 +3,11 @@ import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
-import {newcnv} from './Canvas.js';
+import {cnv} from './Canvas.js';
 import {TransformTool} from './TransformTool.js';
 import {Indicator} from './Indicator.js';
 import {editStructure} from './Executor.js';
-import {vecSum, vecDif, MOVE} from './Geometry.js';
+import {vecSum, vecDif, MOVE, findDist} from './Geometry.js';
 
 
 export class SelectShape extends DeletableAbortable {
@@ -47,14 +47,14 @@ export class SelectShape extends DeletableAbortable {
 export class SelectRect extends SelectShape {
 	constructor(parent_id) {
 		super(parent_id);
-		this.svg_pt0 = newcnv.getSvgPoint(event);
+		this.svg_pt0 = cnv.getSvgPoint(event);
 		this.recalc(event);
 	}
 
 	static tag = 'rect';
 
 	recalc(event) {
-		var svg_pt1 = newcnv.getSvgPoint(event);
+		var svg_pt1 = cnv.getSvgPoint(event);
 		var rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
 		var rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
 		var rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
@@ -68,14 +68,14 @@ export class SelectLasso extends SelectShape {
 	constructor(parent_id) {
 		super(parent_id);
 		this.shape.setAttribute('fill-rule', 'evenodd');
-		this.pts = [newcnv.getSvgPoint(event)];
+		this.pts = [cnv.getSvgPoint(event)];
 		this.recalc(event);
 	}
 
 	static tag = 'polygon';
 
 	recalc(event) {
-		var pt = newcnv.getSvgPoint(event);
+		var pt = cnv.getSvgPoint(event);
 		if (findDist(this.pts[this.pts.length - 1], pt) > 4) {
 			this.pts.push(pt);
 			this.shape.setAttribute('points', this.pts.map(pt => pt.join()).join(' '));
@@ -86,18 +86,18 @@ export class SelectLasso extends SelectShape {
 
 function objsUnderShape(cls, cover) {
 	return cls.getAllInstanceIDs().filter(id => document.elementFromPoint(
-		...newcnv.getScreenPoint(document.getElementById(id).objref.xy)) == cover);
+		...cnv.getScreenPoint(document.getElementById(id).objref.xy)) == cover);
 }
 
 
 function pickCp(pt) {
-	var pt_elem = document.elementFromPoint(...newcnv.getScreenPoint(pt));
+	var pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
 	return (pt_elem != null && pt_elem.is_cp) ? pt_elem.objref : null;
 }
 
 
 export function pickNode(pt) {
-	var pt_elem = document.elementFromPoint(...newcnv.getScreenPoint(pt));
+	var pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
 	return (pt_elem != null && pt_elem.is_atom) ? pt_elem.objref : null;
 }
 
@@ -217,7 +217,7 @@ class SelectionBase {
 		event.stopPropagation();
 		this.indicator = new Indicator('utils');
 		this.accum_vec = [0, 0];
-		this.pt = newcnv.getSvgPoint(event);
+		this.pt = cnv.getSvgPoint(event);
 		this.prepareGroup();
 		this.initCtrPtErrSpecialCase();
 		this.mo_st = vecDif(this.init_ctr_pt_error, this.pt);
@@ -227,7 +227,7 @@ class SelectionBase {
 	}
 
 	corrPtSpecialCase(event) { // Helper
-		this.corrected_point = vecDif(this.init_ctr_pt_error, newcnv.getSvgPoint(event));
+		this.corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
 		return false;
 	}
 
@@ -292,7 +292,7 @@ class SelectionBase {
 		event.preventDefault();
 		this.clipboard = null;
 		let kwargs = this.getCopyKwargs();
-		this.clipboard = Object.keys(kwargs).length ? {kwargs: kwargs, pt0: newcnv.getSvgPoint(event), cnt: 0} : null;
+		this.clipboard = Object.keys(kwargs).length ? {kwargs: kwargs, pt0: cnv.getSvgPoint(event), cnt: 0} : null;
 	}
 
 	cut(event) {
@@ -418,7 +418,7 @@ class SelectionShape extends SelectionBase {
 	corrPtSpecialCase(event) {
 		let flag = super.corrPtSpecialCase(event);
 		if (!flag && this.pointed_cp) {
-			let pt = newcnv.getSvgPoint(event);
+			let pt = cnv.getSvgPoint(event);
 			if (event.shiftKey) this.corrected_point = pt.map(val => Math.round(val / 10) * 10);
 			flag = true;
 		}
@@ -514,7 +514,7 @@ export class SelectionChem extends SelectionShape {
 	corrPtSpecialCase(event) {
 		let flag = super.corrPtSpecialCase(event);
 		if (!flag && this.pointed_atom) {
-			let pt = newcnv.getSvgPoint(event);
+			let pt = cnv.getSvgPoint(event);
 			let to_join = event.shiftKey && event.target.is_atom;
 			let to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
 			let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt,

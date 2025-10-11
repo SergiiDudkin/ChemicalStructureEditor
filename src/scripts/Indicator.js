@@ -1,4 +1,4 @@
-import {newcnv} from './Canvas.js';
+import {cnv} from './Canvas.js';
 import {DeletableAbortable, attachSvg, setAttrsSvg} from './Utils.js';
 import {styleToString} from './ChemParser.js';
 
@@ -22,7 +22,7 @@ export class Indicator extends DeletableAbortable {
 
 	setText(event, text) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
-		var pt = newcnv.getSvgPoint(event);
+		var pt = cnv.getSvgPoint(event);
 		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
 		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
 			.appendChild(document.createTextNode(line)));

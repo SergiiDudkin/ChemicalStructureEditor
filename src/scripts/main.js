@@ -16,7 +16,7 @@ import {ControlPoint} from './ControlPoints.js';
 import {Line, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
 import {Arrow, DoubleArrow, ResonanceArrow, RetroArrow} from './Arrows.js';
 import {registry} from './BaseClasses.js';
-import {newcnv} from './Canvas.js';
+import {cnv} from './Canvas.js';
 import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn, 
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn, 
@@ -29,7 +29,7 @@ import {SelectRect, SelectLasso, SelectionChem, pickNode} from './Selection.js';
 
 function downloadSvg() { // Download .svg
 	var element = document.createElement('a');
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(newcnv.getSvgContent()));
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(cnv.getSvgContent()));
 	element.setAttribute('download', 'molecule.svg');
 	element.click();
 }
@@ -87,7 +87,7 @@ function hideControlPoints() {
 
 
 function getCursorAtom(event, atomtext) {
-	var cursoratom = new ChemNode('cursoratom', ...newcnv.clampEventToCnv(event), '@' + atomtext);
+	var cursoratom = new ChemNode('cursoratom', ...cnv.clampEventToCnv(event), '@' + atomtext);
 	cursoratom.parse();
 	cursoratom.renderText();
 	cursoratom.eventsOff();
@@ -103,7 +103,7 @@ function getDiscreteBondEnd(pt0, [x, y], len=standard_bondlength) {
 
 function pickNodePoint(event) {
 	var node = event.target.is_atom ? event.target.objref : null;
-	var pt = node ? node.xy : newcnv.getSvgPoint(event);
+	var pt = node ? node.xy : cnv.getSvgPoint(event);
 	return [pt, node];
 }
 
@@ -149,7 +149,7 @@ function chemNodeHandler(elbtn) {
 	}
 
 	function movElem(event) { // Move cursor atom
-		cursoratom.setCtr(newcnv.clampEventToCnv(event));
+		cursoratom.setCtr(cnv.clampEventToCnv(event));
 	}
 
 	function setElem(event) { // Create a new atom
@@ -157,7 +157,7 @@ function chemNodeHandler(elbtn) {
 		new_node0id = ChemNode.getNewId();
 		new_node1id = ChemNode.getNewId();
 		new_bond_id = ChemBond.getNewId();
-		if (newcnv.isClicked(event)) { // Click inside the canvas
+		if (cnv.isClicked(event)) { // Click inside the canvas
 			[pt0, node0] = pickNodePoint(event);
 			if (node0) { // If some atom was clicked
 				if (node0.connections.length == 0 && (node0.text == atomtext ||
@@ -197,7 +197,7 @@ function chemNodeHandler(elbtn) {
 	function movBoundNode(event) { // Create extra bond and atom, if the cursor was moved far from the click point
 		dispatcher.undo();
 		var kwargs = {};
-		var difxy = vecDif(pt0, newcnv.getSvgPoint(event));
+		var difxy = vecDif(pt0, cnv.getSvgPoint(event));
 		if (vecLen(difxy) >= 16) {
 			kwargs.create = {
 				atoms: {[new_node1id]: [...getDiscreteBondEnd(pt0, difxy), atomtext]},
@@ -233,7 +233,7 @@ function chemBondHandler(btn, init_type, rotation_schema) {
 	}
 
 	function stBond(event) { // Start drawing bond. Called when mouse button 1 is down.
-		if (newcnv.isClicked(event)) { // Bond starts within the canvas. Continue drawing.
+		if (cnv.isClicked(event)) { // Bond starts within the canvas. Continue drawing.
 			if (event.target.is_bond) { // If an existing bond was clicked, change its multiplicity
 				var focobj = event.target.objref;
 				var kwargs = {alter: {bonds: {[focobj.id]: {type: focobj.getNextType(rotation_schema)}}}};
@@ -297,9 +297,9 @@ function deleteHandler(delbtn) {
 	}
 
 	function delAct(event) { // When mouse button is down
-		if (newcnv.isClicked(event)) {
+		if (cnv.isClicked(event)) {
 			erase(event);
-			newcnv.svg.addEventListener('mousemove', erase);
+			cnv.svg.addEventListener('mousemove', erase);
 			window.addEventListener('mouseup', delStop);
 		}
 		else { // If click out of canvas,
@@ -321,7 +321,7 @@ function deleteHandler(delbtn) {
 	}
 
 	function delStop() {
-		newcnv.svg.removeEventListener('mousemove', erase);
+		cnv.svg.removeEventListener('mousemove', erase);
 		window.removeEventListener('mouseup', delStop);
 	}
 }
@@ -352,10 +352,10 @@ function textHandler(textbtn) {
 
 	function addInput(event) {
 		setNodeText();
-		if (newcnv.isClicked(event)) { // Click inside the canvas
+		if (cnv.isClicked(event)) { // Click inside the canvas
 			[pt, node] = pickNodePoint(event);
 			if (node) { // If some atom was clicked
-				var [left, top] = newcnv.getScreenPoint(pt);
+				var [left, top] = cnv.getScreenPoint(pt);
 				var input = document.createElement('input');
 				input.setAttribute('id', 'txt-input');
 				input.setAttribute('type', 'text');
@@ -400,7 +400,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 	function crPolygon(event) {
 		polygonbtn.selectCond();
-		mo_st = newcnv.getSvgPoint(event);
+		mo_st = cnv.getSvgPoint(event);
 		var [cur_atoms_data, cur_bonds_data] = generatePolygon(mo_st, [0, pvcd], cur_node_ids, cur_bond_ids);
 		editStructure({create: {atoms: cur_atoms_data, bonds: cur_bonds_data}});
 		window.addEventListener('mousemove', movPolygon);
@@ -408,7 +408,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 
 	function movPolygon(event) { // Move cursor polygon
-		var pt = newcnv.getSvgPoint(event);
+		var pt = cnv.getSvgPoint(event);
 		var moving_vec = vecDif(mo_st, pt);
 		mo_st = pt;
 		editStructure({transforms: [[MOVE, {atoms: new Set(cur_node_ids)}, {moving_vec: moving_vec}]]});
@@ -416,7 +416,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 
 	function setPolygon(event) { // Move cursor polygon
 		[new_node_ids, new_bond_ids] = generateIds();
-		if (newcnv.isClicked(event)) { // Click inside the canvas
+		if (cnv.isClicked(event)) { // Click inside the canvas
 			var [pt, node] = pickNodePoint(event);
 			if (node) {
 				stopCursor();
@@ -449,7 +449,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 
 	function flipPolygon(event) {
-		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, newcnv.getSvgPoint(event)));
+		var ortho_proj = vecDotProd(common_bond.ouva, vecDif(common_bond.xy, cnv.getSvgPoint(event)));
 		var dir = Math.sign(ortho_proj);
 		dir = dir ? dir : 1;
 		var ctr = vecSum(common_bond.xy, vecMul(common_bond.ouva, pecd * dir));
@@ -469,7 +469,7 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 	}
 
 	function rotatePolygon(event) {
-		var difxy = vecDif(common_node.xy, newcnv.getSvgPoint(event));
+		var difxy = vecDif(common_node.xy, cnv.getSvgPoint(event));
 		var ctr = getDiscreteBondEnd(common_node.xy, difxy, pvcd);
 
 		if (ctr[0] == prev_ctr[0] && ctr[1] == prev_ctr[1]) return; // Compare old and current
@@ -613,8 +613,8 @@ function twoPointHandler(btn, ShapeCls) {
 	}
 
 	function startShape(event) { // Start drawing line. Called when mouse button 1 is down.
-		if (newcnv.isClicked(event)) { // Line starts within the canvas. Continue drawing.
-			pt0 = newcnv.getSvgPoint(event);
+		if (cnv.isClicked(event)) { // Line starts within the canvas. Continue drawing.
+			pt0 = cnv.getSvgPoint(event);
 			if (event.shiftKey) pt0 = pt0.map(val => Math.round(val / 10) * 10);
 			new_line_id = ShapeCls.getNewId();
 			new_cp0_id = ControlPoint.getNewId();
@@ -632,7 +632,7 @@ function twoPointHandler(btn, ShapeCls) {
 
 	function moveShape(event) { // Move second end of the drawn bond
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
-		let pt1 = newcnv.getSvgPoint(event);
+		let pt1 = cnv.getSvgPoint(event);
 		if (event.shiftKey) pt1 = pt1.map(val => Math.round(val / 10) * 10);
 		let kwargs = {create: {[ShapeCls.alias]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}}};
 		dispatcher.do(kwargs);
@@ -663,7 +663,7 @@ function multipointHandler(btn, ShapeCls) {
 	}
 
 	function setPoint(event) {
-		if (newcnv.isClicked(event)) {
+		if (cnv.isClicked(event)) {
 			cps = getUpdatedCps(event);
 			ShapeCls.reserveCpIds();
 			updateShape(cps);
@@ -695,7 +695,7 @@ function multipointHandler(btn, ShapeCls) {
 	}
 
 	function getUpdatedCps(event) {
-		let pt = newcnv.getSvgPoint(event);
+		let pt = cnv.getSvgPoint(event);
 		pt = event.shiftKey ? pt.map(val => Math.round(val / 10) * 10) : pt;
 		return ShapeCls.insertMidCp([...cps, [ShapeCls.new_cp_id, ...pt]]);
 	}
@@ -730,7 +730,7 @@ function transformHandler(btn, SelectTool=null) {
 
 	function selectInit(event) { // eslint-disable-line no-unused-vars
 		btn.selectCond();
-		newcnv.svg.addEventListener('mousedown', selectAct);
+		cnv.svg.addEventListener('mousedown', selectAct);
 		sensors_all.addEventListener('mousedown', pick);
 		window.addEventListener('mousedown', exit);
 	}
@@ -756,7 +756,7 @@ function transformHandler(btn, SelectTool=null) {
 	}
 
 	function exit(event) {
-		newcnv.svg.removeEventListener('mousedown', selectAct);
+		cnv.svg.removeEventListener('mousedown', selectAct);
 		sensors_all.removeEventListener('mousedown', pick);
 		window.removeEventListener('mousedown', exit);
 		selection.deactivate();
@@ -767,8 +767,8 @@ function transformHandler(btn, SelectTool=null) {
 
 // Set global variables
 window.DEBUG = false;
-window.showChessGrid = newcnv.showChessGrid;
-window.hideGrid = newcnv.hideGrid;
+window.showChessGrid = cnv.showChessGrid;
+window.hideGrid = cnv.hideGrid;
 window.showControlPoints = showControlPoints;
 window.hideControlPoints = hideControlPoints;
 window.selection = selection;
