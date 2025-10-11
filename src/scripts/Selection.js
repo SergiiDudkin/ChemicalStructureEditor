@@ -3,7 +3,7 @@ import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
-import {newcnv} from './CanvasControl.js';
+import {newcnv} from './Canvas.js';
 import {TransformTool} from './TransformTool.js';
 import {Indicator} from './Indicator.js';
 import {editStructure} from './Executor.js';

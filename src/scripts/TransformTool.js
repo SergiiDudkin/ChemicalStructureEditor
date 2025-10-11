@@ -1,4 +1,4 @@
-import {newcnv} from './CanvasControl.js';
+import {newcnv} from './Canvas.js';
 import {Indicator} from './Indicator.js';
 import {MOVE, ROTATE, SCALE, STRETCH, vecDif, rotateAroundCtr, vecDotProd, stretchAlongDir, vecSum, vecMul, unitVec, scaleAroundCtr, discreteAngle} from './Geometry.js';
 import {DeletableAbortable, attachSvg, CtrRect, CtrCircle, CtrPolygon} from './Utils.js';

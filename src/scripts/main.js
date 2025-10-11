@@ -16,7 +16,7 @@ import {ControlPoint} from './ControlPoints.js';
 import {Line, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
 import {Arrow, DoubleArrow, ResonanceArrow, RetroArrow} from './Arrows.js';
 import {registry} from './BaseClasses.js';
-import {newcnv} from './CanvasControl.js';
+import {newcnv} from './Canvas.js';
 import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn, 
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn, 

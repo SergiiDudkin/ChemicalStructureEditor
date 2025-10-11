@@ -1,4 +1,4 @@
-import {newcnv} from './CanvasControl.js';
+import {newcnv} from './Canvas.js';
 import {DeletableAbortable, attachSvg, setAttrsSvg} from './Utils.js';
 import {styleToString} from './ChemParser.js';
 

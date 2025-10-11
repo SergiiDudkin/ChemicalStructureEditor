@@ -1,5 +1,5 @@
 import {makeSvg, attachSvg} from './Utils.js';
-import {newcnv} from './CanvasControl.js';
+import {newcnv} from './Canvas.js';
 
 
 class BaseButton {
