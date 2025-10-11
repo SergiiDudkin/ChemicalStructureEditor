@@ -22,7 +22,8 @@ import {
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn, 
 	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn
 } from './Buttons.js';
-import {dispatcher, refreshBondCutouts, invertCmd} from './Dispatcher.js';
+import {dispatcher, invertCmd} from './Dispatcher.js';
+import {refreshBondCutouts} from './BondCutouts.js';
 import {SelectRect, SelectLasso, SelectionChem, pickNode} from './Selection.js';
 
 

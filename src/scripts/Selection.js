@@ -1,5 +1,6 @@
 import {DeletableAbortable, excludeNonExisting, attachSvg, setAttrsSvg} from './Utils.js';
-import {dispatcher, refreshBondCutouts, invertCmd} from './Dispatcher.js';
+import {dispatcher, invertCmd} from './Dispatcher.js';
+import {refreshBondCutouts} from './BondCutouts.js';
 import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
 import {newcnv} from './CanvasControl.js';
