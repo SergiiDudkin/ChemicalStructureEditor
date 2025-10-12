@@ -47,7 +47,7 @@ class Canvas {
 
 	renderClipPath() {
 		this.cnvclippath.setAttribute('d', [
-			rectToPath(0, 0, ...this.clampToCnv([this.wmax, this.hmax])), 
+			rectToPath(0, 0, ...this.clampToCnv([this.wmax, this.hmax])),
 			...Object.values(this.clip_path_dict)
 		].join(' '));
 	}
@@ -79,7 +79,7 @@ class Canvas {
 	}
 
 	isClicked(event) {
-		return this.svg.contains(event.target)
+		return this.svg.contains(event.target);
 	}
 
 	getSvgContent() {
@@ -94,12 +94,12 @@ class Canvas {
 			.replaceAll(/class=".*?"/gm, '')
 			.replaceAll(/ mask="null"/gm, '')
 			.replaceAll(/ >/gm, '>');
-		return svg_content
+		return svg_content;
 	}
 }
 
 
-const svg_header = 
+const svg_header =
 `<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
 	<!ENTITY ns_svg "http://www.w3.org/2000/svg">
 	<!ENTITY ns_xlink "http://www.w3.org/1999/xlink">
@@ -111,14 +111,14 @@ function indentHtml(el) {
 	if (el.tagName == 'text' && !el.textContent.trim()) return '';
 	if (el.childElementCount) {
 		el.innerHTML = '\n' + [...el.children].map(child => indentHtml(child)).join('\n')
-			.replaceAll(/^/gm, '\t').replaceAll(/(?<=tspan\>)\s+(?=\<tspan)/gm, '') + '\n';
+			.replaceAll(/^/gm, '\t').replaceAll(/(?<=tspan>)\s+(?=<tspan)/gm, '') + '\n';
 	}
-	return el.outerHTML.replaceAll(/\<g\>\s+\<\/g\>/gm, '').replaceAll(/\n\s+\n/gm, '');
+	return el.outerHTML.replaceAll(/<g>\s*<\/g>/gm, '').replaceAll(/^\s*\n/gm, '');
 }
 
 
 function rectToPath(x0, y0, x1, y1) {
-	return `M ${x0} ${y0} H ${x1} V ${y1} H ${x0} Z`
+	return `M ${x0} ${y0} H ${x1} V ${y1} H ${x0} Z`;
 }
 
 

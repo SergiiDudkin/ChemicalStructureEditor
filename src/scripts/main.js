@@ -2,15 +2,14 @@ import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
 import {editStructure} from './Executor.js';
 import {
-	styledict, styleToString, separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
-	computeElementalComposition
+	styledict
 } from './ChemParser.js';
 import {
-	setAttrsSvg, attachSvg, DeletableAbortable, CtrRect, CtrCircle, CtrPolygon, excludeNonExisting, gatherData
+	gatherData
 } from './Utils.js';
 import {
-	vecLen, findDist, unitVec, vecSum, vecDif, vecMul, vecDotProd, rotateVec, rotateAroundCtr, scaleAroundCtr,
-	stretchAlongDir, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, MOVE, ROTATE, SCALE, STRETCH, discreteAngle
+	vecLen, vecSum, vecDif, vecMul, vecDotProd, rotateVec,
+	polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, MOVE, discreteAngle
 } from './Geometry.js';
 import {ControlPoint} from './ControlPoints.js';
 import {Line, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
@@ -18,8 +17,8 @@ import {Arrow, DoubleArrow, ResonanceArrow, RetroArrow} from './Arrows.js';
 import {registry} from './BaseClasses.js';
 import {cnv} from './Canvas.js';
 import {
-	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn, 
-	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn, 
+	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn,
+	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn,
 	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
@@ -738,7 +737,7 @@ function transformHandler(btn, SelectTool=null) {
 	function selectAct(event) { // Click on canvas
 		event.stopPropagation();
 		selection.deactivate();
-		if (SelectTool) new SelectTool('utils');
+		if (SelectTool) new SelectTool('utils', selection);
 	}
 
 	function pick(event) {

@@ -1,5 +1,4 @@
-import {DeletableAbortable, excludeNonExisting, attachSvg, setAttrsSvg} from './Utils.js';
-import {dispatcher, invertCmd} from './Dispatcher.js';
+import {DeletableAbortable, excludeNonExisting, attachSvg, setAttrsSvg, gatherData} from './Utils.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
@@ -7,13 +6,21 @@ import {cnv} from './Canvas.js';
 import {TransformTool} from './TransformTool.js';
 import {Indicator} from './Indicator.js';
 import {editStructure} from './Executor.js';
-import {vecSum, vecDif, MOVE, findDist} from './Geometry.js';
+import {vecSum, vecDif, vecMul, vecLen, MOVE, findDist} from './Geometry.js';
+import {
+	separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw,
+	computeElementalComposition
+} from './ChemParser.js';
+import {invertCmd} from './Dispatcher.js';
+import {registry} from './BaseClasses.js';
+import {ControlPoint} from './ControlPoints.js';
 
 
 export class SelectShape extends DeletableAbortable {
 	// Abstract class
-	constructor(parent_id) {
+	constructor(parent_id, selection) {
 		super();
+		this.selection = selection;
 		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, {
 			class: 'sympoi', 'fill-opacity': 0, stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1
 		});
@@ -33,7 +40,7 @@ export class SelectShape extends DeletableAbortable {
 		window.removeEventListener('mousemove', this.recalc);
 		window.removeEventListener('mouseup', this.selectStop);
 		this.shape.removeAttribute('class');
-		selection.activateFromShape(this.shape);
+		this.selection.activateFromShape(this.shape);
 		this.delete();
 	}
 
@@ -45,8 +52,8 @@ export class SelectShape extends DeletableAbortable {
 
 
 export class SelectRect extends SelectShape {
-	constructor(parent_id) {
-		super(parent_id);
+	constructor(parent_id, selection) {
+		super(parent_id, selection);
 		this.svg_pt0 = cnv.getSvgPoint(event);
 		this.recalc(event);
 	}
@@ -65,8 +72,8 @@ export class SelectRect extends SelectShape {
 
 
 export class SelectLasso extends SelectShape {
-	constructor(parent_id) {
-		super(parent_id);
+	constructor(parent_id, selection) {
+		super(parent_id, selection);
 		this.shape.setAttribute('fill-rule', 'evenodd');
 		this.pts = [cnv.getSvgPoint(event)];
 		this.recalc(event);
