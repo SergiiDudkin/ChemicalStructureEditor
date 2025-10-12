@@ -1,15 +1,11 @@
 import {ChemNode} from './ChemNode.js';
 import {ChemBond} from './ChemBond.js';
 import {editStructure} from './Executor.js';
+import {styledict} from './ChemParser.js';
+import {gatherData} from './Utils.js';
 import {
-	styledict
-} from './ChemParser.js';
-import {
-	gatherData
-} from './Utils.js';
-import {
-	vecLen, vecSum, vecDif, vecMul, vecDotProd, rotateVec,
-	polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, MOVE, discreteAngle
+	vecLen, vecSum, vecDif, vecMul, vecDotProd, rotateVec, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, 
+	MOVE, discreteAngle
 } from './Geometry.js';
 import {ControlPoint} from './ControlPoints.js';
 import {Line, Circle, Rectangle, Polyline, Polygon, Curve, SmoothShape} from './Shapes.js';
@@ -23,7 +19,8 @@ import {
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
-import {SelectRect, SelectLasso, SelectionChem, pickNode} from './Selection.js';
+import {SelectionChem, pickNode} from './Selection.js';
+import {SelectRect, SelectLasso} from './SelectionTools.js';
 
 
 function downloadSvg() { // Download .svg
