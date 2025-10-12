@@ -28,9 +28,9 @@ class BaseButton {
 	}
 
 	createSvg() {
-		var mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
+		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
 		this.svg = makeSvg('svg', {width: 36, height: 36});
-		var mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
 		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
@@ -170,7 +170,7 @@ class DropButton extends BaseButton {
 	}
 
 	pressSubButton(event) {
-		var new_event = new Event('click');
+		const new_event = new Event('click');
 		new_event.clientX = event.clientX;
 		new_event.clientY = event.clientY;
 		this.focused_subbtn.mask_g.dispatchEvent(new_event);

@@ -22,11 +22,11 @@ export class Indicator extends DeletableAbortable {
 
 	setText(event, text) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
-		var pt = cnv.getSvgPoint(event);
+		const pt = cnv.getSvgPoint(event);
 		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
 		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
 			.appendChild(document.createTextNode(line)));
-		var bbox = this.text.getBBox();
+		let bbox = this.text.getBBox();
 		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));
 		bbox = this.text.getBBox();
 		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});

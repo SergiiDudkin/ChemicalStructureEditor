@@ -19,7 +19,7 @@ export function drawPoint(x, y, r=1) {
 
 
 export function drawBBox(text_el) {
-	var {x, y, width, height} = text_el.getBBox();
+	const {x, y, width, height} = text_el.getBBox();
 	attachSvg(DEBUG_GROUP, 'rect', {fill: 'blue', opacity: 0.3, x: x, y: y, width: width, height: height});
 }
 

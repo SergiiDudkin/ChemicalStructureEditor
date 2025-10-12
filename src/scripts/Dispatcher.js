@@ -13,7 +13,7 @@ const transform_inverts = Object.freeze({
 });
 
 export function invertCmd(kwargs_dir) {
-	let kwargs_rev = {};
+	const kwargs_rev = {};
 	if (kwargs_dir.del) {
 		kwargs_rev.create = {};
 		for (const [cls_alias, content] of Object.entries(kwargs_dir.del)) {
@@ -74,7 +74,7 @@ class Dispatcher {
 
 	redo() {
 		if (this.ptr >= this.commands.length) return;
-		let args_rev = this.commands[this.ptr++][0]; // Fetch command
+		const args_rev = this.commands[this.ptr++][0]; // Fetch command
 		this.executor(args_rev); // Execute the given function with args
 		this.callback(args_rev, false);
 	}
@@ -88,8 +88,8 @@ class Dispatcher {
 
 	keyHandler(event) {
 		if ((event.ctrlKey || event.metaKey) && !event.repeat) {
-			var to_redo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
-			var to_undo = event.key == 'z' && !event.shiftKey;
+			const to_redo = event.key == 'y' || event.key == 'Z' || (event.key == 'z' && event.shiftKey);
+			const to_undo = event.key == 'z' && !event.shiftKey;
 			if (to_redo) this.redo();
 			if (to_undo) this.undo();
 			if (to_undo || to_redo) this.postaction();

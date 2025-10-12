@@ -121,7 +121,7 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	recalcLims() {
-		var [node0ctr, node1ctr] = this.getNodeCenters();
+		const [node0ctr, node1ctr] = this.getNodeCenters();
 		this.min_x = Math.min(node0ctr[0], node1ctr[0]);
 		this.max_x = Math.max(node0ctr[0], node1ctr[0]);
 		this.min_y = Math.min(node0ctr[1], node1ctr[1]);
@@ -144,7 +144,7 @@ export class ChemBond extends CanvasCitizen {
 		this.linecnt = this.constructor.linecnt[type];
 
 		// Start and end half width of the bond line (determined by bond type)
-		var tip_thickness = [this.normal, this.thin, this.thick, this.bold];
+		const tip_thickness = [this.normal, this.thin, this.thick, this.bold];
 		this.hw = [0, 1].map(idx => tip_thickness[this.constructor.tip_type[idx][type]] / 2);
 		this.hws = this.normal / 2; // Side line half width
 		this.hsp = this.bond_spacing / 2; // Half of space between lines in multiple bonds
@@ -179,11 +179,11 @@ export class ChemBond extends CanvasCitizen {
 
 	posDouble() {
 		// Find the best shift of double bond; set type accordingly
-		var sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
+		const sinflags = [[0, 0], [0, 0]]; // Flags indicating presence of bonds on each side
 		for (const [node_idx, node] of this.nodes.entries()) {
 			for (const bond of node.connections) {
 				if (this != bond) {
-					var sin = sinVec(this.difxy, bond.difxy);
+					let sin = sinVec(this.difxy, bond.difxy);
 					if (bond.nodes[0] != node) sin *= -1; /* Invert sin if the bond starts not from the node, but ends
 					it (i.e. has opposit direction) */
 					if (sin > 0.1305) sinflags[node_idx][0] = 1;
@@ -191,7 +191,7 @@ export class ChemBond extends CanvasCitizen {
 				}
 			}
 		}
-		var pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
+		const pdshift = Math.sign(sinflags.flat().reduce((pv, cv) => pv + cv, 0)); // Sign of sum
 		this.setType(this.constructor.pdshift1p_to_type[pdshift + 1]);
 		return pdshift;
 	};
@@ -202,7 +202,7 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	updateConvTip(node) {
-		var node_idx = this.getNodeIdx(node);
+		const node_idx = this.getNodeIdx(node);
 		this.terms[node_idx] = this.getNodeCenters()[node_idx];
 		this.offsets[node_idx] = 0;
 		this.hwt = this.hw.slice();
@@ -210,9 +210,9 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	setButtTip(node, line_idx, term_xy) {
-		var node_idx = this.getNodeIdx(node);
-		var hw_vec = vecMul(this.ouva, this.hwt[node_idx]);
-		var dir = this.getNodeSign(node);
+		const node_idx = this.getNodeIdx(node);
+		const hw_vec = vecMul(this.ouva, this.hwt[node_idx]);
+		const dir = this.getNodeSign(node);
 		this.lines[line_idx][node_idx] = [
 			vecSum(term_xy, vecMul(hw_vec, dir)),
 			,
@@ -221,8 +221,8 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	setHalfButt(node, acw) {
-		var node_idx = this.getNodeIdx(node);
-		var hw_len = this.hw[node_idx] * this.getNodeSign(node, acw);
+		const node_idx = this.getNodeIdx(node);
+		const hw_len = this.hw[node_idx] * this.getNodeSign(node, acw);
 		this.juncs[node_idx][+acw] = vecSum(node.xy, vecMul(this.ouva, hw_len));
 	};
 
@@ -231,7 +231,7 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	setSideTip(node) {
-		var node_idx = this.getNodeIdx(node);
+		const node_idx = this.getNodeIdx(node);
 
 		// Iterate over lines
 		for (const [line_idx, shift_factor] of this.getShiftFactors()) {
@@ -239,32 +239,32 @@ export class ChemBond extends CanvasCitizen {
 				this.lines[line_idx][node_idx] = [this.juncs[node_idx][0], node.xy, this.juncs[node_idx][1]];
 			}
 			else { // Floating line tip
-				var shift_val = (this.hws + this.hsp) * shift_factor;
-				var term_xy = this.terms[node_idx];
-				var xy = vecSum(term_xy, vecMul(this.ouva, shift_val));
+				const shift_val = (this.hws + this.hsp) * shift_factor;
+				const term_xy = this.terms[node_idx];
+				let xy = vecSum(term_xy, vecMul(this.ouva, shift_val));
 				if (node.connections.length > 1 && this.linecnt == 2 && !node.text) {
-					var step = this.getNodeSign(node, shift_factor > 0);
+					const step = this.getNodeSign(node, shift_factor > 0);
 
-					var adj_bond = node.goToBond(this, step);
+					const adj_bond = node.goToBond(this, step);
 
-					var this_vec = this.getNodeVec(node); // This bond vector
-					var adj_vec = adj_bond.getNodeVec(node); // Adjacent bond vector
+					const this_vec = this.getNodeVec(node); // This bond vector
+					const adj_vec = adj_bond.getNodeVec(node); // Adjacent bond vector
 
-					var is_cw = node_idx == (shift_factor < 0); // True if clockwise
-					var angle = is_cw ? angleVec(this_vec, adj_vec) : angleVec(adj_vec, this_vec);
+					const is_cw = node_idx == (shift_factor < 0); // True if clockwise
+					const angle = is_cw ? angleVec(this_vec, adj_vec) : angleVec(adj_vec, this_vec);
 
 					if ((angle < 1) && (Math.abs(shift_factor) == 2)) {
-						var bisect_xy = angleBisector(this_vec, adj_vec);
+						const bisect_xy = angleBisector(this_vec, adj_vec);
 						xy = lineIntersec(xy, vecSum(xy, this_vec), term_xy, vecSum(term_xy, bisect_xy));
 					}
 					else if ((angle <= 0.84) && (Math.abs(shift_factor) == 1)) { // Double bond in center
-						var adj_bond_border = adj_bond.getBorder(node, step > 0);
-						var side_shift = vecMul(this.ouva, this.hws * this.getNodeSign(node));
+						const adj_bond_border = adj_bond.getBorder(node, step > 0);
+						const side_shift = vecMul(this.ouva, this.hws * this.getNodeSign(node));
 
-						var t0 = vecSum(xy, side_shift);
-						var t1 = vecSum(t0, this_vec);
-						var t2 = vecSum(xy, vecMul(side_shift, -1));
-						var t3 = vecSum(t2, this_vec);
+						const t0 = vecSum(xy, side_shift);
+						const t1 = vecSum(t0, this_vec);
+						const t2 = vecSum(xy, vecMul(side_shift, -1));
+						const t3 = vecSum(t2, this_vec);
 
 						this.lines[line_idx][node_idx][0] = lineIntersec(t0, t1, ...adj_bond_border);
 						this.lines[line_idx][node_idx][2] = lineIntersec(t2, t3, ...adj_bond_border);
@@ -319,8 +319,8 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	static deleteMaskLines(upper_bond, root, del_mask=false) {
-		var u_mask_lines = Array.from(root.getElementsByClassName(`u${upper_bond.id}`));
-		var masks = new Set(u_mask_lines.map(m_line => m_line.parentNode));
+		const u_mask_lines = Array.from(root.getElementsByClassName(`u${upper_bond.id}`));
+		const masks = new Set(u_mask_lines.map(m_line => m_line.parentNode));
 		u_mask_lines.forEach(u_mask_line => u_mask_line.remove());
 		if (del_mask) {
 			for (const mask of masks) {
@@ -338,7 +338,7 @@ export class ChemBond extends CanvasCitizen {
 
 	renderBond() {
 		while (this.g.childElementCount) this.g.lastChild.remove(); // Remove old lines
-		var color = window.DEBUG ? getColor() : this.color;
+		const color = window.DEBUG ? getColor() : this.color;
 		if (this.pattern) {
 			this.pattern.setAttribute('patternTransform', `rotate(${this.rotang * 180 / Math.PI})`);
 			this.pattern.firstChild.setAttribute('fill', color);
@@ -354,7 +354,7 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	updateAllRects() {
-		var offsets = this.offsets.map(offset => Math.max(offset, this.constructor.min_offset));
+		const offsets = this.offsets.map(offset => Math.max(offset, this.constructor.min_offset));
 		this.backrect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();
 		this.refreshSelectRect();
 	};
@@ -375,44 +375,44 @@ export class ChemBond extends CanvasCitizen {
 	};
 
 	getBorder(node, acw) {
-		var side = this.getNodeSign(node, !acw);
+		const side = this.getNodeSign(node, !acw);
 		return this.getNodeCenters().map((nc, idx) => vecSum(nc, vecMul(this.ouva, this.hw[idx] * side)));
 	};
 
 	adjustLength(node) {
 		// Prevents overlapping of the chemical symbol and bond
-		var node_centers = this.getNodeCenters();
-		var node_idx = this.getNodeIdx(node);
-		var curxy = node_centers[node_idx];
+		const node_centers = this.getNodeCenters();
+		const node_idx = this.getNodeIdx(node);
+		const curxy = node_centers[node_idx];
 
-		var textbox = node.g.childNodes[0].getBBox();
-		var tb_w = textbox.width;
-		var tb_h = textbox.height;
+		const textbox = node.g.childNodes[0].getBBox();
+		let tb_w = textbox.width;
+		let tb_h = textbox.height;
 
 		// Adjust textbox borders
 		tb_w += 2;
 		tb_h = Math.max(0, tb_h - 2);
 
 		// Find intersecting textbox border line
-		var threshold = tb_h / tb_w;
-		var [difx, dify] = this.difxy;
-		var tan = Math.abs(dify / difx);
-		var dirtab = [ // 0: R, 1: U, 2: L, 3: D
+		const threshold = tb_h / tb_w;
+		const [difx, dify] = this.difxy;
+		const tan = Math.abs(dify / difx);
+		const dirtab = [ // 0: R, 1: U, 2: L, 3: D
 			[[2, 2],
 				[0, 0]],
 			[[3, 1],
 				[3, 1]]
 		];
-		var dir = dirtab[+(tan > threshold)][+(node_idx == 0 == difx > 0)][+(node_idx == 0 == dify < 0)];
+		const dir = dirtab[+(tan > threshold)][+(node_idx == 0 == difx > 0)][+(node_idx == 0 == dify < 0)];
 
 		// Compute intersection point
-		var multab = [
+		const multab = [
 			[ 0.5, -0.5,  0.5,  0.5], // Right
 			[-0.5, -0.5,  0.5, -0.5], // Up
 			[-0.5, -0.5, -0.5,  0.5], // Left
 			[-0.5,  0.5,  0.5,  0.5]  // Down
 		];
-		var [fx0, fy0, fx1, fy1] = multab[dir];
+		const [fx0, fy0, fx1, fy1] = multab[dir];
 		this.terms[node_idx] = lineIntersec(
 			...node_centers,
 			vecSum(curxy, [fx0 * tb_w, fy0 * tb_h]),
@@ -423,7 +423,7 @@ export class ChemBond extends CanvasCitizen {
 		this.offsets[node_idx] = vecLen(vecDif(curxy, this.terms[node_idx]));
 
 		// Compute halw width of the actual bond terminals
-		var prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
+		const prop = findDist(node_centers[node_idx], this.terms[node_idx]) / this.len;
 		this.hwt[node_idx] = this.hw[node_idx] * (1 - prop) + this.hw[1 - node_idx] * prop;
 
 		return this.terms[node_idx];
@@ -458,7 +458,7 @@ export class ChemBond extends CanvasCitizen {
 
 	refreshSelectRect() {
 		if (this.select_rect && !this.offsets.includes(undefined)) {
-			var offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(
+			const offsets = this.offsets.map((offset, idx) => this.nodes[idx].select_circ ? 0 : Math.max(
 				offset, this.constructor.min_offset
 			));
 			this.select_rect.setCtr(this.xy).setWidth(this.len).setOffsets(offsets).setAbsRotAng(this.rotang).render();

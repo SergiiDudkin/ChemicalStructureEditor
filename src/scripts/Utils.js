@@ -6,13 +6,13 @@ export function setAttrsSvg(el, attrs={}) {
 }
 
 export function makeSvg(tag, attrs={}) {
-	var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+	const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
 	setAttrsSvg(el, attrs);
 	return el;
 }
 
 export function attachSvg(parent, tag, attrs={}) {
-	var el = makeSvg(tag, attrs);
+	const el = makeSvg(tag, attrs);
 	parent.appendChild(el);
 	return el;
 }
@@ -44,7 +44,7 @@ class CtrShape extends Deletable {
 	constructor(parent_id, cx, cy, svg_attrs) {
 		super();
 		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, svg_attrs);
-		for (var i = 0; i < 2; i++) {
+		for (let i = 0; i < 2; i++) {
 			this.shape.transform.baseVal.appendItem(this.shape.ownerSVGElement.createSVGTransform());
 		}
 		this.shape.objref = this;
@@ -139,7 +139,7 @@ export function excludeNonExisting(el_ids) {
 
 
 export function gatherData(ids=new Set()) {
-	let data = {};
+	const data = {};
 	ids.forEach(id => data[id] = document.getElementById(id).objref.getData());
 	return data;
 }

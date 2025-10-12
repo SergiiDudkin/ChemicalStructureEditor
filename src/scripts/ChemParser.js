@@ -4,8 +4,8 @@ import {attachSvg} from './Utils.js';
 
 function buildPrefixTree(prefix_tree, words, leaf_type) {
 	for (const word of words) {
-		var parent;
-		var branch = prefix_tree;
+		let parent;
+		let branch = prefix_tree;
 		for (const char of word) {
 			if (!branch[char]) branch[char] = {children: {}, leaf_type: 0};
 			parent = branch[char];
@@ -16,16 +16,16 @@ function buildPrefixTree(prefix_tree, words, leaf_type) {
 }
 
 export function tokenize(formula) {
-	var tokens = [];
-	var branch = prefix_tree;
-	var accum = ''; // Char container to assemble a token
-	var token = null; // Assembled token
-	var saved_i; // i after the last complete token
-	for (var i = 0; i < formula.length; i++) {
-		var char = formula[i];
+	const tokens = [];
+	let branch = prefix_tree;
+	let accum = ''; // Char container to assemble a token
+	let token = null; // Assembled token
+	let saved_i; // i after the last complete token
+	for (var i = 0; i < formula.length; i++) { // eslint-disable-line no-var
+		const char = formula[i];
 		if (char in branch) {
 			accum += char;
-			var parent = branch[char];
+			const parent = branch[char];
 			branch = parent.children;
 			if (parent.leaf_type) {
 				[token, saved_i] = [accum, i];
@@ -45,10 +45,10 @@ export function tokenize(formula) {
 }
 
 export function buildBracketTree(tokens) {
-	var bracket_tree = [];
-	var bracket_stack = [];
-	var bracket_content = [];
-	var group_obj, popped;
+	const bracket_tree = [];
+	const bracket_stack = [];
+	let bracket_content = [];
+	let group_obj, popped;
 	for (const item of tokens) {
 		if (bracket_stack.length) {
 			if (item == ')' || item == ']') {
@@ -76,25 +76,25 @@ export function buildBracketTree(tokens) {
 }
 
 export function styleToString(styledict, extras={}) {
-	var aug_styledict = Object.assign({...styledict}, extras);
+	const aug_styledict = Object.assign({...styledict}, extras);
 	return Object.entries(aug_styledict).map(entry => entry.join(':')).join(';');
 }
 
 function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 	// Render text_arr
-	var text = attachSvg(parent, 'text', {x: x, y: y, style: styleToString(styledict), class: 'chemtxt sympoi'});
+	const text = attachSvg(parent, 'text', {x: x, y: y, style: styleToString(styledict), class: 'chemtxt sympoi'});
 
-	var font_size = parseInt(styledict['font-size']);
-	var dy = font_size / 5;
-	var was_dy = false;
-	for (var item of text_arr) {
-		var is_dy = false;
+	const font_size = parseInt(styledict['font-size']);
+	const dy = font_size / 5;
+	let was_dy = false;
+	for (let item of text_arr) {
+		let is_dy = false;
 		if (typeof item === 'object') {
-			var flags;
+			let flags;
 			[item, flags] = Object.entries(item)[0];
 			is_dy = flags.includes('s');
 		}
-		var tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+		const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
 		tspan.appendChild(document.createTextNode(item));
 		if (is_dy) tspan.setAttribute('style', `font-size:${font_size * 0.7}px`);
 		if (is_dy != was_dy) tspan.setAttribute('dy', (is_dy - was_dy) * dy);
@@ -107,9 +107,9 @@ function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 
 function dockText(anchor, satelite, dir) {
 	// Stack satelite text to the anchor one
-	var x = parseFloat(anchor.getAttribute('x'));
-	var y = parseFloat(anchor.getAttribute('y'));
-	var dy = parseFloat(anchor.style.fontSize) * 0.8;
+	let x = parseFloat(anchor.getAttribute('x'));
+	let y = parseFloat(anchor.getAttribute('y'));
+	const dy = parseFloat(anchor.style.fontSize) * 0.8;
 
 	if (dir == 0) x += anchor.getBBox().width; // R
 	else if (dir == 1) x -= satelite.getBBox().width; // L
@@ -122,19 +122,19 @@ function dockText(anchor, satelite, dir) {
 
 function attachTextArr(anchor, dir, text_arr, parent, styledict) {
 	if (text_arr.length) {
-		var satelite = styleText(text_arr, parent, styledict);
+		const satelite = styleText(text_arr, parent, styledict);
 		dockText(anchor, satelite, dir);
 		return satelite;
 	}
 }
 
 function flattenBracketTree(bracket_tree, rev=false) {
-	var text_arr=[];
-	for (var {brackets, content, count} of bracket_tree) {
-		var appendix = [];
+	const text_arr=[];
+	for (const {brackets, content, count} of bracket_tree) {
+		const appendix = [];
 		if (brackets.length) appendix.push(brackets[0]);
 		if (content instanceof Array) {
-			var nested_text_arr = flattenBracketTree(content, rev);
+			const nested_text_arr = flattenBracketTree(content, rev);
 			if (rev) nested_text_arr.reverse();
 			appendix.push(...nested_text_arr);
 		}
@@ -148,9 +148,9 @@ function flattenBracketTree(bracket_tree, rev=false) {
 }
 
 function firstElemIdx(bracket_tree) {
-	var branch = bracket_tree;
-	var brackets_cnt = 0;
-	var subscript_cnt = 0;
+	let branch = bracket_tree;
+	let brackets_cnt = 0;
+	let subscript_cnt = 0;
 	while (true) {
 		if (branch[0].brackets.length) brackets_cnt++;
 		if (branch[0].count !== null) subscript_cnt++;
@@ -166,10 +166,10 @@ function centering(text) {
 }
 
 export function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
-	var anch;
-	var rev = dir == 1;
-	var text_arr = flattenBracketTree(bracket_tree, rev);
-	var [brackets_cnt, subscript_cnt, has_1st_subscript] = firstElemIdx(bracket_tree);
+	let anch;
+	const rev = dir == 1;
+	const text_arr = flattenBracketTree(bracket_tree, rev);
+	const [brackets_cnt, subscript_cnt, has_1st_subscript] = firstElemIdx(bracket_tree);
 
 	if (dir == 0) { // R
 		anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
@@ -177,7 +177,7 @@ export function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 		attachTextArr(anch, 0, text_arr.slice(brackets_cnt + 1), parent, styledict); // r_sat
 	}
 	else if (dir == 1) { // L
-		var both_cnt = brackets_cnt + subscript_cnt;
+		const both_cnt = brackets_cnt + subscript_cnt;
 		anch = styleText([text_arr[both_cnt]], parent, styledict, [x, y], true);
 		attachTextArr(anch, 0, text_arr.slice(0, both_cnt).reverse(), parent, styledict); // r_sat
 		attachTextArr(anch, 1, text_arr.slice(both_cnt + 1).reverse(), parent, styledict); // l_sat
@@ -186,10 +186,10 @@ export function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 		anch = styleText([text_arr[brackets_cnt]], parent, styledict, [x, y], true);
 		attachTextArr(anch, 1, text_arr.slice(0, brackets_cnt), parent, styledict); // l_sat
 		if (has_1st_subscript) attachTextArr(anch, 0, [text_arr[brackets_cnt + 1]], parent, styledict); // r_sat
-		var vl_brackets = [];
-		var ptr = brackets_cnt + has_1st_subscript;
+		const vl_brackets = [];
+		let ptr = brackets_cnt + has_1st_subscript;
 		while (['(', '['].includes(text_arr[++ptr])) vl_brackets.push(text_arr[ptr]);
-		var v_sat = attachTextArr(anch, dir, text_arr.slice(ptr), parent, styledict); // v_sat
+		const v_sat = attachTextArr(anch, dir, text_arr.slice(ptr), parent, styledict); // v_sat
 		attachTextArr(v_sat, 1, vl_brackets, parent, styledict); // vl_sat
 	}
 }
@@ -197,7 +197,7 @@ export function textTermBuilder(bracket_tree, parent, dir, styledict, [x, y]) {
 
 // MolInfo helpers
 export function sumFormula(formula_a, formula_b) {
-	var merged = {...formula_a};
+	const merged = {...formula_a};
 	for (const [atom, count] of Object.entries(formula_b)) {
 		if (!(atom in merged)) merged[atom] = 0;
 		merged[atom] += count;
@@ -229,9 +229,9 @@ export function treeToFormula(bracket_tree, formula={}) {
 
 export function separateUnrecognized(formula) {
 	// eslint-disable-next-line no-unused-vars
-	var recognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => el in std_atomic_weights));
+	const recognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => el in std_atomic_weights));
 	// eslint-disable-next-line no-unused-vars
-	var unrecognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => !(el in std_atomic_weights)));
+	const unrecognized = Object.fromEntries(Object.entries(formula).filter(([el, cnt]) => !(el in std_atomic_weights)));
 	return [recognized, unrecognized];
 }
 
@@ -242,8 +242,8 @@ export function formulaToFw(formula) {
 }
 
 export function toHillSystem(formula) {
-	var hill_arr = [];
-	var el_set = new Set(Object.keys(formula));
+	const hill_arr = [];
+	const el_set = new Set(Object.keys(formula));
 	if ('C' in formula) {
 		hill_arr.push(['C', formula.C]);
 		el_set.delete('C');
@@ -261,28 +261,28 @@ export function hillToStr(hill_arr) {
 }
 
 export function computeElementalComposition(formula) {
-	var fw = formulaToFw(formula);
+	const fw = formulaToFw(formula);
 	return toHillSystem(formula).map(([el, cnt]) => [el, std_atomic_weights[el] * cnt / fw]);
 }
 
 
-var bracket_pairs = {')': '(', ']': '['};
-var punctuation = new Set(['-', ',']);
-var brackets = new Set(['(', ')', '[', ']']);
-var digits = new Set([...Array(10).keys()].map(digit => '' + digit));
+const bracket_pairs = {')': '(', ']': '['};
+const punctuation = new Set(['-', ',']);
+const brackets = new Set(['(', ')', '[', ']']);
+const digits = new Set([...Array(10).keys()].map(digit => '' + digit));
 
-export var styledict = {
+export const styledict = {
 	'fill': 'black',
 	'font-family': 'Arial',
 	'font-size': '16px'
 };
 
 
-var prefix_tree = {};
+const prefix_tree = {};
 buildPrefixTree(prefix_tree, Object.keys(std_atomic_weights), 1);
 buildPrefixTree(prefix_tree, Object.keys(residue_formulae), 2);
 buildPrefixTree(prefix_tree, punctuation, 3);
 buildPrefixTree(prefix_tree, brackets, 4);
 buildPrefixTree(prefix_tree, digits, 5);
-var digit_children = Object.fromEntries([...digits].map(digit => [digit, prefix_tree[digit]]));
+const digit_children = Object.fromEntries([...digits].map(digit => [digit, prefix_tree[digit]]));
 digits.forEach(digit => prefix_tree[digit].children = digit_children);

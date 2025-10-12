@@ -19,24 +19,24 @@ export class TransformTool extends DeletableAbortable {
 		this.parent_id = parent_id;
 		this.g = attachSvg(document.getElementById(parent_id), 'g', {id: 'transform-tool'});
 		this.xy = [cx, cy];
-		var hw = width / 2; // Transform tool half witdth
-		var hh = height / 2; // Transform tool half height
+		const hw = width / 2; // Transform tool half witdth
+		const hh = height / 2; // Transform tool half height
 
 		// Dimensions
-		var cl = 8; // Corner rectangle length
-		var sw = 6; // Side rectangle width
-		var sh = 12; // Side rectangle height
-		var aht = 2; // Pivot half thickness
-		var ahl = 14; // Pivot half length
-		var lever_r = 6; // Lever radius
+		const cl = 8; // Corner rectangle length
+		const sw = 6; // Side rectangle width
+		const sh = 12; // Side rectangle height
+		const aht = 2; // Pivot half thickness
+		const ahl = 14; // Pivot half length
+		const lever_r = 6; // Lever radius
 		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
 
-		var pivot_pts = [
+		const pivot_pts = [
 			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl],
 			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
 		].map(pt => pt.join()).join(' ');
 
-		var vals = [ // Jigs init data: [ShapeClass, cx, cy, svg_args, callback]
+		const vals = [ // Jigs init data: [ShapeClass, cx, cy, svg_args, callback]
 			[CtrPolygon, cx, cy, {points: pivot_pts, 'fill-rule': 'evenodd'}, this.startMovingPivot], // Pivot
 			[CtrCircle, cx, cy - hh - this.lever_len, {r: lever_r}, this.startRotating], // Lever
 			[CtrRect, cx + hw, cy + hh, {width: cl, height: cl}, this.startScaling], // Bottom-right square
@@ -82,9 +82,9 @@ export class TransformTool extends DeletableAbortable {
 	}
 
 	rotating(event) {
-		var rot_angle = Math.atan2(...vecDif(this.pivot.xy, cnv.getSvgPoint(event)).toReversed()) - this.rot_st;
+		let rot_angle = Math.atan2(...vecDif(this.pivot.xy, cnv.getSvgPoint(event)).toReversed()) - this.rot_st;
 		if (event.shiftKey) {
-			var new_accum_rot_angle = discreteAngle(this.accum_rot_angle + rot_angle, 5);
+			const new_accum_rot_angle = discreteAngle(this.accum_rot_angle + rot_angle, 5);
 			rot_angle = (new_accum_rot_angle != this.accum_rot_angle) ? new_accum_rot_angle - this.accum_rot_angle : 0;
 		}
 		this.accum_rot_angle += rot_angle;
@@ -120,7 +120,7 @@ export class TransformTool extends DeletableAbortable {
 	}
 
 	scaling(event) {
-		var factor = this.getFactor();
+		const factor = this.getFactor();
 		this.indicator.showPercent(event, (this.accum_factor * 100).toFixed(1));
 		this.scale(factor, this.pivot.xy);
 		this.selection.relocatingItems(SCALE, {scale_factor: factor, scale_ctr: [...this.pivot.xy]});
@@ -154,7 +154,7 @@ export class TransformTool extends DeletableAbortable {
 	}
 
 	stretching(event) {
-		var factor = this.getFactor();
+		const factor = this.getFactor();
 		this.indicator.showPercent(event, (this.accum_factor * 100).toFixed(1));
 		this.stretch(factor, this.dir_angle, this.pivot.xy);
 		this.selection.relocatingItems(STRETCH, {stretch_factor: factor, dir_angle: this.dir_angle,
@@ -188,11 +188,11 @@ export class TransformTool extends DeletableAbortable {
 	}
 
 	movingPivot(event) {
-		var corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
+		let corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
 		if (event.shiftKey) {
 			this.pivot.shape.classList.add('sympoi', 'jigforcehover');
 			this.selection.eventsOff();
-			var el = event.target;
+			const el = event.target;
 			if (el.is_atom || el.is_bond) corrected_point = el.objref.xy;
 		}
 		else {
@@ -213,14 +213,14 @@ export class TransformTool extends DeletableAbortable {
 
 	// Utils
 	getFactor() {
-		var corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
-		var transform_vec = vecDif(this.pivot.xy, corrected_point);
-		var ref_vec = vecDif(this.pivot.xy, this.curr_jig.xy);
-		var dir_vec = vecDif(this.xy, this.curr_jig.xy);
-		var factor = vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
+		const corrected_point = vecDif(this.init_ctr_pt_error, cnv.getSvgPoint(event));
+		const transform_vec = vecDif(this.pivot.xy, corrected_point);
+		const ref_vec = vecDif(this.pivot.xy, this.curr_jig.xy);
+		const dir_vec = vecDif(this.xy, this.curr_jig.xy);
+		let factor = vecDotProd(dir_vec, transform_vec) / vecDotProd(dir_vec, ref_vec);
 		factor = Math.abs(this.accum_factor * factor) > 0.0250001 ? factor : 1;
 		if (event.shiftKey) {
-			var rounded_new_accum_factor = Math.round(this.accum_factor * factor / 0.05) * 0.05;
+			const rounded_new_accum_factor = Math.round(this.accum_factor * factor / 0.05) * 0.05;
 			factor = rounded_new_accum_factor != this.accum_factor ? rounded_new_accum_factor / this.accum_factor : 1;
 		}
 		this.accum_factor = this.accum_factor * factor;
@@ -228,7 +228,8 @@ export class TransformTool extends DeletableAbortable {
 	}
 
 	locateLever() {
-		var new_lever_ctr = vecSum(this.jigs[9].xy, vecMul(unitVec(vecDif(this.xy, this.jigs[9].xy)), this.lever_len));
+		const new_lever_ctr = vecSum(this.jigs[9].xy,
+			vecMul(unitVec(vecDif(this.xy, this.jigs[9].xy)), this.lever_len));
 		this.lever.setCtr(new_lever_ctr).render();
 	}
 

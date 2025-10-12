@@ -82,8 +82,8 @@ export class ChemNode extends CanvasCitizen {
 	}
 
 	parse() {
-		var target_text;
-		var used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
+		let target_text;
+		const used_valency = this.connections.reduce((prev, curr) => prev + curr.multiplicity, 0);
 		if (this.text.startsWith('@')) {
 			target_text = this.text.slice(1);
 			try {
@@ -96,7 +96,7 @@ export class ChemNode extends CanvasCitizen {
 		else {
 			target_text = this.isMethane() ? 'C' : this.text; // Convert floating C atoms into CH4
 			this.bracket_tree = [{content: target_text, brackets: [], count: null}];
-			var h_cnt = target_text in this.constructor.hmaxtab ? Math.max(this.constructor.hmaxtab[target_text] -
+			const h_cnt = target_text in this.constructor.hmaxtab ? Math.max(this.constructor.hmaxtab[target_text] -
 				used_valency, 0) : 0;
 			if (h_cnt) this.bracket_tree.push({content: 'H', brackets: [], count: h_cnt > 1 ? h_cnt : null});
 		}
@@ -104,14 +104,14 @@ export class ChemNode extends CanvasCitizen {
 	};
 
 	setCtr(xy) {
-		var [dx, dy] = vecDif(this.xy, xy);
-		let [x, y] = xy;
+		const [dx, dy] = vecDif(this.xy, xy);
+		const [x, y] = xy;
 		this.xy = [...xy]; // Copy the array
 
 		this.backcircle.setAttribute('cx', x);
 		this.backcircle.setAttribute('cy', y);
 
-		for (var textnode of this.g.childNodes) {
+		for (const textnode of this.g.childNodes) {
 			textnode.setAttribute('x', parseFloat(textnode.getAttribute('x')) + dx);
 			textnode.setAttribute('y', parseFloat(textnode.getAttribute('y')) + dy);
 		}
@@ -175,9 +175,9 @@ export class ChemNode extends CanvasCitizen {
 	locateHydr() {
 		/* Find the least ocupied direction in terms of the most interfearing bond angle
 		(or to be exect, unit vector projection) */
-		var proj_rldu = [0, 0, 0, 0];
+		let proj_rldu = [0, 0, 0, 0];
 		for (const bond of this.connections) {
-			var [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len);
+			const [bondcos, bondsin] = bond.getNodeVec(this).map(dif => dif / bond.len);
 			proj_rldu = [bondcos, -bondcos, bondsin, -bondsin].map((item, idx) => Math.max(item, proj_rldu[idx]));
 		}
 		proj_rldu = [0, 1e-6, 2e-6, 3e-6].map((item, idx) => item + proj_rldu[idx]); // Set micro priority
@@ -191,20 +191,20 @@ export class ChemNode extends CanvasCitizen {
 
 	goToBond(bond, step) {
 		// Go to another bond
-		var idx = this.connections.indexOf(bond);
-		var bond_cnt = this.connections.length;
-		var target_idx = (idx + bond_cnt + step % bond_cnt) % bond_cnt;
+		const idx = this.connections.indexOf(bond);
+		const bond_cnt = this.connections.length;
+		const target_idx = (idx + bond_cnt + step % bond_cnt) % bond_cnt;
 		return this.connections[target_idx];
 	};
 
 	computeBondsJunc(bond0, bond1) {
-		var cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
+		const cos_a = cosVec(bond0.getNodeVec(this), bond1.getNodeVec(this));
 		if (Math.abs(cos_a) > Math.cos(Math.PI / 24) || !bond0.len || !bond1.len) {
 			bond0.setHalfButt(this, true);
 			bond1.setHalfButt(this, false);
 		}
 		else {
-			var junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
+			const junc = lineIntersec(...bond0.getBorder(this, false), ...bond1.getBorder(this, true));
 			bond0.juncs[bond0.getNodeIdx(this)][1] = junc;
 			bond1.juncs[bond1.getNodeIdx(this)][0] = junc;
 		}
@@ -212,7 +212,7 @@ export class ChemNode extends CanvasCitizen {
 
 	calcLineTips() {
 		this.sortConnections();
-		var ctr_bonds = this.connections.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
+		const ctr_bonds = this.connections.filter(bond => ChemBond.ctrline[bond.type] !== undefined);
 		this.ctr_bonds_cnt = ctr_bonds.length;
 		if (ctr_bonds.length > 1) {
 			ctr_bonds.forEach((bond, i) => this.computeBondsJunc(bond, ctr_bonds[(i + 1) % ctr_bonds.length]));

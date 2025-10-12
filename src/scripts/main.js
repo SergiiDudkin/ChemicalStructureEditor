@@ -90,7 +90,7 @@ function getCursorAtom(event, atomtext) {
 	return cursoratom;
 }
 
-let standard_bondlength = 40;
+const standard_bondlength = 40;
 
 function getDiscreteBondEnd(pt0, [x, y], len=standard_bondlength) {
 	const angle = discreteAngle(Math.atan2(y, x), 15);
@@ -524,11 +524,11 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		const bonds_type = {};
 		const casted_types = {};
 		for (const [id, data] of Object.entries(new_bonds_data)) {
-			let is_pseudo_double = non_sp3_ring.has(data[0]) && non_sp3_ring.has(data[1]);
+			const is_pseudo_double = non_sp3_ring.has(data[0]) && non_sp3_ring.has(data[1]);
 			for (let i = 0; i < 2; i++) {
 				if (data[i] in node_pairs) data[i] = node_pairs[data[i]]; // Replace new node id with the existing one
 			}
-			let node_els = data.slice(0, 2).map(node_id => document.getElementById(node_id));
+			const node_els = data.slice(0, 2).map(node_id => document.getElementById(node_id));
 			if (node_els.every(Boolean)) {
 				const nodes = node_els.map(node_el => node_el.objref);
 				const [node0, node1] = nodes;
@@ -560,14 +560,14 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		}
 
 		for (let j = 0; j < num; j++) { // Consume free non_sp3 nodes for double bonds
-			let j1p = (j + 1) % num;
-			let is_double = node_map[j].non_sp3 && node_map[j1p].non_sp3;
-			let bond_id = new_bond_ids[j];
+			const j1p = (j + 1) % num;
+			const is_double = node_map[j].non_sp3 && node_map[j1p].non_sp3;
+			const bond_id = new_bond_ids[j];
 			if (is_double) {
 				node_map[j].non_sp3 = false;
 				node_map[j1p].non_sp3 = false;
 				if (bond_id in casted_types) {
-					let {old_bond_id, new_type} = casted_types[bond_id];
+					const {old_bond_id, new_type} = casted_types[bond_id];
 					bonds_type[old_bond_id] = {type: new_type};
 				}
 			}
@@ -614,7 +614,7 @@ function twoPointHandler(btn, ShapeCls) {
 		if (document.getElementById(new_line_id) !== null) dispatcher.undo();
 		let pt1 = cnv.getSvgPoint(event);
 		if (event.shiftKey) pt1 = pt1.map(val => Math.round(val / 10) * 10);
-		let kwargs = {create: {[ShapeCls.alias]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}}};
+		const kwargs = {create: {[ShapeCls.alias]: {[new_line_id]: [[[new_cp0_id, ...pt0], [new_cp1_id, ...pt1]]]}}};
 		dispatcher.do(kwargs);
 		document.getElementById(new_line_id).objref.eventsOff();
 	}
@@ -724,8 +724,8 @@ function transformHandler(btn, SelectTool=null) {
 	function pick(event) {
 		event.stopPropagation();
 		selection.deactivate();
-		let target = event.target;
-		let picked_obj = target.objref;
+		const target = event.target;
+		const picked_obj = target.objref;
 		if (SelectTool || target.is_shape) {
 			selection.setSelectedItem(picked_obj);
 		}

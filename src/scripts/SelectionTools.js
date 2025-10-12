@@ -49,11 +49,11 @@ export class SelectRect extends SelectShape {
 	static tag = 'rect';
 
 	recalc(event) {
-		var svg_pt1 = cnv.getSvgPoint(event);
-		var rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
-		var rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
-		var rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
-		var rect_h = Math.abs(svg_pt1[1] - this.svg_pt0[1]);
+		const svg_pt1 = cnv.getSvgPoint(event);
+		const rect_x = Math.min(this.svg_pt0[0], svg_pt1[0]);
+		const rect_y = Math.min(this.svg_pt0[1], svg_pt1[1]);
+		const rect_w = Math.abs(svg_pt1[0] - this.svg_pt0[0]);
+		const rect_h = Math.abs(svg_pt1[1] - this.svg_pt0[1]);
 		setAttrsSvg(this.shape, {x: rect_x, y: rect_y, width: rect_w, height: rect_h});
 	}
 }
@@ -70,7 +70,7 @@ export class SelectLasso extends SelectShape {
 	static tag = 'polygon';
 
 	recalc(event) {
-		var pt = cnv.getSvgPoint(event);
+		const pt = cnv.getSvgPoint(event);
 		if (findDist(this.pts[this.pts.length - 1], pt) > 4) {
 			this.pts.push(pt);
 			this.shape.setAttribute('points', this.pts.map(pt => pt.join()).join(' '));
@@ -80,7 +80,7 @@ export class SelectLasso extends SelectShape {
 
 
 export function pickMol(chemobj) {
-	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
+	const [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
 	return {atoms: atoms, bonds: bonds};
 }
 
@@ -88,7 +88,7 @@ export function pickMol(chemobj) {
 function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
 	atoms.add(node.id);
 	for (const bond of node.connections) {
-		var next_node = bond.nodes.filter(item => item != node)[0];
+		const next_node = bond.nodes.filter(item => item != node)[0];
 		bonds.add(bond.id);
 		if (!atoms.has(next_node.id)) iterMolDft(next_node, atoms, bonds);
 	}

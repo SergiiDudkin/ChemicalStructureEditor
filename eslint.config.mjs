@@ -13,6 +13,8 @@ export default [
 		rules: {
 			'semi': 'error',
 			'no-sparse-arrays': 'off',
+			'prefer-const': 'error',
+			'no-var': 'error',
 			'@stylistic/js/indent': ['error', 'tab'],
 			'@stylistic/js/arrow-spacing': ['error', { 'before': true, 'after': true }],
 			'@stylistic/js/block-spacing': ['error', 'never'],

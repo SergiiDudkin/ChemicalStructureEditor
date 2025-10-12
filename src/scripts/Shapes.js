@@ -90,7 +90,7 @@ export class ShapeBase extends CanvasCitizen {
 
 	recalcCtr() {
 		this.xy = [0, 1].map(i => {
-			let vals = this.cps.map(cp => cp.xy[i]);
+			const vals = this.cps.map(cp => cp.xy[i]);
 			return (Math.min(...vals) + Math.max(...vals)) / 2;
 		});
 	}
@@ -363,6 +363,7 @@ export class Curve extends MultipointShape {
 
 	calcCoordinates() {
 		const res = [['M', ...this.cps[0].xy]];
+		// eslint-disable-next-line no-var
 		for (var i = 1; i < this.cps.length - 1; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
 		this.coords = [{d: res.flat().join(' ')}];
 	}
@@ -414,6 +415,7 @@ export class SmoothShape extends Curve {
 	calcCoordinates() {
 		const len1m = this.cps.length - 1;
 		const res = [['M', ...this.cps[len1m].xy]];
+		// eslint-disable-next-line no-var
 		for (var i = 0; i < len1m; i++) res.push(['Q', ...this.cps[i].xy, ...this.cps[++i].xy]);
 		this.coords = [{d: res.flat().join(' ')}];
 	}

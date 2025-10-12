@@ -84,7 +84,7 @@ class ControlPointInner extends ControlPoint {
 export class ControlPointEdge extends ControlPointInner {
 	postInit() {
 		this.followers = [this.prev, this.next];
-		let a = this.followers.map(cp => [cp.prev, cp.next]).flat().filter(cp => cp instanceof ControlPointEdge);
+		const a = this.followers.map(cp => [cp.prev, cp.next]).flat().filter(cp => cp instanceof ControlPointEdge);
 		if (a.length == 2) {
 			1 + 1;
 		}

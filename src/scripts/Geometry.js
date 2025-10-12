@@ -1,17 +1,17 @@
 // Geometry utilities
 export function lineIntersec([x1, y1], [x2, y2], [x3, y3], [x4, y4]) { // Find intersection point of two lines
-	var a = x1 * y2 - y1 * x2;
-	var b = x3 - x4;
-	var c = x1 - x2;
-	var d = x3 * y4 - y3 * x4;
-	var e = y3 - y4;
-	var f = y1 - y2;
-	var g = c * e - f * b;
+	const a = x1 * y2 - y1 * x2;
+	const b = x3 - x4;
+	const c = x1 - x2;
+	const d = x3 * y4 - y3 * x4;
+	const e = y3 - y4;
+	const f = y1 - y2;
+	const g = c * e - f * b;
 	if (g == 0) {
 		throw new Error('Non-intersecting lines!');
 	};
-	var ipoi_y = (a * e - f * d) / g; // Intersection point, x value
-	var ipoi_x = (a * b - c * d) / g; // Intersection point, y value
+	const ipoi_y = (a * e - f * d) / g; // Intersection point, x value
+	const ipoi_x = (a * b - c * d) / g; // Intersection point, y value
 	return [ipoi_x, ipoi_y];
 }
 
@@ -73,15 +73,15 @@ export function sinVec(xy0, xy1) { // Find sin between two vectors
 }
 
 export function angleVec(xy0, xy1) { // Calculate angle (in rad*pi) between two vectors
-	var angle = Math.atan2(vecCrossProd(xy0, xy1), vecDotProd(xy0, xy1));
+	const angle = Math.atan2(vecCrossProd(xy0, xy1), vecDotProd(xy0, xy1));
 	return (angle / Math.PI + 2) % 2;
 }
 
 export function rotateVec([x, y], angle) { // Rotate vector
-	var cosa = Math.cos(angle);
-	var sina = Math.sin(angle);
-	var newx = x * cosa - y * sina;
-	var newy = x * sina + y * cosa;
+	const cosa = Math.cos(angle);
+	const sina = Math.sin(angle);
+	const newx = x * cosa - y * sina;
+	const newy = x * sina + y * cosa;
 	return [newx, newy];
 }
 
@@ -94,21 +94,21 @@ function rot90acw([x, y]) {
 }
 
 export function rotateAroundCtr(pt, rot_angle, rot_ctr) {
-	var old_casted_pt = vecDif(rot_ctr, pt);
-	var new_casted_pt = rotateVec(old_casted_pt, rot_angle);
-	var moving_vec = vecDif(old_casted_pt, new_casted_pt);
+	const old_casted_pt = vecDif(rot_ctr, pt);
+	const new_casted_pt = rotateVec(old_casted_pt, rot_angle);
+	const moving_vec = vecDif(old_casted_pt, new_casted_pt);
 	return vecSum(pt, moving_vec);
 }
 
 export function scaleAroundCtr(pt, scale_factor, scale_ctr) {
-	var old_casted_pt = vecDif(scale_ctr, pt);
-	var new_casted_pt = vecMul(old_casted_pt, scale_factor);
-	var moving_vec = vecDif(old_casted_pt, new_casted_pt);
+	const old_casted_pt = vecDif(scale_ctr, pt);
+	const new_casted_pt = vecMul(old_casted_pt, scale_factor);
+	const moving_vec = vecDif(old_casted_pt, new_casted_pt);
 	return vecSum(pt, moving_vec);
 }
 
 export function stretchAlongDir(pt, stretch_factor, dir_angle, stretch_ctr) {
-	var casted_pt = rotateVec(vecDif(stretch_ctr, pt), -dir_angle);
+	const casted_pt = rotateVec(vecDif(stretch_ctr, pt), -dir_angle);
 	casted_pt[0] *= stretch_factor;
 	return vecSum(rotateVec(casted_pt, dir_angle), stretch_ctr);
 }
@@ -140,21 +140,21 @@ export function polygonVertexCtrDist(angle, side_len) {
 }
 
 function getAngleSigns(a_xy0, a_xy1, b_xy0, b_xy1) {
-	var vec_a = vecDif(a_xy0, a_xy1);
-	var vec_b = vecDif(b_xy0, b_xy1);
-	var sign_a1_a0_b0 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy0)));
-	var sign_a1_a0_b1 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy1)));
-	var sign_b1_b0_a0 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy0)));
-	var sign_b1_b0_a1 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy1)));
+	const vec_a = vecDif(a_xy0, a_xy1);
+	const vec_b = vecDif(b_xy0, b_xy1);
+	const sign_a1_a0_b0 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy0)));
+	const sign_a1_a0_b1 = Math.sign(sinVec(vec_a, vecDif(a_xy0, b_xy1)));
+	const sign_b1_b0_a0 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy0)));
+	const sign_b1_b0_a1 = Math.sign(sinVec(vec_b, vecDif(b_xy0, a_xy1)));
 	return [sign_a1_a0_b0, sign_a1_a0_b1, sign_b1_b0_a0, sign_b1_b0_a1];
 }
 
 export function checkIntersec(a_xy0, a_xy1, b_xy0, b_xy1) {
-	var angle_signs = getAngleSigns(a_xy0, a_xy1, b_xy0, b_xy1);
-	var no_zero_angle = !angle_signs.some(sign => sign == 0);
-	var no_common_terminals = !angle_signs.some(sign => Number.isNaN(sign));
-	var [sign_a1_a0_b0, sign_a1_a0_b1, sign_b1_b0_a0, sign_b1_b0_a1] = angle_signs;
-	var has_common_point = (sign_a1_a0_b0 != sign_a1_a0_b1) && (sign_b1_b0_a0 != sign_b1_b0_a1);
+	const angle_signs = getAngleSigns(a_xy0, a_xy1, b_xy0, b_xy1);
+	const no_zero_angle = !angle_signs.some(sign => sign == 0);
+	const no_common_terminals = !angle_signs.some(sign => Number.isNaN(sign));
+	const [sign_a1_a0_b0, sign_a1_a0_b1, sign_b1_b0_a0, sign_b1_b0_a1] = angle_signs;
+	const has_common_point = (sign_a1_a0_b0 != sign_a1_a0_b1) && (sign_b1_b0_a0 != sign_b1_b0_a1);
 	return has_common_point && no_zero_angle && no_common_terminals;
 }
 

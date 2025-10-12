@@ -38,7 +38,7 @@ function sortoutClasses(obj) {
 
 
 export function editChem({create={}, del={}, alter={}, transforms=new Array()}) {
-	var atoms_parse = new Set(),
+	const atoms_parse = new Set(),
 		atoms_render = new Set(),
 		atoms_auto_d_bond = new Set(),
 		atoms_refresh_tips = new Set(),
@@ -56,8 +56,8 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Delete bonds
 	for (const bond_id of del.bonds) {
-		let bond = document.getElementById(bond_id).objref;
-		let bond_nodes = bond.nodes;
+		const bond = document.getElementById(bond_id).objref;
+		const bond_nodes = bond.nodes;
 		bond.delete();
 		for (const node of bond_nodes) {
 			if (!del.atoms.has(node.id)) {
@@ -81,7 +81,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Create bonds
 	for (const [id, data] of Object.entries(create.bonds)) {
-		let bond = new ChemBond(id, ...data); // data: [node0, node1, type]
+		const bond = new ChemBond(id, ...data); // data: [node0, node1, type]
 		bonds_update_rect.add(bond);
 		for (const node of bond.nodes) {
 			atoms_parse.add(node);
@@ -97,7 +97,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 	// Edit atoms
 	Object.entries(alter.atoms).forEach(([id, attrs]) => atoms_text_me[id] = attrs.text);
 	for (const [node_id, text] of Object.entries(atoms_text_me)) {
-		let node = document.getElementById(node_id).objref;
+		const node = document.getElementById(node_id).objref;
 		node.text = text;
 		atoms_parse.add(node);
 		if (node.text == '') atoms_refresh_tips.add(node);
@@ -109,7 +109,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Edit bonds
 	for (const [bond_id, attrs] of Object.entries(alter.bonds)) {
-		let bond = document.getElementById(bond_id).objref;
+		const bond = document.getElementById(bond_id).objref;
 		bond.setType(attrs.type);
 		bonds_d_adjust.add(bond);
 		for (const node of bond.nodes) {
@@ -121,7 +121,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Transforms
 	for (const [type, ids, params] of transforms) {
-		let mirrored_bonds = new Set();
+		const mirrored_bonds = new Set();
 		for (const atom_id of ids.atoms) {
 			const atom = document.getElementById(atom_id).objref;
 			atom.setCtr(transform_funcs[type](atom.xy, params));
@@ -190,7 +190,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 	// Reshape floating tips (some symbol is present)
 	for (const node_bond of tips_update) {
-		let [node, bond] = node_bond.split('&').map(id => document.getElementById(id).objref);
+		const [node, bond] = node_bond.split('&').map(id => document.getElementById(id).objref);
 		bond.updateTip(node);
 		bonds_to_render.add(bond);
 	}
@@ -209,7 +209,7 @@ export function editChem({create={}, del={}, alter={}, transforms=new Array()}) 
 
 // eslint-disable-next-line no-unused-vars
 export function editShapes({create={}, del={}, alter={}, transforms=new Array()}) {
-	var cps_to_render = new Set(),
+	const cps_to_render = new Set(),
 		shapes_to_render = new Set();
 
 	for (const ids of Object.values(del)) {
@@ -220,7 +220,7 @@ export function editShapes({create={}, del={}, alter={}, transforms=new Array()}
 
 	for (const [cls_alias, content] of Object.entries(create)) {
 		for (const [id, data] of Object.entries(content)) {
-			let new_shape = new (registry.classes[cls_alias])(id, ...data);
+			const new_shape = new (registry.classes[cls_alias])(id, ...data);
 			shapes_to_render.add(new_shape);
 			new_shape.cps.forEach(cp => cps_to_render.add(cp));
 		}

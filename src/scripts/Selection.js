@@ -22,13 +22,13 @@ function objsUnderShape(cls, cover) {
 
 
 function pickCp(pt) {
-	var pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
+	const pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
 	return (pt_elem != null && pt_elem.is_cp) ? pt_elem.objref : null;
 }
 
 
 export function pickNode(pt) {
-	var pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
+	const pt_elem = document.elementFromPoint(...cnv.getScreenPoint(pt));
 	return (pt_elem != null && pt_elem.is_atom) ? pt_elem.objref : null;
 }
 
@@ -103,12 +103,12 @@ class SelectionBase {
 
 	addTransformTool() {
 		if (this.highlights.hasChildNodes()) {
-			var margin = 6;
-			var bbox = this.highlights.getBBox();
-			var width = bbox.width + margin * 2;
-			var height = bbox.height + margin * 2;
-			var cx = bbox.x - margin + width / 2;
-			var cy = bbox.y - margin + height / 2;
+			const margin = 6;
+			const bbox = this.highlights.getBBox();
+			const width = bbox.width + margin * 2;
+			const height = bbox.height + margin * 2;
+			const cx = bbox.x - margin + width / 2;
+			const cy = bbox.y - margin + height / 2;
 			this.transform_tool = new TransformTool('utils', cx, cy, width, height, this);
 		}
 	}
@@ -164,7 +164,7 @@ class SelectionBase {
 
 	moving(event) { // Active moving
 		this.corrPtSpecialCase(event);
-		var moving_vec = vecDif(this.mo_st, this.corrected_point);
+		const moving_vec = vecDif(this.mo_st, this.corrected_point);
 
 		this.accum_vec = vecSum(this.accum_vec, moving_vec);
 		this.mo_st = this.corrected_point;
@@ -188,7 +188,7 @@ class SelectionBase {
 	}
 
 	relocatingItems(action_type, params) {
-		let kwargs = {transforms: [this.paramsToTransform(action_type, params)]};
+		const kwargs = {transforms: [this.paramsToTransform(action_type, params)]};
 		editStructure(kwargs);
 	}
 
@@ -196,8 +196,8 @@ class SelectionBase {
 	augmentCmd(kwargs_dir, kwargs_rev) {} // Helper
 
 	finishRelocatingItems(action_type, params) {
-		let kwargs_dir = {transforms: [this.paramsToTransform(action_type, params)]};
-		let kwargs_rev = invertCmd(kwargs_dir);
+		const kwargs_dir = {transforms: [this.paramsToTransform(action_type, params)]};
+		const kwargs_rev = invertCmd(kwargs_dir);
 		this.augmentCmd(kwargs_dir, kwargs_rev);
 		this.finishAction(kwargs_dir, kwargs_rev);
 	}
@@ -222,7 +222,7 @@ class SelectionBase {
 	copy(event) {
 		event.preventDefault();
 		this.clipboard = null;
-		let kwargs = this.getCopyKwargs();
+		const kwargs = this.getCopyKwargs();
 		this.clipboard = Object.keys(kwargs).length ? {kwargs: kwargs, pt0: cnv.getSvgPoint(event), cnt: 0} : null;
 	}
 
@@ -250,7 +250,7 @@ class SelectionBase {
 	updateNewCopySubIds(id_map) {} // Helper
 
 	activateFromPasteKwargs(kwargs) {
-		let ids_to_activate = {};
+		const ids_to_activate = {};
 		for (const {alias} of this.citizens) {
 			if (alias in kwargs.create) ids_to_activate[alias] = Object.keys(kwargs.create[alias]);
 		}
@@ -275,7 +275,7 @@ class SelectionBase {
 	}
 
 	getDelKwargs() { // Helper
-		let kwargs = {del: {}};
+		const kwargs = {del: {}};
 		for (const {alias} of this.citizens) {
 			kwargs.del[alias] = new Set(this[alias]);
 		}
@@ -349,7 +349,7 @@ class SelectionShape extends SelectionBase {
 	corrPtSpecialCase(event) {
 		let flag = super.corrPtSpecialCase(event);
 		if (!flag && this.pointed_cp) {
-			let pt = cnv.getSvgPoint(event);
+			const pt = cnv.getSvgPoint(event);
 			if (event.shiftKey) this.corrected_point = pt.map(val => Math.round(val / 10) * 10);
 			flag = true;
 		}
@@ -413,9 +413,9 @@ export class SelectionChem extends SelectionShape {
 	}
 
 	joinMols(event) {
-		let kwargs = {};
-		let target_node = event.target.objref; // Target atom (static)
-		let bonds_data = gatherData(new Set(target_node.connections.map(bond => bond.id)));
+		const kwargs = {};
+		const target_node = event.target.objref; // Target atom (static)
+		const bonds_data = gatherData(new Set(target_node.connections.map(bond => bond.id)));
 		kwargs.del = { // Delete
 			atoms: new Set([target_node.id]), // Target atom
 			bonds: new Set(Object.keys(bonds_data)) // Bonds of the target atom
@@ -445,10 +445,10 @@ export class SelectionChem extends SelectionShape {
 	corrPtSpecialCase(event) {
 		let flag = super.corrPtSpecialCase(event);
 		if (!flag && this.pointed_atom) {
-			let pt = cnv.getSvgPoint(event);
-			let to_join = event.shiftKey && event.target.is_atom;
-			let to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
-			let skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt,
+			const pt = cnv.getSvgPoint(event);
+			const to_join = event.shiftKey && event.target.is_atom;
+			const to_rejoin = this.join_cmd && to_join && event.target.objref.id != this.pointed_atom.id;
+			const skip = to_rejoin && vecLen(vecDif(pt, event.target.objref.xy)) > vecLen(vecDif(pt,
 				this.pointed_atom.xy));
 
 			if (!skip) {
@@ -506,7 +506,7 @@ export class SelectionChem extends SelectionShape {
 	}
 
 	computeFormula() {
-		var atoms = this.atoms.size ? [...this.atoms] : [...document.getElementById('sensors_a').children]
+		const atoms = this.atoms.length ? [...this.atoms] : [...document.getElementById('sensors_a').children]
 			.map(el => el.objref.id);
 		return atoms.reduce(
 			(acc, atom_id) => sumFormula(acc, document.getElementById(atom_id).objref.formula), {}
@@ -514,13 +514,13 @@ export class SelectionChem extends SelectionShape {
 	}
 
 	computeMolInfo() {
-		var [formula, unrecognized] = separateUnrecognized(this.computeFormula());
-		var hill_string = hillToStr(toHillSystem(formula));
-		var hill_unrecognized = hillToStr(toHillSystem(unrecognized));
-		var fw = formulaToFw(formula);
-		var el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`)
+		const [formula, unrecognized] = separateUnrecognized(this.computeFormula());
+		const hill_string = hillToStr(toHillSystem(formula));
+		const hill_unrecognized = hillToStr(toHillSystem(unrecognized));
+		const fw = formulaToFw(formula);
+		const el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`)
 			.join(', ');
-		var str_output =
+		const str_output =
 `	Brutto formula 
 	${hill_string}
 
@@ -553,7 +553,7 @@ export class SelectionChem extends SelectionShape {
 	}
 
 	getDelKwargs() {
-		let kwargs = super.getDelKwargs();
+		const kwargs = super.getDelKwargs();
 		kwargs.del.atoms.forEach(atom_id => document.getElementById(atom_id).objref.connections
 			.forEach(bond => kwargs.del.bonds.add(bond.id)));
 		return kwargs;
