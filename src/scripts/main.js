@@ -4,7 +4,7 @@ import {editStructure} from './Executor.js';
 import {styledict} from './ChemParser.js';
 import {gatherData} from './Utils.js';
 import {
-	vecLen, vecSum, vecDif, vecMul, vecDotProd, rotateVec, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist, 
+	vecLen, vecSum, vecDif, vecMul, vecDotProd, rotateVec, polygonAngle, polygonEdgeCtrDist, polygonVertexCtrDist,
 	MOVE, discreteAngle
 } from './Geometry.js';
 import {ControlPoint} from './ControlPoints.js';
@@ -20,7 +20,7 @@ import {
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {SelectionChem, pickNode} from './Selection.js';
-import {SelectRect, SelectLasso} from './SelectionTools.js';
+import {SelectRect, SelectLasso, pickMol} from './SelectionTools.js';
 
 
 function downloadSvg() { // Download .svg
@@ -113,21 +113,6 @@ function getBondEnd(event, pt0) {
 		pt1 = node1 ? node1.xy : pt1;
 	}
 	return [pt1, node1];
-}
-
-function pickMol(chemobj) {
-	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
-	return {atoms: atoms, bonds: bonds};
-}
-
-function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
-	atoms.add(node.id);
-	for (const bond of node.connections) {
-		var next_node = bond.nodes.filter(item => item != node)[0];
-		bonds.add(bond.id);
-		if (!atoms.has(next_node.id)) iterMolDft(next_node, atoms, bonds);
-	}
-	return [atoms, bonds];
 }
 
 

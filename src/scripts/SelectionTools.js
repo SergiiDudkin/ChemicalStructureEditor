@@ -1,6 +1,7 @@
 import {DeletableAbortable, attachSvg, setAttrsSvg} from './Utils.js';
 import {cnv} from './Canvas.js';
 import {findDist} from './Geometry.js';
+import {ChemNode} from './ChemNode.js';
 
 
 export class SelectShape extends DeletableAbortable {
@@ -75,4 +76,21 @@ export class SelectLasso extends SelectShape {
 			this.shape.setAttribute('points', this.pts.map(pt => pt.join()).join(' '));
 		}
 	}
+}
+
+
+export function pickMol(chemobj) {
+	let [atoms, bonds] = iterMolDft(chemobj instanceof ChemNode ? chemobj : chemobj.nodes[0]);
+	return {atoms: atoms, bonds: bonds};
+}
+
+
+function iterMolDft(node, atoms=new Set(), bonds=new Set()) {
+	atoms.add(node.id);
+	for (const bond of node.connections) {
+		var next_node = bond.nodes.filter(item => item != node)[0];
+		bonds.add(bond.id);
+		if (!atoms.has(next_node.id)) iterMolDft(next_node, atoms, bonds);
+	}
+	return [atoms, bonds];
 }
