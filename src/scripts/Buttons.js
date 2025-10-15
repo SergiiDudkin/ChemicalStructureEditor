@@ -221,11 +221,11 @@ function toBtnText(text) {
 	text-anchor='middle'>${text}</text>`;
 }
 
-const flex_container = document.getElementsByClassName('flex-container')[0];
+const toolbar = document.getElementById('toolbar');
 
 const elbtnseq = ['C', 'H', 'O', 'N', 'S'];
 
-const selectbtn = new DropButton(flex_container, `
+const selectbtn = new DropButton(toolbar, `
 	<polygon stroke="none" fill="black" points="9.1,4 9.2,24.2 13.5,21.5 15.6,27.2 19.4,25.8 17.3,20.1 22.3,19.3">
 	</polygon>
 `);
@@ -246,7 +246,7 @@ export const selmobtn = new SubButton(selectbtn, `
 `);
 selectbtn.focusSubbtn(selrebtn);
 
-const dropelbtn = new DropButton(flex_container, `
+const dropelbtn = new DropButton(toolbar, `
 	<line x1="15.0" y1="28.0" x2="15.0" y2="19.0" stroke="black" stroke-width="2" />
 	<line x1="2.0" y1="5.5" x2="9.8" y2="10.0" stroke="black" stroke-width="2" />
 	<line x1="28.0" y1="5.5" x2="20.2" y2="10.0" stroke="black" stroke-width="2" />
@@ -256,7 +256,7 @@ const dropelbtn = new DropButton(flex_container, `
 export const elbtns = elbtnseq.map(atom => new SubButton(dropelbtn, toBtnText(atom)));
 dropelbtn.focusSubbtn(elbtns[0]);
 
-const dropbondbtn = new DropButton(flex_container, `
+const dropbondbtn = new DropButton(toolbar, `
 	<line x1="11.0" y1="19.0" x2="19.4" y2="10.6" stroke="black" stroke-width="2" />
 	<text x="6.5" y="24.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
 	font-size="12px">C</text>
@@ -284,20 +284,20 @@ export const lowerbtn = new SubButton(dropbondbtn, `
 `);
 dropbondbtn.focusSubbtn(bondbtn);
 
-export const delbtn = new RegularButton(flex_container, `
+export const delbtn = new RegularButton(toolbar, `
 	<path style="fill:none;stroke:black;stroke-width:2;" d="M2.5,19.6c-0.7-0.7-0.7-0.7,0-1.4L18.1,2.6c0.7-0.7,0.7-0.7,
 	1.4,0l7.8,7.8c0.7,0.7,0.7,0.7,0,1.4L15.6,23.5c-3.2,3.2-6,3.2-9.2,0L2.5,19.6z"/>
 	<rect x="12.7" y="4.8" transform="matrix(0.7072 0.7071 -0.7071 0.7072 13.2169 -10.3978)" width="13" height="12"/>
 `);
 
-export const textbtn = new RegularButton(flex_container, `
+export const textbtn = new RegularButton(toolbar, `
 	<path d=" M 22 6.8 V 23.2 M 18 5 H 20 A 2 2 0 0 1 22 7 A 2 2 0 0 1 24 5 H 26 M 18 25 H 20 A 2 2 0 0 0 22 23 A 2 2 
 	0 0 0 24 25 H 26" stroke="black" stroke-width="1.5" />
 	<text x="12" y="17.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Serif" 
 	font-size="20px">T</text>
 `);
 
-const dropcycbtn = new DropButton(flex_container, `
+const dropcycbtn = new DropButton(toolbar, `
 	<polygon points="28.8,15.0 23.6,25.8 11.9,28.5 2.5,21.0 2.5,9.0 11.9,1.5 23.6,4.2" fill="black" />
 	<polygon points="15.0,25.2 5.3,18.2 9.0,6.7 21.0,6.7 24.7,18.2" fill="white" />
 `);
@@ -321,7 +321,7 @@ export const heptagonbtn = new SubButton(dropcycbtn,
 );
 dropcycbtn.focusSubbtn(benzenebtn);
 
-const droparrowsbtn = new DropButton(flex_container, `
+const droparrowsbtn = new DropButton(toolbar, `
 	<line stroke="black" stroke-width="2" x1="5" y1="15" x2="19" y2="15"></line>
 	<polygon stroke="none" points="18,11 18,19 28,15"></polygon>
 	<polygon stroke="none" points="3,11 5,15 3,19 10,19 12,15 10,11"></polygon>
@@ -348,7 +348,7 @@ export const retroarrowbtn = new SubButton(droparrowsbtn, `
 `);
 droparrowsbtn.focusSubbtn(arrowbtn);
 
-const dropshapesbtn = new DropButton(flex_container, `
+const dropshapesbtn = new DropButton(toolbar, `
 	<circle cx="20" cy="17" r="8"></circle>
 	<rect stroke="white" stroke-width="1" x="2" y="14" width="15" height="13"></rect>
 	<polygon stroke="white" stroke-width="1" points="14,2 22,19 6,19"></polygon>
@@ -377,3 +377,307 @@ export const smoothbtn = new SubButton(dropshapesbtn, `
 	26.4 16.9 Q 27 2 23 10 Q 20.3 15.3 12 8"></path>
 `);
 dropshapesbtn.focusSubbtn(linebtn);
+
+
+
+const menu_bar = document.getElementById('menubar');
+
+function toMenuText(text, width) {
+	return `<text class='menumsk' x='${width / 2}' y='17' fill='black' dominant-baseline='middle' 
+	text-anchor='middle'>${text}</text>`;
+}
+
+class MenuItem {
+	constructor(parent, thml_text) {
+		this.parent = parent;
+		this.thml_text = thml_text;
+		// this.active = false;
+
+		this.createSvg();
+		this.createHtml();
+		this.setImage(thml_text);
+
+		// this.animateBtnDown = this.animateBtnDown.bind(this);
+		// this.animateBtnUp = this.animateBtnUp.bind(this);
+		// this.mask_g.addEventListener('mousedown', this.animateBtnDown);
+	}
+
+	static btn_num = 0;
+
+	static id_prefix = 'mi';
+
+	static w = 100;
+
+	static h = 30;
+
+	static btn_corners = `0,0 ${this.w},0 ${this.w},${this.h} 0,${this.h}`;
+
+	static getBtnNum() {
+		return this.btn_num++;
+	}
+
+	createSvg() {
+		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
+		this.svg = makeSvg('svg', {width: this.constructor.w + 6, height: this.constructor.h + 6});
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
+		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
+		this.img = attachSvg(mask, 'g');
+		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
+		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
+		this.mask_g.objref = this;
+		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: this.constructor.w + 2, height: this.constructor.h + 2}); // Button tissue
+		this.selrect = attachSvg(this.mask_g, 'polygon',
+			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
+		);
+	}
+
+	createHtml() {
+		this.parent.appendChild(this.svg);
+	}
+
+	setImage(thml_text) {
+		this.img.insertAdjacentHTML('beforeend', thml_text);
+	}
+
+	// // eslint-disable-next-line no-unused-vars
+	// animateBtnDown(event) { // Change appearance of fancy buttons
+	// 	this.filter_g.setAttribute('filter', 'url(#okshadow)');
+	// 	this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
+	// 	window.addEventListener('mouseup', this.animateBtnUp);
+	// }
+
+	// // eslint-disable-next-line no-unused-vars
+	// animateBtnUp(event) { // Reset appearance of fancy buttons
+	// 	window.removeEventListener('mouseup', this.animateBtnUp);
+	// 	this.filter_g.setAttribute('filter', 'url(#shadow)');
+	// 	this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
+	// }
+
+	// selectCond() {
+	// 	if (!this.active) this.select();
+	// }
+
+	// deselectCond(event) {
+	// 	if (event.target.objref !== this && this.active) this.deselect();
+	// }
+
+	// select() {
+	// 	this.active = true;
+	// 	this.selrect.setAttribute('class', 'visible-anim');
+	// }
+
+	// deselect() {
+	// 	this.active = false;
+	// 	this.selrect.setAttribute('class', 'invisible');
+	// }
+}
+
+
+class MenuButton {
+	constructor(parent, thml_text) {
+		this.parent = parent;
+		this.thml_text = thml_text;
+		// this.active = false;
+
+		this.createSvg();
+		this.createHtml();
+		this.setImage(thml_text);
+
+		this.animateBtnDown = this.animateBtnDown.bind(this);
+		this.animateBtnUp = this.animateBtnUp.bind(this);
+		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
+	}
+
+	static btn_num = 0;
+
+	static id_prefix = 'mb';
+
+	static w = 100;
+
+	static h = 30;
+
+	static btn_corners = `0,0 ${this.w},0 ${this.w},${this.h} 0,${this.h}`;
+
+	static getBtnNum() {
+		return this.btn_num++;
+	}
+
+	createSvg() {
+		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
+		this.svg = makeSvg('svg', {width: this.constructor.w + 6, height: this.constructor.h + 16});
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
+		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
+		this.img = attachSvg(mask, 'g');
+		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
+		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
+		this.mask_g.objref = this;
+		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: this.constructor.w + 2, height: this.constructor.h + 2}); // Button tissue
+		this.selrect = attachSvg(this.mask_g, 'polygon',
+			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
+		);
+	}
+
+	createHtml() {
+		this.parent.appendChild(this.svg);
+	}
+
+	setImage(thml_text) {
+		this.img.insertAdjacentHTML('beforeend', thml_text);
+	}
+
+	// eslint-disable-next-line no-unused-vars
+	animateBtnDown(event) { // Change appearance of fancy buttons
+		this.filter_g.setAttribute('filter', 'url(#okshadow)');
+		this.filter_g.setAttribute('transform', `translate(${this.constructor.w / 2} ${this.constructor.h / 2}) scale(0.94) translate(${-this.constructor.w / 2} ${-this.constructor.h / 2})`);
+		window.addEventListener('mouseup', this.animateBtnUp);
+	}
+
+	// eslint-disable-next-line no-unused-vars
+	animateBtnUp(event) { // Reset appearance of fancy buttons
+		window.removeEventListener('mouseup', this.animateBtnUp);
+		this.filter_g.setAttribute('filter', 'url(#shadow)');
+		this.filter_g.setAttribute('transform', `translate(${this.constructor.w / 2} ${this.constructor.h / 2}) scale(1) translate(${-this.constructor.w / 2} ${-this.constructor.h / 2})`);
+	}
+
+	// selectCond() {
+	// 	if (!this.active) this.select();
+	// }
+
+	// deselectCond(event) {
+	// 	if (event.target.objref !== this && this.active) this.deselect();
+	// }
+
+	// select() {
+	// 	this.active = true;
+	// 	this.selrect.setAttribute('class', 'visible-anim');
+	// }
+
+	// deselect() {
+	// 	this.active = false;
+	// 	this.selrect.setAttribute('class', 'invisible');
+	// }
+}
+
+
+class DropMenu extends MenuItem {
+	constructor(parent, thml_text) {
+		super(parent, thml_text);
+		this.collapsed = true;
+		this.clip_path_num = null;
+		this.children_cnt = 0;
+		this.cut_left = this.drop_container.offsetLeft - this.constructor.hflex_term - 40; // ToDo: set value!
+		this.cut_right = this.drop_container.offsetLeft + this.drop_container.offsetWidth + this.constructor.hflex_term - 50; // ToDo: set value!
+		this.cut_top = 0;
+		this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
+
+		this.expand = this.expand.bind(this);
+		this.collapse = this.collapse.bind(this);
+		this.pressSubButton = this.pressSubButton.bind(this);
+		this.drop_container.addEventListener('pointerenter', this.expand);
+		this.drop_container.addEventListener('pointerleave', this.collapse);
+		this.mask_g.addEventListener('click', this.pressSubButton);
+	}
+
+	static id_prefix = 'dm';
+
+	static margin = 2;
+
+	static hflex_term = 6 - this.margin;
+
+	static bs = 6;
+
+	// static btn_corners = '0,0 30,0 30,25 25,30 0,30';
+
+	createHtml() {
+		this.drop_container = document.createElement('div');
+		this.drop_container.classList.add('dropcontmenu');
+		this.drop_container.style.width = this.constructor.w + 6
+		this.drop_container.appendChild(this.svg);
+		this.parent.appendChild(this.drop_container);
+
+		this.hflex = document.createElement('div');
+		this.hflex.classList.add('dropflexmenu');
+		this.hflex.style.left = this.drop_container.offsetLeft + 'px';
+		this.drop_container.appendChild(this.hflex);
+	}
+
+	expand(event) { // eslint-disable-line no-unused-vars
+		console.log('!0');
+		console.log(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
+		console.log(this.cut_right - this.cut_left);
+		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
+		this.collapsed = false;
+		// if (this.active) this.deselect();
+	}
+
+	collapse(event) { // eslint-disable-line no-unused-vars
+		// return;
+		console.log('!1');
+		cnv.unclip(this.clip_path_num);
+		this.clip_path_num = null;
+		this.collapsed = true;
+		// if (this.active) this.select();
+	}
+
+	pressSubButton(event) {
+		const new_event = new Event('click');
+		new_event.clientX = event.clientX;
+		new_event.clientY = event.clientY;
+		this.focused_subbtn.mask_g.dispatchEvent(new_event);
+	}
+
+	appendChild(child) {
+		// child.setAttribute('height', this.constructor.h + 6 - this.constructor.hflex_term);
+		child.setAttribute('height', this.constructor.h + 2);
+		child.setAttribute('width', this.constructor.w + 6 - this.constructor.hflex_term);
+		// if (this.children_cnt) this.hflex.lastChild.setAttribute('height', 36);
+		if (this.children_cnt) this.hflex.lastChild.setAttribute('height', this.constructor.h);
+		// this.cut_bottom = ++this.children_cnt * (this.constructor.h + 6) - this.constructor.hflex_term;
+		this.cut_bottom = ++this.children_cnt * this.constructor.h + this.constructor.margin;
+		// this.hflex.style.height = this.children_cnt * (this.constructor.h + 6) + 'px';
+		this.hflex.style.height = this.children_cnt * this.constructor.h + 2 + 'px';
+		console.log(this.hflex.style.height);
+		this.hflex.appendChild(child);
+	}
+
+	// selectCond(subbtn) {
+	// 	this.active = true;
+	// 	this.focused_subbtn.focline.setAttribute('class', 'invisible');
+	// 	this.focused_subbtn = subbtn;
+	// 	this.active_subbtn = subbtn;
+	// 	if (this.collapsed) this.select();
+	// }
+
+	// deselectCond(subbtn) {
+	// 	this.active = false;
+	// 	this.focusSubbtn(subbtn);
+	// 	if (this.collapsed) this.deselect();
+	// }
+
+	// focusSubbtn(subbtn) {
+	// 	this.focused_subbtn = subbtn;
+	// 	this.focused_subbtn.focline.setAttribute('class', 'visible');
+	// }
+
+	// select() {
+	// 	this.img.innerHTML = this.active_subbtn.thml_text;
+	// 	this.selrect.setAttribute('class', 'visible');
+	// }
+
+	// deselect() {
+	// 	this.img.innerHTML = this.thml_text;
+	// 	this.selrect.setAttribute('class', 'invisible');
+	// }
+}
+
+export const menu_drop = new DropMenu(menu_bar, toMenuText('Drop', MenuItem.w));
+export const menu_item = new MenuItem(menu_bar, toMenuText('Menu Item', MenuItem.w));
+export const menu_btn = new MenuButton(menu_bar, toMenuText('Help', MenuButton.w));
+export const menu_item0 = new MenuItem(menu_bar, toMenuText('Menu Item', MenuItem.w));
+
+
+export const mi0 = new MenuItem(menu_drop, toMenuText('mi0', MenuItem.w));
+export const submenu_btn = new MenuButton(menu_drop, toMenuText('Help', MenuButton.w));
+export const mi1 = new MenuItem(menu_drop, toMenuText('mi1', MenuItem.w));
+export const mi2 = new MenuItem(menu_drop, toMenuText('mi2', MenuItem.w));
+

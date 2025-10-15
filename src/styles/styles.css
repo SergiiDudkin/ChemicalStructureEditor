@@ -192,3 +192,26 @@ body {
 	opacity: 1;
 	cursor: pointer;
 }
+
+
+.dropflexmenu {
+	display: none;
+/*	display: flex;*/
+	flex-direction: column;
+/*	height: 36px;*/
+	position: absolute;
+	top: 42px;
+/*	gap: 0px;*/
+	align-content: flex-start;
+}
+.dropcontmenu {
+}
+.dropcontmenu:hover .dropflexmenu {
+	display: flex;
+}
+
+/*#qwe {
+	filter: drop-shadow( 3px 3px 2px rgba(0, 0, 0, .7));
+}*/
+
+
