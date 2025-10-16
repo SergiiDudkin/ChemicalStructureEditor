@@ -565,28 +565,26 @@ class DropMenu extends MenuItem {
 		this.collapsed = true;
 		this.clip_path_num = null;
 		this.children_cnt = 0;
-		this.cut_left = this.drop_container.offsetLeft - this.constructor.hflex_term - 40; // ToDo: set value!
-		this.cut_right = this.drop_container.offsetLeft + this.drop_container.offsetWidth + this.constructor.hflex_term - 50; // ToDo: set value!
+
+		const [cnv0x, cnv0y] = cnv.getScreenPoint([0, 0]);
+		this.cut_left = this.drop_container.offsetLeft - this.constructor.margin - cnv0x; // ToDo: set value!
+		this.cut_right = this.drop_container.offsetLeft + this.constructor.w + this.constructor.margin - cnv0x; // ToDo: set value!
 		this.cut_top = 0;
-		this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
+		this.cut_bottom = 0;
 
 		this.expand = this.expand.bind(this);
 		this.collapse = this.collapse.bind(this);
-		this.pressSubButton = this.pressSubButton.bind(this);
 		this.drop_container.addEventListener('pointerenter', this.expand);
 		this.drop_container.addEventListener('pointerleave', this.collapse);
-		this.mask_g.addEventListener('click', this.pressSubButton);
 	}
 
 	static id_prefix = 'dm';
 
 	static margin = 2;
 
-	static hflex_term = 6 - this.margin;
+	static button_spacing = 0;
 
-	static bs = 6;
-
-	// static btn_corners = '0,0 30,0 30,25 25,30 0,30';
+	static hflex_term = this.button_spacing - this.margin;
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
@@ -602,72 +600,24 @@ class DropMenu extends MenuItem {
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
-		console.log('!0');
-		console.log(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
-		console.log(this.cut_right - this.cut_left);
 		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
 		this.collapsed = false;
-		// if (this.active) this.deselect();
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
-		// return;
-		console.log('!1');
 		cnv.unclip(this.clip_path_num);
 		this.clip_path_num = null;
 		this.collapsed = true;
-		// if (this.active) this.select();
-	}
-
-	pressSubButton(event) {
-		const new_event = new Event('click');
-		new_event.clientX = event.clientX;
-		new_event.clientY = event.clientY;
-		this.focused_subbtn.mask_g.dispatchEvent(new_event);
 	}
 
 	appendChild(child) {
-		// child.setAttribute('height', this.constructor.h + 6 - this.constructor.hflex_term);
-		child.setAttribute('height', this.constructor.h + 2);
-		child.setAttribute('width', this.constructor.w + 6 - this.constructor.hflex_term);
-		// if (this.children_cnt) this.hflex.lastChild.setAttribute('height', 36);
-		if (this.children_cnt) this.hflex.lastChild.setAttribute('height', this.constructor.h);
-		// this.cut_bottom = ++this.children_cnt * (this.constructor.h + 6) - this.constructor.hflex_term;
-		this.cut_bottom = ++this.children_cnt * this.constructor.h + this.constructor.margin;
-		// this.hflex.style.height = this.children_cnt * (this.constructor.h + 6) + 'px';
-		this.hflex.style.height = this.children_cnt * this.constructor.h + 2 + 'px';
-		console.log(this.hflex.style.height);
+		if (this.children_cnt) this.hflex.lastChild.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
+		child.setAttribute('height', this.constructor.h + this.constructor.margin);
+		child.setAttribute('width', this.constructor.w + this.constructor.margin);
+		this.cut_bottom = ++this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin;
+		this.hflex.style.height = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin + 'px';
 		this.hflex.appendChild(child);
 	}
-
-	// selectCond(subbtn) {
-	// 	this.active = true;
-	// 	this.focused_subbtn.focline.setAttribute('class', 'invisible');
-	// 	this.focused_subbtn = subbtn;
-	// 	this.active_subbtn = subbtn;
-	// 	if (this.collapsed) this.select();
-	// }
-
-	// deselectCond(subbtn) {
-	// 	this.active = false;
-	// 	this.focusSubbtn(subbtn);
-	// 	if (this.collapsed) this.deselect();
-	// }
-
-	// focusSubbtn(subbtn) {
-	// 	this.focused_subbtn = subbtn;
-	// 	this.focused_subbtn.focline.setAttribute('class', 'visible');
-	// }
-
-	// select() {
-	// 	this.img.innerHTML = this.active_subbtn.thml_text;
-	// 	this.selrect.setAttribute('class', 'visible');
-	// }
-
-	// deselect() {
-	// 	this.img.innerHTML = this.thml_text;
-	// 	this.selrect.setAttribute('class', 'invisible');
-	// }
 }
 
 export const menu_drop = new DropMenu(menu_bar, toMenuText('Drop', MenuItem.w));
