@@ -391,15 +391,10 @@ class MenuItem {
 	constructor(parent, thml_text) {
 		this.parent = parent;
 		this.thml_text = thml_text;
-		// this.active = false;
 
 		this.createSvg();
 		this.createHtml();
 		this.setImage(thml_text);
-
-		// this.animateBtnDown = this.animateBtnDown.bind(this);
-		// this.animateBtnUp = this.animateBtnUp.bind(this);
-		// this.mask_g.addEventListener('mousedown', this.animateBtnDown);
 	}
 
 	static btn_num = 0;
@@ -438,38 +433,6 @@ class MenuItem {
 	setImage(thml_text) {
 		this.img.insertAdjacentHTML('beforeend', thml_text);
 	}
-
-	// // eslint-disable-next-line no-unused-vars
-	// animateBtnDown(event) { // Change appearance of fancy buttons
-	// 	this.filter_g.setAttribute('filter', 'url(#okshadow)');
-	// 	this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
-	// 	window.addEventListener('mouseup', this.animateBtnUp);
-	// }
-
-	// // eslint-disable-next-line no-unused-vars
-	// animateBtnUp(event) { // Reset appearance of fancy buttons
-	// 	window.removeEventListener('mouseup', this.animateBtnUp);
-	// 	this.filter_g.setAttribute('filter', 'url(#shadow)');
-	// 	this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
-	// }
-
-	// selectCond() {
-	// 	if (!this.active) this.select();
-	// }
-
-	// deselectCond(event) {
-	// 	if (event.target.objref !== this && this.active) this.deselect();
-	// }
-
-	// select() {
-	// 	this.active = true;
-	// 	this.selrect.setAttribute('class', 'visible-anim');
-	// }
-
-	// deselect() {
-	// 	this.active = false;
-	// 	this.selrect.setAttribute('class', 'invisible');
-	// }
 }
 
 
@@ -477,7 +440,6 @@ class MenuButton {
 	constructor(parent, thml_text) {
 		this.parent = parent;
 		this.thml_text = thml_text;
-		// this.active = false;
 
 		this.createSvg();
 		this.createHtml();
@@ -538,24 +500,6 @@ class MenuButton {
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
 		this.filter_g.setAttribute('transform', `translate(${this.constructor.w / 2} ${this.constructor.h / 2}) scale(1) translate(${-this.constructor.w / 2} ${-this.constructor.h / 2})`);
 	}
-
-	// selectCond() {
-	// 	if (!this.active) this.select();
-	// }
-
-	// deselectCond(event) {
-	// 	if (event.target.objref !== this && this.active) this.deselect();
-	// }
-
-	// select() {
-	// 	this.active = true;
-	// 	this.selrect.setAttribute('class', 'visible-anim');
-	// }
-
-	// deselect() {
-	// 	this.active = false;
-	// 	this.selrect.setAttribute('class', 'invisible');
-	// }
 }
 
 
