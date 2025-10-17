@@ -437,57 +437,16 @@ class MenuItem {
 }
 
 
-class MenuButton {
+class MenuButton extends MenuItem {
 	constructor(parent, thml_text) {
-		this.parent = parent;
-		this.thml_text = thml_text;
-
-		this.createSvg();
-		this.createHtml();
-		this.setImage(thml_text);
+		super(parent, thml_text);
 
 		this.animateBtnDown = this.animateBtnDown.bind(this);
 		this.animateBtnUp = this.animateBtnUp.bind(this);
 		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
 	}
 
-	static btn_num = 0;
-
 	static id_prefix = 'mb';
-
-	static w = 100;
-
-	static h = 30;
-
-	static btn_corners = `0,0 ${this.w},0 ${this.w},${this.h} 0,${this.h}`;
-
-	static getBtnNum() {
-		return this.btn_num++;
-	}
-
-	createSvg() {
-		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
-		this.svg = makeSvg('svg', {width: this.constructor.w + 6, height: this.constructor.h + 16});
-		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
-		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
-		this.img = attachSvg(mask, 'g');
-		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
-		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
-		this.mask_g.objref = this;
-		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: this.constructor.w + 2, height: this.constructor.h + 2}); // Button tissue
-		this.selrect = attachSvg(this.mask_g, 'polygon',
-			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
-		);
-	}
-
-	createHtml() {
-		this.svg.objref = this;
-		this.parent.appendChild(this.svg);
-	}
-
-	setImage(thml_text) {
-		this.img.insertAdjacentHTML('beforeend', thml_text);
-	}
 
 	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
@@ -508,15 +467,10 @@ class MenuButton {
 class DropMenu extends MenuItem {
 	constructor(parent, thml_text) {
 		super(parent, thml_text);
-		this.collapsed = true;
 		this.clip_path_num = null;
 		this.children_cnt = 0;
 
-		const [cnv0x, cnv0y] = cnv.getScreenPoint([0, 0]);
-		this.cut_left = this.drop_container.offsetLeft - this.constructor.margin - cnv0x; // ToDo: set value!
-		this.cut_right = this.drop_container.offsetLeft + this.constructor.w + this.constructor.margin - cnv0x; // ToDo: set value!
-		this.cut_top = 0;
-		this.cut_bottom = 0;
+		this.initCutDims();
 
 		this.expand = this.expand.bind(this);
 		this.collapse = this.collapse.bind(this);
@@ -529,8 +483,6 @@ class DropMenu extends MenuItem {
 	static margin = 2;
 
 	static button_spacing = 0;
-
-	static hflex_term = this.button_spacing - this.margin;
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
@@ -545,71 +497,35 @@ class DropMenu extends MenuItem {
 		this.drop_container.appendChild(this.hflex);
 	}
 
+	initCutDims() {
+		const [cnv0x, cnv0y] = cnv.getScreenPoint([0, 0]);
+		this.cut_left = this.drop_container.offsetLeft - this.constructor.margin - cnv0x;
+		this.cut_right = this.drop_container.offsetLeft + this.constructor.w + this.constructor.margin - cnv0x;
+		this.cut_top = 0;
+		this.cut_bottom = 0;
+	}
+
 	expand(event) { // eslint-disable-line no-unused-vars
 		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
-		this.collapsed = false;
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
 		cnv.unclip(this.clip_path_num);
 		this.clip_path_num = null;
-		this.collapsed = true;
 	}
 
 	appendChild(child) {
 		if (this.children_cnt) this.hflex.lastChild.objref.svg.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
-
-		// if (child.tagName == 'svg') {
-		// 	child.setAttribute('height', this.constructor.h + this.constructor.margin);
-		// 	child.setAttribute('width', this.constructor.w + this.constructor.margin);
-		// }
-		// else {
-		// 	child.getElementsByTagName('svg')
-		// }
-
-		// const childsvg = child.tagName == 'svg' ? child : child.getElementsByTagName('svg')[0];
-		// childsvg.setAttribute('height', this.constructor.h + this.constructor.margin);
-		// childsvg.setAttribute('width', this.constructor.w + this.constructor.margin);
-
 		child.objref.svg.setAttribute('height', this.constructor.h + this.constructor.margin);
 		child.objref.svg.setAttribute('width', this.constructor.w + this.constructor.margin);
-
 		this.cut_bottom = ++this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin;
 		this.hflex.style.height = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin + 'px';
 		this.hflex.appendChild(child);
 	}
 }
 
-class SubDropMenu extends MenuItem {
-	constructor(parent, thml_text) {
-		super(parent, thml_text);
-		this.collapsed = true;
-		this.clip_path_num = null;
-		this.children_cnt = 0;
-
-		const [cnv0x, cnv0y] = cnv.getScreenPoint([0, 0]);
-
-		this.cut_left = this.parent.cut_right - this.constructor.margin; // ToDo: set value!
-		this.cut_right = this.parent.cut_right + this.constructor.w + this.constructor.margin; // ToDo: set value!
-		// console.log(this.drop_container.offsetTop);
-		// (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing;
-		this.cut_top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
-		this.cut_bottom = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
-		console.log(this.cut_top, this.cut_bottom);
-
-		this.expand = this.expand.bind(this);
-		this.collapse = this.collapse.bind(this);
-		this.drop_container.addEventListener('pointerenter', this.expand);
-		this.drop_container.addEventListener('pointerleave', this.collapse);
-	}
-
+class SubDropMenu extends DropMenu {
 	static id_prefix = 'sdm';
-
-	static margin = 2;
-
-	static button_spacing = 0;
-
-	static hflex_term = this.button_spacing - this.margin;
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
@@ -626,16 +542,11 @@ class SubDropMenu extends MenuItem {
 		this.drop_container.appendChild(this.hflex);
 	}
 
-	expand(event) { // eslint-disable-line no-unused-vars
-		console.log(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
-		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
-		this.collapsed = false;
-	}
-
-	collapse(event) { // eslint-disable-line no-unused-vars
-		cnv.unclip(this.clip_path_num);
-		this.clip_path_num = null;
-		this.collapsed = true;
+	initCutDims() {
+		this.cut_left = this.parent.cut_right - this.constructor.margin;
+		this.cut_right = this.parent.cut_right + this.constructor.w + this.constructor.margin;
+		this.cut_top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
+		this.cut_bottom = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
 	}
 
 	appendChild(child) {
@@ -644,9 +555,6 @@ class SubDropMenu extends MenuItem {
 		child.setAttribute('width', this.constructor.w + this.constructor.margin);
 		this.children_cnt++;
 		this.cut_bottom = this.cut_top + this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin * 2;
-
-		// this.drop_container.offsetTop + this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin;
-
 		this.hflex.style.height = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin + 'px';
 		this.hflex.appendChild(child);
 	}
