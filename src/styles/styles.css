@@ -202,18 +202,6 @@ body {
 }
 .dropcontmenu {
 }
-.dropcontmenu:hover .dropflexmenu {
-	display: flex;
-}
-
-.dropflexsubmenu {
-	display: none;
-/*	display: flex;*/
-	flex-direction: column;
-	position: absolute;
-}
-.dropcontsubmenu {
-}
-.dropcontsubmenu:hover .dropflexsubmenu {
+.dropcontmenu:hover > .dropflexmenu {
 	display: flex;
 }

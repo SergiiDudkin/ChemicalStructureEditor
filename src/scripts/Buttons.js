@@ -529,14 +529,14 @@ class SubDropMenu extends DropMenu {
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
-		this.drop_container.classList.add('dropcontsubmenu');
+		this.drop_container.classList.add('dropcontmenu');
 		this.drop_container.appendChild(this.svg);
 		this.drop_container.style.height = this.parent.constructor.h + 'px';
 		this.drop_container.objref = this;
 		this.parent.appendChild(this.drop_container);
 
 		this.hflex = document.createElement('div');
-		this.hflex.classList.add('dropflexsubmenu');
+		this.hflex.classList.add('dropflexmenu');
 		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.constructor.w + this.constructor.margin + 'px';
 		this.hflex.style.top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing + 'px';
 		this.drop_container.appendChild(this.hflex);
