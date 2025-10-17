@@ -537,7 +537,7 @@ class SubDropMenu extends DropMenu {
 
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflexsubmenu');
-		this.hflex.style.left = this.drop_container.offsetLeft + this.parent.constructor.w + this.constructor.margin + 'px';
+		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.constructor.w + this.constructor.margin + 'px';
 		this.hflex.style.top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing + 'px';
 		this.drop_container.appendChild(this.hflex);
 	}
@@ -545,8 +545,8 @@ class SubDropMenu extends DropMenu {
 	initCutDims() {
 		this.cut_left = this.parent.cut_right - this.constructor.margin;
 		this.cut_right = this.parent.cut_right + this.constructor.w + this.constructor.margin;
-		this.cut_top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
-		this.cut_bottom = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing - this.constructor.margin;
+		this.cut_top = (this.parent.children_cnt - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) - this.constructor.margin;
+		this.cut_bottom = this.cut_top;
 	}
 
 	appendChild(child) {
