@@ -467,7 +467,7 @@ class MenuButton extends MenuItem {
 class DropMenu extends MenuItem {
 	constructor(parent, thml_text) {
 		super(parent, thml_text);
-		this.clip_path_num = null;
+		this.clip_path_nums = [];
 		this.children_cnt = 0;
 
 		this.initCutDims();
@@ -488,6 +488,7 @@ class DropMenu extends MenuItem {
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcontmenu');
 		this.drop_container.appendChild(this.svg);
+		this.drop_container.objref = this;
 		this.parent.appendChild(this.drop_container);
 
 		this.hflex = document.createElement('div');
@@ -506,20 +507,21 @@ class DropMenu extends MenuItem {
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
-		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
+		this.clip_path_nums.push(cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom));
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
-		cnv.unclip(this.clip_path_num);
-		this.clip_path_num = null;
+		this.clip_path_nums.forEach(item => cnv.unclip(item));
+		this.clip_path_nums = [];
 	}
 
 	appendChild(child) {
 		if (this.children_cnt) this.hflex.lastChild.objref.svg.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
 		child.objref.svg.setAttribute('height', this.constructor.h + this.constructor.margin);
 		child.objref.svg.setAttribute('width', this.constructor.w + this.constructor.margin);
-		this.cut_bottom = ++this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin;
-		this.hflex.style.height = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin + 'px';
+		this.children_cnt++;
+		this.cut_bottom = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin;
+		this.hflex.style.height = this.cut_bottom + 'px';
 		this.hflex.appendChild(child);
 	}
 }
@@ -538,25 +540,27 @@ class SubDropMenu extends DropMenu {
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflexmenu');
 		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.constructor.w + this.constructor.margin + 'px';
-		this.hflex.style.top = (this.parent.children_cnt - 1) * this.parent.constructor.h + this.parent.constructor.button_spacing + 'px';
+		this.hflex.style.top = (this.parent.children_cnt - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) + 'px';
 		this.drop_container.appendChild(this.hflex);
 	}
 
 	initCutDims() {
 		this.cut_left = this.parent.cut_right - this.constructor.margin;
 		this.cut_right = this.parent.cut_right + this.constructor.w + this.constructor.margin;
-		this.cut_top = (this.parent.children_cnt - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) - this.constructor.margin;
+		this.cut_top = (this.parent.children_cnt - 1) * (this.parent.constructor.h + 
+			this.parent.constructor.button_spacing) - this.constructor.margin;
 		this.cut_bottom = this.cut_top;
 	}
 
+	expand(event) { // eslint-disable-line no-unused-vars
+		super.expand(event);
+		this.clip_path_nums.push(cnv.clipRect(this.cut_left, this.cut_top, 
+			this.parent.cut_right, Math.min(this.cut_bottom, this.parent.cut_bottom)));
+	}
+
 	appendChild(child) {
-		if (this.children_cnt) this.hflex.lastChild.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
-		child.setAttribute('height', this.constructor.h + this.constructor.margin);
-		child.setAttribute('width', this.constructor.w + this.constructor.margin);
-		this.children_cnt++;
-		this.cut_bottom = this.cut_top + this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin * 2;
-		this.hflex.style.height = this.children_cnt * this.constructor.h + (this.children_cnt - 1) * this.constructor.button_spacing + this.constructor.margin + 'px';
-		this.hflex.appendChild(child);
+		super.appendChild(child);
+		this.cut_bottom += this.cut_top + this.constructor.margin;
 	}
 }
 
@@ -575,4 +579,5 @@ export const mi2 = new MenuItem(menu_drop, toMenuText('mi2', MenuItem.w));
 
 export const sdi1 = new MenuItem(menu_subdrop, toMenuText('sdi1', MenuItem.w));
 export const sdi2 = new MenuItem(menu_subdrop, toMenuText('sdi2', MenuItem.w));
-
+export const sdibtn = new MenuButton(menu_subdrop, toMenuText('sdibtn', MenuButton.w));
+export const sdi3 = new MenuItem(menu_subdrop, toMenuText('sdi3', MenuItem.w));
