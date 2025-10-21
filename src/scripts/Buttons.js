@@ -383,7 +383,7 @@ dropshapesbtn.focusSubbtn(linebtn);
 const menu_bar = document.getElementById('menubar');
 
 function toMenuText(text, width) {
-	return `<text class='menumsk' x='${width / 2}' y='17' fill='black' dominant-baseline='middle' 
+	return `<text font-family="Arial" font-size="16px" font-weight="normal" x='${width / 2}' y='15' fill='black' dominant-baseline='middle' 
 	text-anchor='middle'>${text}</text>`;
 }
 
@@ -395,6 +395,7 @@ class MenuItem {
 		this.createSvg();
 		this.createHtml();
 		this.setImage(thml_text);
+		this.centerText();
 	}
 
 	static btn_num = 0;
@@ -403,7 +404,7 @@ class MenuItem {
 
 	static w = 100;
 
-	static h = 30;
+	static h = 25;
 
 	static btn_corners = `0,0 ${this.w},0 ${this.w},${this.h} 0,${this.h}`;
 
@@ -414,7 +415,7 @@ class MenuItem {
 	createSvg() {
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
 		this.svg = makeSvg('svg', {width: this.constructor.w + 6, height: this.constructor.h + 6});
-		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
 		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
@@ -433,6 +434,18 @@ class MenuItem {
 
 	setImage(thml_text) {
 		this.img.insertAdjacentHTML('beforeend', thml_text);
+	}
+
+	setHeight() {
+
+	}
+
+	centerText() {
+		const text = this.img.firstChild;
+		const font_size = text.getAttribute('font-size');
+		const y = this.constructor.h / 2 + parseInt(font_size) / 8;
+		text.setAttribute('y', y);
+		// console.log(text.getBBox().width);
 	}
 }
 
@@ -516,7 +529,12 @@ class DropMenu extends MenuItem {
 	}
 
 	appendChild(child) {
-		if (this.children_cnt) this.hflex.lastChild.objref.svg.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
+		if (this.children_cnt) {
+			this.hflex.lastChild.objref.svg.setAttribute('height', this.constructor.h + this.constructor.button_spacing);
+			if (this.hflex.lastChild.objref.drop_container) {
+				this.hflex.lastChild.objref.drop_container.style.height = this.constructor.h + this.constructor.button_spacing + 'px';
+			}
+		}
 		child.objref.svg.setAttribute('height', this.constructor.h + this.constructor.margin);
 		child.objref.svg.setAttribute('width', this.constructor.w + this.constructor.margin);
 		this.children_cnt++;
@@ -563,6 +581,24 @@ class SubDropMenu extends DropMenu {
 		this.cut_bottom += this.cut_top + this.constructor.margin;
 	}
 }
+
+
+function getTextDims(html_text) {
+	// console.log(html_text);
+	const test_svg_cnv = document.getElementById('filters');
+	// const test_svg_cnv = cnv.svg;
+	test_svg_cnv.insertAdjacentHTML('beforeend', html_text);
+	const text_el = test_svg_cnv.lastChild;
+	// const bbox = text_el.getBBox();
+	const {width, height} = text_el.getBBox();
+	// console.log(bbox);
+	text_el.remove();
+	// return bbox.width;
+	return [width, height]
+}
+
+const text_len = getTextDims(toMenuText('Drog676hhhhhhhp', DropMenu.w));
+console.log(text_len);
 
 
 export const menu_drop = new DropMenu(menu_bar, toMenuText('Drop', DropMenu.w));
