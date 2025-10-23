@@ -535,7 +535,9 @@ class DropMenu extends MenuItem {
 
 	static button_spacing = 0;
 
-	static cnv_origin = cnv.getScreenPoint([0, 0]);
+	static {
+		[this.cnv_x, this.cnv_y] = cnv.getScreenPoint([0, 0]);
+	}
 
 	getBtnCorners() {
 		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
@@ -550,24 +552,37 @@ class DropMenu extends MenuItem {
 
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflexmenu');
-		this.hflex.style.left = this.drop_container.offsetLeft + 'px';
-		this.hflex.style.top = '42px';
 		this.drop_container.appendChild(this.hflex);
+
+		this.allignHtml();
+	}
+
+	allignHtml() {
+		this.hflex.style.left = this.drop_container.offsetLeft + 'px';
+		this.hflex.style.top = this.constructor.cnv_y + 'px';
 	}
 
 	initCutDims() {
 		this.calcCutLeft();
 		this.calcCutRight();
-		this.cut_top = 0;
-		this.cut_bottom = 0;
+		this.calcCutTop();
+		this.calcCutBottom();
 	}
 
 	calcCutLeft() {
-		this.cut_left = this.drop_container.offsetLeft - this.constructor.child_margin - this.constructor.cnv_origin[0];
+		this.cut_left = this.drop_container.offsetLeft - this.constructor.child_margin - this.constructor.cnv_x;
 	}
 
 	calcCutRight() {
 		this.cut_right = this.cut_left + this.drop_container_width + this.constructor.child_margin * 2;
+	}
+
+	calcCutTop() {
+		this.cut_top = 0;
+	}
+
+	calcCutBottom() {
+		this.cut_bottom = 0;
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
@@ -618,35 +633,23 @@ class DropMenu extends MenuItem {
 class SubDropMenu extends DropMenu {
 	static id_prefix = 'sdm';
 
-	createHtml() {
-		this.drop_container = document.createElement('div');
-		this.drop_container.classList.add('dropcontmenu');
-		this.drop_container.appendChild(this.svg);
+	allignHtml() {
 		this.drop_container.style.height = this.parent.constructor.h + 'px';
-		this.drop_container.objref = this;
-		this.parent.appendChild(this.drop_container);
-
-		this.hflex = document.createElement('div');
-		this.hflex.classList.add('dropflexmenu');
 		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.drop_container_width + this.constructor.child_margin + 'px';
 		this.hflex.style.top = (this.parent.children.length - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) + 'px';
-		this.drop_container.appendChild(this.hflex);
-	}
-
-	initCutDims() {
-		this.calcCutLeft();
-		this.calcCutRight();
-		this.cut_top = this.parent.cut_top + (this.parent.children.length - 1) * (this.parent.constructor.h + 
-			this.parent.constructor.button_spacing) - this.constructor.child_margin * (!this.parent.cut_top);
-		this.cut_bottom = this.cut_top;
 	}
 
 	calcCutLeft() {
 		this.cut_left = this.parent.cut_right - this.constructor.child_margin;
 	}
 
-	calcCutRight() {
-		this.cut_right = this.cut_left + this.drop_container_width + this.constructor.child_margin * 2;
+	calcCutTop() {
+		this.cut_top = this.parent.cut_top + (this.parent.children.length - 1) * (this.parent.constructor.h + 
+			this.parent.constructor.button_spacing) - this.constructor.child_margin * (!this.parent.cut_top);
+	}
+
+	calcCutBottom() {
+		this.cut_bottom = this.cut_top;
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
