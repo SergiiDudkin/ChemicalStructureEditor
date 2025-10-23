@@ -386,7 +386,7 @@ const menu_bar = document.getElementById('menubar');
 class MenuItem {
 	constructor(parent, html_text) {
 		this.parent = parent;
-		this.text_width = getTextWidth(html_text);
+		this.text_width = Math.round(getTextWidth(html_text));
 		this.width = this.constructor.w;
 		this.height = this.constructor.h;
 		this.margin_ver = this.constructor.margin;
@@ -404,7 +404,7 @@ class MenuItem {
 
 	static w = 100;
 
-	static h = 25;
+	static h = 24;
 
 	static margin = 6;
 
@@ -519,6 +519,7 @@ class DropMenu extends MenuItem {
 		this.clip_path_nums = [];
 		this.children_cnt = 0;
 		this.children = [];
+		this.drop_container_width = this.constructor.w;
 
 		this.initCutDims();
 
@@ -533,6 +534,12 @@ class DropMenu extends MenuItem {
 	static child_margin = 2;
 
 	static button_spacing = 0;
+
+	static cnv_origin = cnv.getScreenPoint([0, 0]);
+
+	getBtnCorners() {
+		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
+	}
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
@@ -549,11 +556,18 @@ class DropMenu extends MenuItem {
 	}
 
 	initCutDims() {
-		const [cnv0x, cnv0y] = cnv.getScreenPoint([0, 0]);
-		this.cut_left = this.drop_container.offsetLeft - this.constructor.child_margin - cnv0x;
-		this.cut_right = this.drop_container.offsetLeft + this.width + this.constructor.child_margin - cnv0x;
+		this.calcCutLeft();
+		this.calcCutRight();
 		this.cut_top = 0;
 		this.cut_bottom = 0;
+	}
+
+	calcCutLeft() {
+		this.cut_left = this.drop_container.offsetLeft - this.constructor.child_margin - this.constructor.cnv_origin[0];
+	}
+
+	calcCutRight() {
+		this.cut_right = this.cut_left + this.drop_container_width + this.constructor.child_margin * 2;
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
@@ -577,6 +591,28 @@ class DropMenu extends MenuItem {
 		this.hflex.appendChild(child);
 		this.children.push(child.objref);
 	}
+
+	getMaxChildrenTextWidth() {
+		return Math.max(...this.children.map(child => child.text_width));
+	}
+
+	setChildrenTextWidth(width) {
+		this.drop_container_width = width;
+		this.calcCutRight()
+		for (const child of this.children) {
+			child.setWidth(this.drop_container_width);
+			if (child instanceof SubDropMenu) {
+				child.hflex.style.left = this.hflex.offsetLeft + this.drop_container_width + this.constructor.child_margin + 'px';
+				child.cut_left = this.cut_right - child.constructor.child_margin;
+				child.calcCutRight();
+				child.compressDropContainerWidth();
+			}
+		}
+	}
+
+	compressDropContainerWidth() {
+		this.setChildrenTextWidth(this.getMaxChildrenTextWidth() + 4 * 2);
+	}
 }
 
 class SubDropMenu extends DropMenu {
@@ -592,17 +628,25 @@ class SubDropMenu extends DropMenu {
 
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflexmenu');
-		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.constructor.w + this.constructor.child_margin + 'px';
+		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.drop_container_width + this.constructor.child_margin + 'px';
 		this.hflex.style.top = (this.parent.children.length - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) + 'px';
 		this.drop_container.appendChild(this.hflex);
 	}
 
 	initCutDims() {
-		this.cut_left = this.parent.cut_right - this.constructor.child_margin;
-		this.cut_right = this.parent.cut_right + this.width + this.constructor.child_margin;
-		this.cut_top = (this.parent.children.length - 1) * (this.parent.constructor.h + 
-			this.parent.constructor.button_spacing) - this.constructor.child_margin;
+		this.calcCutLeft();
+		this.calcCutRight();
+		this.cut_top = this.parent.cut_top + (this.parent.children.length - 1) * (this.parent.constructor.h + 
+			this.parent.constructor.button_spacing) - this.constructor.child_margin * (!this.parent.cut_top);
 		this.cut_bottom = this.cut_top;
+	}
+
+	calcCutLeft() {
+		this.cut_left = this.parent.cut_right - this.constructor.child_margin;
+	}
+
+	calcCutRight() {
+		this.cut_right = this.cut_left + this.drop_container_width + this.constructor.child_margin * 2;
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
@@ -644,41 +688,44 @@ const text_attrs = {
 	'text-anchor': 'middle'
 }
 
+const text_dropdown_extra_attrs ={
+	'font-size': '14px',
+	'font-weight': 'bold',
+}
+
+const text_dropdown_attrs = {...text_attrs, ...text_dropdown_extra_attrs}
+
+
 function toMenuText(text, attrs) {
 	const svg_text = makeSvg('text', attrs=attrs);
 	svg_text.textContent = text;
 	return svg_text.outerHTML;
 }
 
-// function toMenuText(text, attrs) {
-// 	const svg_text = makeSvg('text', attrs=attrs);
-// 	console.log(svg_text);
-// 	const svg_text_html = svg_text.outerHTML;
-// 	console.log(svg_text_html);
-// 	return makeSvg('text', attrs=attrs).getHTML();
-// }
-
-// console.log(toMenuText('fgewrg', text_attrs));
-
-// const text_len = getTextWidth(toMenuText('Drog676hhhhhhhp', DropMenu.w));
-// console.log(text_len);
 
 export const menu_drop = new DropMenu(menu_bar, toMenuText('Drop', text_attrs));
 export const menu_item = new MenuItem(menu_bar, toMenuText('Menu Item', text_attrs));
 export const menu_btn = new MenuButton(menu_bar, toMenuText('Help', text_attrs));
 export const menu_item0 = new MenuItem(menu_bar, toMenuText('Menu Item', text_attrs));
 
-export const mi0 = new MenuItem(menu_drop, toMenuText('mi0', text_attrs));
-export const submenu_btn = new MenuButton(menu_drop, toMenuText('Help', text_attrs));
-export const menu_subdrop = new SubDropMenu(menu_drop, toMenuText('Subdrop', text_attrs));
-export const mi1 = new MenuItem(menu_drop, toMenuText('mi1', text_attrs));
-export const mi2 = new MenuItem(menu_drop, toMenuText('mi2', text_attrs));
+export const mi0 = new MenuItem(menu_drop, toMenuText('mi0', text_dropdown_attrs));
+export const submenu_btn = new MenuButton(menu_drop, toMenuText('Help', text_dropdown_attrs));
+export const menu_subdrop = new SubDropMenu(menu_drop, toMenuText('Subdrop', text_dropdown_attrs));
+export const mi1 = new MenuItem(menu_drop, toMenuText('mi1', text_dropdown_attrs));
+export const mi2 = new MenuItem(menu_drop, toMenuText('mi2', text_dropdown_attrs));
 
-export const sdi1 = new MenuItem(menu_subdrop, toMenuText('sdi1', text_attrs));
-export const sdi2 = new MenuItem(menu_subdrop, toMenuText('sdi2', text_attrs));
-export const sdibtn = new MenuButton(menu_subdrop, toMenuText('sdibtn', text_attrs));
-export const sdi3 = new MenuItem(menu_subdrop, toMenuText('sdi3', text_attrs));
+export const sdi1 = new MenuItem(menu_subdrop, toMenuText('sdi1', text_dropdown_attrs));
+export const sdi2 = new MenuItem(menu_subdrop, toMenuText('sdi2', text_dropdown_attrs));
+export const sdibtn = new MenuButton(menu_subdrop, toMenuText('sdibtn', text_dropdown_attrs));
+export const sdi3 = new MenuItem(menu_subdrop, toMenuText('sdi3', text_dropdown_attrs));
+export const menu_subsubdrop = new SubDropMenu(menu_subdrop, toMenuText('SubSub', text_dropdown_attrs));
+
+export const ssdi1 = new MenuItem(menu_subsubdrop, toMenuText('ssdi1', text_dropdown_attrs));
+export const ssdi2 = new MenuItem(menu_subsubdrop, toMenuText('ssdi2', text_dropdown_attrs));
 
 menu_drop.setWidth(menu_drop.text_width + 8);
 menu_drop.setHeight(30);
+menu_drop.compressDropContainerWidth();
+// menu_subdrop.compressDropContainerWidth();
+// menu_subsubdrop.compressDropContainerWidth();
 // menu_drop.setMarginVer(6);
