@@ -478,10 +478,56 @@ class MenuItem {
 	}
 
 	centerText() {
-		const text = this.img.firstChild;
-		const font_size = text.getAttribute('font-size');
+		// const text = this.img.firstChild;
+		const font_size = this.text.getAttribute('font-size');
 		const y = this.height / 2 + parseInt(font_size) / 8;
-		text.setAttribute('y', y);
+		this.text.setAttribute('y', y);
+	}
+}
+
+
+class MenuCheckBox extends MenuItem {
+	constructor(parent, html_text) {
+		super(parent, html_text);
+		this.box_size = 12;
+		this.active = false;
+		this.text_width += this.box_size + 4;
+		this.locateCheckBox();
+
+		this.toggle = this.toggle.bind(this);
+		this.mask_g.addEventListener('click', this.toggle);
+	}
+
+	locateCheckBox() {
+		const half_size = this.box_size / 2;
+		const ctr_x = this.width - 4 - half_size;
+		const ctr_y = this.height / 2;
+		setAttrsSvg(this.flag, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
+		setAttrsSvg(this.checkbox, {x: ctr_x - half_size, y: ctr_y - half_size, width: this.box_size, height: this.box_size});
+	}
+
+	setWidth(width) {
+		super.setWidth(width);
+		this.locateCheckBox();
+	}
+
+	createSvg() {
+		super.createSvg();
+		this.checkbox = attachSvg(this.img, 'rect');
+		this.flag = attachSvg(this.svg, 'polyline', {class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 4});
+	}
+
+	toggle() {
+		this.active ? this.deselect() : this.select();
+		this.active = !this.active;
+	}
+
+	select() {
+		this.flag.setAttribute('class', 'visible');
+	}
+
+	deselect() {
+		this.flag.setAttribute('class', 'invisible');
 	}
 }
 
@@ -725,6 +771,7 @@ export const menu_subsubdrop = new SubDropMenu(menu_subdrop, toMenuText('SubSub'
 
 export const ssdi1 = new MenuItem(menu_subsubdrop, toMenuText('ssdi1', text_dropdown_attrs));
 export const ssdi2 = new MenuItem(menu_subsubdrop, toMenuText('ssdi2', text_dropdown_attrs));
+export const cb = new MenuCheckBox(menu_subsubdrop, toMenuText('checkbox', text_dropdown_attrs));
 
 menu_drop.setWidth(menu_drop.text_width + 8);
 menu_drop.setHeight(30);
