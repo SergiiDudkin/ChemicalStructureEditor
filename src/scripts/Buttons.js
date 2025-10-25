@@ -503,6 +503,7 @@ class MenuCheckBox extends MenuItem {
 		const ctr_x = this.width - 4 - half_size;
 		const ctr_y = this.height / 2;
 		setAttrsSvg(this.flag, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
+		setAttrsSvg(this.flag_bg, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
 		setAttrsSvg(this.checkbox, {x: ctr_x - half_size, y: ctr_y - half_size, width: this.box_size, height: this.box_size});
 	}
 
@@ -514,7 +515,8 @@ class MenuCheckBox extends MenuItem {
 	createSvg() {
 		super.createSvg();
 		this.checkbox = attachSvg(this.img, 'rect');
-		this.flag = attachSvg(this.svg, 'polyline', {class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 4});
+		this.flag_bg = attachSvg(this.img, 'polyline', {class: 'invisible', stroke: 'white', fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'square'});
+		this.flag = attachSvg(this.mask_g, 'polyline', {class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 2, 'stroke-linecap': 'square'});
 	}
 
 	toggle() {
@@ -524,10 +526,16 @@ class MenuCheckBox extends MenuItem {
 
 	select() {
 		this.flag.setAttribute('class', 'visible');
+		this.flag_bg.setAttribute('class', 'visible');
+		// this.flag_bg.classList.remove('invisible');
+		// this.flag_bg.classList.add('visible');
 	}
 
 	deselect() {
 		this.flag.setAttribute('class', 'invisible');
+		this.flag_bg.setAttribute('class', 'invisible');
+		// this.flag_bg.classList.remove('visible');
+		// this.flag_bg.classList.add('invisible');
 	}
 }
 
