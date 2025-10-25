@@ -486,110 +486,103 @@ class MenuItem {
 }
 
 
-class MenuCheckBox extends MenuItem {
+class MenuFlag extends MenuItem {
 	constructor(parent, html_text) {
 		super(parent, html_text);
 		this.box_size = 12;
 		this.active = false;
 		this.text_width += this.box_size + 4;
-		this.locateCheckBox();
+		this.locateFlag();
 
 		this.toggle = this.toggle.bind(this);
 		this.mask_g.addEventListener('click', this.toggle);
 	}
 
-	static id_prefix = 'mcb';
+	static id_prefix = 'mfb';
 
-	locateCheckBox() {
+	getFlagDims() {
 		const half_size = this.box_size / 2;
 		const ctr_x = this.width - 4 - half_size;
 		const ctr_y = this.height / 2;
+		return [ctr_x, ctr_y, half_size];
+	}
+
+	setWidth(width) {
+		super.setWidth(width);
+		this.locateFlag();
+	}
+
+	select() {
+		this.flag.setAttribute('class', 'visible');
+		this.flag_bg.setAttribute('class', 'visible');
+		this.active = true;
+	}
+
+	deselect() {
+		this.flag.setAttribute('class', 'invisible');
+		this.flag_bg.setAttribute('class', 'invisible');
+		this.active = false;
+	}
+}
+
+
+class MenuCheckBox extends MenuFlag {
+	static id_prefix = 'mcb';
+
+	locateFlag() {
+		const [ctr_x, ctr_y, half_size] = this.getFlagDims();
 		setAttrsSvg(this.flag, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
 		setAttrsSvg(this.flag_bg, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
 		setAttrsSvg(this.checkbox, {x: ctr_x - half_size, y: ctr_y - half_size, width: this.box_size, height: this.box_size});
 	}
 
-	setWidth(width) {
-		super.setWidth(width);
-		this.locateCheckBox();
-	}
-
 	createSvg() {
 		super.createSvg();
 		this.checkbox = attachSvg(this.img, 'rect');
-		this.flag_bg = attachSvg(this.img, 'polyline', {class: 'invisible', stroke: 'white', fill: 'none', 'stroke-width': 4, 'stroke-linecap': 'square'});
+		this.flag_bg = attachSvg(this.img, 'polyline', {class: 'invisible', stroke: 'white', fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'square'});
 		this.flag = attachSvg(this.mask_g, 'polyline', {class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 2, 'stroke-linecap': 'square'});
 	}
 
 	toggle() {
 		this.active ? this.deselect() : this.select();
-		this.active = !this.active;
-	}
-
-	select() {
-		this.flag.setAttribute('class', 'visible');
-		this.flag_bg.setAttribute('class', 'visible');
-		// this.flag_bg.classList.remove('invisible');
-		// this.flag_bg.classList.add('visible');
-	}
-
-	deselect() {
-		this.flag.setAttribute('class', 'invisible');
-		this.flag_bg.setAttribute('class', 'invisible');
-		// this.flag_bg.classList.remove('visible');
-		// this.flag_bg.classList.add('invisible');
 	}
 }
 
 
-class MenuRadioButton extends MenuItem {
+class MenuRadioButton extends MenuFlag {
 	constructor(parent, html_text) {
 		super(parent, html_text);
-		this.box_size = 12;
-		this.active = false;
-		this.text_width += this.box_size + 4;
-		this.locateFlag();
-
-		this.toggle = this.toggle.bind(this);
-		this.mask_g.addEventListener('click', this.toggle);
+		this.mutex_partners = [];
 	}
 
 	static id_prefix = 'mrb';
 
+	static setMutEx(...items) {
+		for (const item of items) {
+			const items_set = new Set(items);
+			items_set.delete(item);
+			item.mutex_partners = [...items_set]
+		}
+		items[0].toggle();
+	}
+
 	locateFlag() {
-		const half_size = this.box_size / 2;
-		const ctr_x = this.width - 4 - half_size;
-		const ctr_y = this.height / 2;
+		const [ctr_x, ctr_y, half_size] = this.getFlagDims();
 		setAttrsSvg(this.flag, {cx: ctr_x, cy: ctr_y});
 		setAttrsSvg(this.flag_bg, {cx: ctr_x, cy: ctr_y});
 		setAttrsSvg(this.flag_box, {cx: ctr_x, cy: ctr_y, r: half_size});
 	}
 
-	setWidth(width) {
-		super.setWidth(width);
-		this.locateFlag();
-	}
-
 	createSvg() {
 		super.createSvg();
 		this.flag_box = attachSvg(this.img, 'circle');
-		this.flag_bg = attachSvg(this.img, 'circle', {class: 'invisible', stroke: 'none', fill: 'white', r: 4});
+		this.flag_bg = attachSvg(this.img, 'circle', {class: 'invisible', stroke: 'none', fill: 'white', r: 3.5});
 		this.flag = attachSvg(this.mask_g, 'circle', {class: 'invisible', stroke: 'none', fill: 'blue', r: 3});
 	}
 
 	toggle() {
-		this.active ? this.deselect() : this.select();
-		this.active = !this.active;
-	}
-
-	select() {
-		this.flag.setAttribute('class', 'visible');
-		this.flag_bg.setAttribute('class', 'visible');
-	}
-
-	deselect() {
-		this.flag.setAttribute('class', 'invisible');
-		this.flag_bg.setAttribute('class', 'invisible');
+		this.select();
+		this.mutex_partners.forEach(partner => partner.deselect());
 	}
 }
 
@@ -834,7 +827,11 @@ export const menu_subsubdrop = new SubDropMenu(menu_subdrop, toMenuText('SubSub'
 export const ssdi1 = new MenuItem(menu_subsubdrop, toMenuText('ssdi1', text_dropdown_attrs));
 export const ssdi2 = new MenuItem(menu_subsubdrop, toMenuText('ssdi2', text_dropdown_attrs));
 export const cb = new MenuCheckBox(menu_subsubdrop, toMenuText('checkbox', text_dropdown_attrs));
-export const rb = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton', text_dropdown_attrs));
+export const rb0 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton0', text_dropdown_attrs));
+export const rb1 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton1', text_dropdown_attrs));
+export const rb2 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton2', text_dropdown_attrs));
+
+MenuRadioButton.setMutEx(rb0, rb1, rb2);
 
 menu_drop.setWidth(menu_drop.text_width + 8);
 menu_drop.setHeight(30);
