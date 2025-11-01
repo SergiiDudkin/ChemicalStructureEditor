@@ -418,7 +418,6 @@ class MenuItem {
 
 	createSvg() {
 		this.svg = makeSvg('svg', {width: this.width + 6, height: this.height + 6});
-		// this.svg = makeSvg('svg');
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
 		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
 		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
@@ -478,7 +477,6 @@ class MenuItem {
 	}
 
 	centerText() {
-		// const text = this.img.firstChild;
 		const font_size = this.text.getAttribute('font-size');
 		const y = this.height / 2 + parseInt(font_size) / 8;
 		this.text.setAttribute('y', y);
@@ -731,11 +729,12 @@ class DropMenu extends MenuItem {
 	}
 }
 
+
 class SubDropMenu extends DropMenu {
 	static id_prefix = 'sdm';
 
 	allignHtml() {
-		this.drop_container.style.height = this.parent.constructor.h + 'px';
+		// this.drop_container.style.height = this.parent.constructor.h + 'px';
 		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.drop_container_width + this.constructor.child_margin + 'px';
 		this.hflex.style.top = (this.parent.children.length - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) + 'px';
 	}
@@ -792,9 +791,8 @@ const text_attrs = {
 	'text-anchor': 'middle'
 }
 
-const text_dropdown_extra_attrs ={
+const text_dropdown_extra_attrs = {
 	'font-size': '14px',
-	'font-weight': 'bold',
 }
 
 const text_dropdown_attrs = {...text_attrs, ...text_dropdown_extra_attrs}
