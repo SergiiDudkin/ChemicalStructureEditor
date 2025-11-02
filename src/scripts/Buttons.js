@@ -389,8 +389,8 @@ class MenuItem {
 		this.text_width = Math.round(getTextWidth(html_text));
 		this.width = this.constructor.w;
 		this.height = this.constructor.h;
-		this.margin_ver = this.constructor.margin;
 		this.margin_hor = this.constructor.margin;
+		this.margin_ver = this.constructor.margin;
 
 		this.createSvg();
 		this.createHtml();
@@ -408,6 +408,8 @@ class MenuItem {
 
 	static margin = 6;
 
+	static padding = 4;
+
 	static getBtnNum() {
 		return this.btn_num++;
 	}
@@ -417,7 +419,7 @@ class MenuItem {
 	}
 
 	createSvg() {
-		this.svg = makeSvg('svg', {width: this.width + 6, height: this.height + 6});
+		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
 		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
 		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
@@ -440,7 +442,7 @@ class MenuItem {
 
 	setWidth(width) {
 		this.width = width;
-		setAttrsSvg(this.text, {'text-anchor': 'start', x: 4});
+		setAttrsSvg(this.text, {'text-anchor': 'start', x: this.constructor.padding});
 		this.svg.setAttribute('width', width + this.margin_hor);
 		this.clip_poligon.setAttribute('points', this.getBtnCorners());
 		this.bg.setAttribute('width', this.width + 2);
@@ -489,7 +491,7 @@ class MenuFlag extends MenuItem {
 		super(parent, html_text);
 		this.box_size = 12;
 		this.active = false;
-		this.text_width += this.box_size + 4;
+		this.text_width += this.box_size + this.constructor.padding;
 		this.locateFlag();
 
 		this.toggle = this.toggle.bind(this);
@@ -500,7 +502,7 @@ class MenuFlag extends MenuItem {
 
 	getFlagDims() {
 		const half_size = this.box_size / 2;
-		const ctr_x = this.width - 4 - half_size;
+		const ctr_x = this.width - this.constructor.padding - half_size;
 		const ctr_y = this.height / 2;
 		return [ctr_x, ctr_y, half_size];
 	}
@@ -616,7 +618,6 @@ class DropMenu extends MenuItem {
 	constructor(parent, html_text) {
 		super(parent, html_text);
 		this.clip_path_nums = [];
-		this.children_cnt = 0;
 		this.children = [];
 		this.drop_container_width = this.constructor.w;
 
@@ -633,10 +634,6 @@ class DropMenu extends MenuItem {
 	static child_margin = 2;
 
 	static button_spacing = 0;
-
-	static {
-		[this.cnv_x, this.cnv_y] = cnv.getScreenPoint([0, 0]);
-	}
 
 	getBtnCorners() {
 		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
@@ -657,8 +654,8 @@ class DropMenu extends MenuItem {
 	}
 
 	allignHtml() {
-		this.hflex.style.left = this.drop_container.offsetLeft + 'px';
-		this.hflex.style.top = this.constructor.cnv_y + 'px';
+		this.hflex.style.left = this.origin.x + 'px';
+		this.hflex.style.top = this.origin.y + 'px';
 	}
 
 	initCutDims() {
@@ -669,7 +666,7 @@ class DropMenu extends MenuItem {
 	}
 
 	calcCutLeft() {
-		this.cut_left = this.drop_container.offsetLeft - this.constructor.child_margin - this.constructor.cnv_x;
+		this.cut_left = this.origin.x - this.constructor.child_margin - cnv.x;
 	}
 
 	calcCutRight() {
@@ -682,6 +679,7 @@ class DropMenu extends MenuItem {
 
 	calcCutBottom() {
 		this.cut_bottom = 0;
+		this.children.forEach(child => this.cut_bottom += child.height + child.margin_ver);
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
@@ -700,10 +698,9 @@ class DropMenu extends MenuItem {
 		}
 		child.objref.setMarginHor(this.constructor.child_margin);
 		child.objref.setMarginVer(this.constructor.child_margin);
-		this.cut_bottom = (ch_cnt + 1) * this.height + ch_cnt * this.constructor.button_spacing + this.constructor.child_margin;
-		this.hflex.style.height = this.cut_bottom + 'px';
 		this.hflex.appendChild(child);
 		this.children.push(child.objref);
+		this.calcCutBottom();
 	}
 
 	getMaxChildrenTextWidth() {
@@ -716,8 +713,8 @@ class DropMenu extends MenuItem {
 		for (const child of this.children) {
 			child.setWidth(this.drop_container_width);
 			if (child instanceof SubDropMenu) {
-				child.hflex.style.left = this.hflex.offsetLeft + this.drop_container_width + this.constructor.child_margin + 'px';
-				child.cut_left = this.cut_right - child.constructor.child_margin;
+				child.allignHtml();
+				child.calcCutLeft();
 				child.calcCutRight();
 				child.compressDropContainerWidth();
 			}
@@ -725,7 +722,12 @@ class DropMenu extends MenuItem {
 	}
 
 	compressDropContainerWidth() {
-		this.setChildrenTextWidth(this.getMaxChildrenTextWidth() + 4 * 2);
+		this.setChildrenTextWidth(this.getMaxChildrenTextWidth() + this.constructor.padding * 2);
+	}
+
+	get origin() {
+		const {x, y} = new DOMPoint(0, 0).matrixTransform(this.svg.getScreenCTM());
+		return {x: x, y: cnv.y};
 	}
 }
 
@@ -734,9 +736,8 @@ class SubDropMenu extends DropMenu {
 	static id_prefix = 'sdm';
 
 	allignHtml() {
-		// this.drop_container.style.height = this.parent.constructor.h + 'px';
-		this.hflex.style.left = this.parent.hflex.offsetLeft + this.parent.drop_container_width + this.constructor.child_margin + 'px';
-		this.hflex.style.top = (this.parent.children.length - 1) * (this.parent.constructor.h + this.parent.constructor.button_spacing) + 'px';
+		this.hflex.style.left = this.parent.drop_container_width + this.constructor.child_margin + 'px';
+		this.hflex.style.top = this.origin.y - this.parent.origin.y + 'px';
 	}
 
 	calcCutLeft() {
@@ -744,12 +745,12 @@ class SubDropMenu extends DropMenu {
 	}
 
 	calcCutTop() {
-		this.cut_top = this.parent.cut_top + (this.parent.children.length - 1) * (this.parent.constructor.h + 
-			this.parent.constructor.button_spacing) - this.constructor.child_margin * (!this.parent.cut_top);
+		this.cut_top = Math.max(this.origin.y - cnv.y - this.constructor.child_margin, 0);
 	}
 
 	calcCutBottom() {
-		this.cut_bottom = this.cut_top;
+		super.calcCutBottom();
+		this.cut_bottom += this.origin.y - cnv.y;
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
@@ -763,9 +764,13 @@ class SubDropMenu extends DropMenu {
 		this.drop_container.style.height = this.height + this.margin_ver + 'px';
 	}
 
-	appendChild(child) {
-		super.appendChild(child);
-		this.cut_bottom += this.cut_top + this.constructor.child_margin;
+	get origin() {
+		let {x, y} = this.parent.origin;
+		for (const sibling of this.parent.children) {
+			if (sibling == this) break;
+			y += sibling.height + sibling.margin_ver;
+		}
+		return {x: x + this.parent.drop_container_width + this.constructor.child_margin, y: y};
 	}
 }
 
@@ -810,6 +815,7 @@ export const menu_item = new MenuItem(menu_bar, toMenuText('Menu Item', text_att
 export const menu_btn = new MenuButton(menu_bar, toMenuText('Help', text_attrs));
 export const menu_item0 = new MenuItem(menu_bar, toMenuText('Menu Item', text_attrs));
 
+
 export const mi0 = new MenuItem(menu_drop, toMenuText('mi0', text_dropdown_attrs));
 export const submenu_btn = new MenuButton(menu_drop, toMenuText('Help', text_dropdown_attrs));
 export const menu_subdrop = new SubDropMenu(menu_drop, toMenuText('Subdrop', text_dropdown_attrs));
@@ -837,3 +843,7 @@ menu_drop.compressDropContainerWidth();
 // menu_subdrop.compressDropContainerWidth();
 // menu_subsubdrop.compressDropContainerWidth();
 // menu_drop.setMarginVer(6);
+
+// console.log(menu_drop.getOrig());
+// console.log(menu_subdrop.getOrig());
+// console.log(menu_drop.getContainerOrig());

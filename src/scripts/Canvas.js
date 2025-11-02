@@ -10,6 +10,7 @@ class Canvas {
 		this.hmax = 566;
 
 		this.svgWidth();
+		[this.x, this.y] = this.getScreenPoint([0, 0]);
 		[
 			'svgWidth', 'updateMatrixrf', 'showChessGrid', 'hideGrid'
 		].forEach(method => this[method] = this[method].bind(this));
