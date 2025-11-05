@@ -205,3 +205,7 @@ body {
 .dropcontmenu:hover > .dropflexmenu {
 	display: flex;
 }
+
+.hidden {
+	display: none;
+}

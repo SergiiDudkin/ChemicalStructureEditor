@@ -33,38 +33,7 @@
 			</svg>
 		</div>
 		<div> <!-- id="rightbox"> -->
-			<div id="menubar" class="flex-row"> <!-- Horizontal menu bar -->
-				<div class="dropdown">
-					<svg width="74" height="36" display="block">
-						<mask class="menumsk" id="maskFile">
-							<rect x="0" y="0" width="68" height="30" fill="white" />
-							<text class="but" x="7" y="21" fill="black">File</text>
-						</mask>
-						<g filter="url(#shadow)">
-							<rect class="but brick" id="options" x="0" y="0" width="70" height="32" mask="url(#maskFile)" />
-						</g>
-					</svg>
-					<div class="dropdown-child">
-						<div id="new-file" class="dropdown-btn">New</div>
-						<div id="download-svg" class="dropdown-btn">Save as .svg</div>
-						<div id="download-json" class="dropdown-btn">Save as .json</div>
-						<div class="dropdown-btn">Save as .mol</div>
-						<div id="open-json" class="dropdown-btn">
-							<span>Open .json file</span>
-							<input type="file" accept=".json" id="file-input" class="dropdown-btn" />
-						</div>						
-					</div>
-				</div>
-				<svg width="74" height="36" display="block">
-					<mask class="menumsk" id="maskOptions">
-						<rect x="0" y="0" width="68" height="30" fill="white" />
-						<text class="but" x="7" y="21" fill="black">Options</text>
-					</mask>
-					<g filter="url(#shadow)">
-						<rect id="btn-opt1" class="but brick" id="options" x="0" y="0" width="70" height="32" mask="url(#maskOptions)" />
-					</g>
-				</svg>
-			</div>
+			<div id="menubar" class="flex-row"></div> <!-- Horizontal menu bar -->
 			<div id="canvas-container">
 				<svg id="canvas" width="670" height="570" display="block"> <!-- Main canvas -->
 					<g filter="url(#shadow)">

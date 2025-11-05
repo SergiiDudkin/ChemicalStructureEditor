@@ -15,7 +15,9 @@ import {cnv} from './Canvas.js';
 import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn,
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn,
-	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn
+	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn,
+	menu_bar, menu_file, file_new, save_as_svg, save_as_json, save_as_mol, open_json,
+	menu_view, show_grid, show_control_points, show_mol_info, zoom
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
@@ -23,54 +25,108 @@ import {SelectionChem, pickNode} from './Selection.js';
 import {SelectRect, SelectLasso, pickMol} from './SelectionTools.js';
 
 
-function downloadSvg() { // Download .svg
-	const element = document.createElement('a');
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(cnv.getSvgContent()));
-	element.setAttribute('download', 'molecule.svg');
-	element.click();
-}
-document.getElementById('download-svg').addEventListener('click', downloadSvg);
-
-function downloadJson() { // Download .svg
-	const kwargs = {create: {}};
-	registry.citizens.forEach(cls => kwargs.create[cls.alias] = gatherData(cls.getAllInstanceIDs()));
-	const json_content = JSON.stringify(kwargs, null, '\t');
-	const element = document.createElement('a');
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
-	element.setAttribute('download', 'molecule.json');
-	element.click();
-}
-document.getElementById('download-json').addEventListener('click', downloadJson);
-
 function blankCanvasCmd() {
 	const kwargs = {del: {}};
 	registry.citizens.forEach(cls => kwargs.del[cls.alias] = new Set(cls.getAllInstanceIDs()));
 	return kwargs;
 }
 
-function openJsonFile(event) {
-	const file = event.target.files[0];
-	if (!file) return;
-	const reader = new FileReader();
-	reader.addEventListener('load', event => {
-		const kwargs = JSON.parse(event.target.result);
-		Object.assign(kwargs, blankCanvasCmd());
-		dispatcher.do(kwargs);
-		refreshBondCutouts();
-		registry.classes_vals.forEach(cls => cls.setMaxIdCounter());
-		registry.classes_vals.forEach(cls => {if (cls.reserveCpIds) cls.reserveCpIds();});
-		registry.classes_vals.forEach(cls => {if (cls.reserveId) cls.reserveId();});
-		document.getElementById('file-input').value = null;
-	});
-	reader.readAsText(file);
-}
-document.getElementById('open-json').addEventListener('click', () => document.getElementById('file-input').click());
-document.getElementById('file-input').addEventListener('change', openJsonFile);
 
-function eraseAll() {
-	dispatcher.do(blankCanvasCmd());
+function newFileHandler(btn) {
+	btn.mask_g.addEventListener('click', eraseAll);
+
+	function eraseAll() {
+		dispatcher.do(blankCanvasCmd());
+	}
 }
-document.getElementById('new-file').addEventListener('click', eraseAll);
+
+
+function downloadSvgHandler(btn) {
+	btn.mask_g.addEventListener('click', downloadSvg);
+
+	function downloadSvg() {
+		const element = document.createElement('a');
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(cnv.getSvgContent()));
+		element.setAttribute('download', 'molecule.svg');
+		element.click();
+	}
+}
+
+
+function downloadJsonHandler(btn) {
+	btn.mask_g.addEventListener('click', downloadJson);
+
+	function downloadJson() {
+		const kwargs = {create: {}};
+		registry.citizens.forEach(cls => kwargs.create[cls.alias] = gatherData(cls.getAllInstanceIDs()));
+		const json_content = JSON.stringify(kwargs, null, '\t');
+		const element = document.createElement('a');
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(json_content));
+		element.setAttribute('download', 'molecule.json');
+		element.click();
+	}
+}
+
+
+function openJsonHandler(btn) {
+	menu_bar.insertAdjacentHTML('beforeend', `<input type="file" accept=".json" class="hidden" />`);
+	const json_file_input = menu_bar.lastChild;
+	btn.mask_g.addEventListener('click', () => json_file_input.click());
+	json_file_input.addEventListener('change', openJson);
+
+	function openJson(event) {
+		const file = event.target.files[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.addEventListener('load', event => {
+			const kwargs = JSON.parse(event.target.result);
+			Object.assign(kwargs, blankCanvasCmd());
+			dispatcher.do(kwargs);
+			refreshBondCutouts();
+			registry.classes_vals.forEach(cls => cls.setMaxIdCounter());
+			registry.classes_vals.forEach(cls => {if (cls.reserveCpIds) cls.reserveCpIds();});
+			registry.classes_vals.forEach(cls => {if (cls.reserveId) cls.reserveId();});
+			json_file_input.value = null;
+		});
+		reader.readAsText(file);
+	}
+}
+
+
+function chessGridHandler(btn) {
+	btn.setCallback(callback);
+
+	function callback(is_active) {
+		if (is_active) {
+			cnv.showChessGrid();
+		}
+		else {
+			cnv.hideGrid();
+		}
+	}
+}
+
+
+function controlPointsHandler(btn) {
+	btn.setCallback(callback);
+
+	function callback(is_active) {
+		if (is_active) {
+			showControlPoints();
+		}
+		else {
+			hideControlPoints();
+		}
+	}
+}
+
+
+newFileHandler(file_new);
+downloadSvgHandler(save_as_svg);
+downloadJsonHandler(save_as_json);
+openJsonHandler(open_json);
+chessGridHandler(show_grid);
+controlPointsHandler(show_control_points);
 
 
 function showControlPoints() {
