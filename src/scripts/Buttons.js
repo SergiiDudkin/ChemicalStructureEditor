@@ -427,7 +427,9 @@ class MenuItem {
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
 		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
 		this.mask_g.objref = this;
-		this.bg = attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}); // Button tissue
+		this.bg = attachSvg(this.mask_g, 'rect',
+			{class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}
+		); // Button tissue
 	}
 
 	createHtml() {
@@ -493,7 +495,7 @@ class MenuFlag extends MenuItem {
 		this.active = false;
 		this.text_width += this.box_size + this.constructor.padding;
 		this.locateFlag();
-		this.callback = (is_active) => {};
+		this.callback = (is_active) => {}; // eslint-disable-line no-unused-vars
 
 		this.toggle = this.toggle.bind(this);
 		this.mask_g.addEventListener('click', this.toggle);
@@ -540,16 +542,26 @@ class MenuCheckBox extends MenuFlag {
 
 	locateFlag() {
 		const [ctr_x, ctr_y, half_size] = this.getFlagDims();
-		setAttrsSvg(this.flag, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
-		setAttrsSvg(this.flag_bg, {points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`});
-		setAttrsSvg(this.checkbox, {x: ctr_x - half_size, y: ctr_y - half_size, width: this.box_size, height: this.box_size});
+		setAttrsSvg(this.flag,
+			{points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`}
+		);
+		setAttrsSvg(this.flag_bg,
+			{points: `${ctr_x - 4},${ctr_y - 2} ${ctr_x + 1},${ctr_y + 2} ${ctr_x + 6},${ctr_y - 7}`}
+		);
+		setAttrsSvg(this.checkbox,
+			{x: ctr_x - half_size, y: ctr_y - half_size, width: this.box_size, height: this.box_size}
+		);
 	}
 
 	createSvg() {
 		super.createSvg();
 		this.checkbox = attachSvg(this.img, 'rect');
-		this.flag_bg = attachSvg(this.img, 'polyline', {class: 'invisible', stroke: 'white', fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'square'});
-		this.flag = attachSvg(this.mask_g, 'polyline', {class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 2, 'stroke-linecap': 'square'});
+		this.flag_bg = attachSvg(this.img, 'polyline',
+			{class: 'invisible', stroke: 'white', fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'square'}
+		);
+		this.flag = attachSvg(this.mask_g, 'polyline',
+			{class: 'invisible', stroke: 'blue', fill: 'none', 'stroke-width': 2, 'stroke-linecap': 'square'}
+		);
 	}
 
 	toggle() {
@@ -571,7 +583,7 @@ class MenuRadioButton extends MenuFlag {
 		for (const item of items) {
 			const items_set = new Set(items);
 			items_set.delete(item);
-			item.mutex_partners = [...items_set]
+			item.mutex_partners = [...items_set];
 		}
 		items[0].toggle();
 	}
@@ -612,7 +624,8 @@ class MenuButton extends MenuItem {
 	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
-		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(0.94) translate(${-this.width / 2} ${-this.height / 2})`);
+		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${
+			this.height / 2}) scale(0.94) translate(${-this.width / 2} ${-this.height / 2})`);
 		window.addEventListener('mouseup', this.animateBtnUp);
 	}
 
@@ -620,7 +633,8 @@ class MenuButton extends MenuItem {
 	animateBtnUp(event) { // Reset appearance of fancy buttons
 		window.removeEventListener('mouseup', this.animateBtnUp);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${-this.width / 2} ${-this.height / 2})`);
+		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${
+			-this.width / 2} ${-this.height / 2})`);
 	}
 }
 
@@ -720,7 +734,7 @@ class DropMenu extends MenuItem {
 
 	setChildrenTextWidth(width) {
 		this.drop_container_width = width;
-		this.calcCutRight()
+		this.calcCutRight();
 		for (const child of this.children) {
 			child.setWidth(this.drop_container_width);
 			if (child instanceof SubDropMenu) {
@@ -737,6 +751,7 @@ class DropMenu extends MenuItem {
 	}
 
 	get origin() {
+		// eslint-disable-next-line no-unused-vars
 		const {x, y} = new DOMPoint(0, 0).matrixTransform(this.svg.getScreenCTM());
 		return {x: x, y: cnv.y};
 	}
@@ -764,9 +779,9 @@ class SubDropMenu extends DropMenu {
 		this.cut_bottom += this.origin.y - cnv.y;
 	}
 
-	expand(event) { // eslint-disable-line no-unused-vars
+	expand(event) {
 		super.expand(event);
-		this.clip_path_nums.push(cnv.clipRect(this.cut_left, this.cut_top, 
+		this.clip_path_nums.push(cnv.clipRect(this.cut_left, this.cut_top,
 			this.parent.cut_right, Math.min(this.cut_bottom, this.parent.cut_bottom)));
 	}
 
@@ -776,7 +791,7 @@ class SubDropMenu extends DropMenu {
 	}
 
 	get origin() {
-		let {x, y} = this.parent.origin;
+		let {x, y} = this.parent.origin; // eslint-disable-line prefer-const
 		for (const sibling of this.parent.children) {
 			if (sibling == this) break;
 			y += sibling.height + sibling.margin_ver;
@@ -816,13 +831,13 @@ const text_dropdown_attrs = {...text_attrs, ...text_dropdown_extra_attrs};
 const text_menu_extra_attrs = {
 	x: MenuItem.w / 2,
 	'text-anchor': 'middle'
-}
+};
 
 const text_menu_attrs = {...text_attrs, ...text_menu_extra_attrs};
 
 
 function toMenuText(text, attrs) {
-	const svg_text = makeSvg('text', attrs=attrs);
+	const svg_text = makeSvg('text', attrs);
 	svg_text.textContent = text;
 	return svg_text.outerHTML;
 }

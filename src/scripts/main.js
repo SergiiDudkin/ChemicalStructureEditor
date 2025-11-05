@@ -15,9 +15,8 @@ import {cnv} from './Canvas.js';
 import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn,
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn,
-	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn,
-	menu_bar, menu_file, file_new, save_as_svg, save_as_json, save_as_mol, open_json,
-	menu_view, show_grid, show_control_points, show_mol_info, zoom
+	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn, menu_bar, file_new, save_as_svg, save_as_json,
+	open_json, show_grid, show_control_points
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
