@@ -795,17 +795,15 @@ function getTextWidth(html_text) {
 	return width;
 }
 
-// {'text-anchor': 'start', x: this.constructor.padding}
+
 const text_attrs = {
 	'font-family': 'Arial',
 	'font-size': '16px',
 	'font-weight': 'normal',
-	// x: MenuItem.w / 2,
 	x: MenuItem.padding,
 	y: '15',
 	fill: 'black',
 	'dominant-baseline': 'middle',
-	// 'text-anchor': 'middle',
 	'text-anchor': 'start'
 };
 
@@ -854,7 +852,6 @@ export const show_mol_info = new MenuCheckBox(show, toMenuText('mol info window'
 show.compressDropContainerWidth();
 
 
-
 export const zoom = new SubDropMenu(menu_view, toMenuText('zoom', text_dropdown_attrs));
 export const zoom500 = new MenuRadioButton(zoom, toMenuText('500%', text_dropdown_attrs));
 export const zoom200 = new MenuRadioButton(zoom, toMenuText('200%', text_dropdown_attrs));
@@ -863,52 +860,3 @@ export const zoom50 = new MenuRadioButton(zoom, toMenuText('50%', text_dropdown_
 export const zoom25 = new MenuRadioButton(zoom, toMenuText('25%', text_dropdown_attrs));
 zoom.compressDropContainerWidth();
 MenuRadioButton.setMutEx(zoom100, zoom500, zoom200, zoom50, zoom25);
-
-
-
-
-
-// export const menu_drop = new DropMenu(menu_bar, toMenuText('Drop', text_menu_attrs));
-// // export const menu_item = new MenuItem(menu_bar, toMenuText('Menu Item', text_attrs));
-// // export const menu_btn = new MenuButton(menu_bar, toMenuText('Help', text_attrs));
-// // export const menu_item0 = new MenuItem(menu_bar, toMenuText('Menu Item', text_attrs));
-
-
-// export const mi0 = new MenuItem(menu_drop, toMenuText('mi0', text_dropdown_attrs));
-// export const submenu_btn = new MenuButton(menu_drop, toMenuText('Help', text_dropdown_attrs));
-// export const menu_subdrop = new SubDropMenu(menu_drop, toMenuText('Subdrop', text_dropdown_attrs));
-// export const mi1 = new MenuItem(menu_drop, toMenuText('mi1', text_dropdown_attrs));
-// export const mi2 = new MenuItem(menu_drop, toMenuText('mi2', text_dropdown_attrs));
-
-// export const sdi1 = new MenuItem(menu_subdrop, toMenuText('sdi1', text_dropdown_attrs));
-// export const sdi2 = new MenuItem(menu_subdrop, toMenuText('sdi2', text_dropdown_attrs));
-// export const sdibtn = new MenuButton(menu_subdrop, toMenuText('sdibtn', text_dropdown_attrs));
-// export const sdi3 = new MenuItem(menu_subdrop, toMenuText('sdi3', text_dropdown_attrs));
-// export const menu_subsubdrop = new SubDropMenu(menu_subdrop, toMenuText('SubSub', text_dropdown_attrs));
-
-// export const ssdi1 = new MenuItem(menu_subsubdrop, toMenuText('ssdi1', text_dropdown_attrs));
-// export const ssdi2 = new MenuItem(menu_subsubdrop, toMenuText('ssdi2', text_dropdown_attrs));
-// export const cb = new MenuCheckBox(menu_subsubdrop, toMenuText('checkbox', text_dropdown_attrs));
-// export const rb0 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton0', text_dropdown_attrs));
-// export const rb1 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton1', text_dropdown_attrs));
-// export const rb2 = new MenuRadioButton(menu_subsubdrop, toMenuText('radiobutton2', text_dropdown_attrs));
-
-// MenuRadioButton.setMutEx(rb0, rb1, rb2);
-// menu_drop.setHeight(30);
-// menu_subdrop.compressDropContainerWidth();
-
-
-
-// menu_drop.setWidth(menu_drop.text_width + 8);
-
-// menu_drop.compressDropContainerWidth();
-
-// menu_subsubdrop.compressDropContainerWidth();
-// menu_drop.setMarginVer(6);
-
-// console.log(menu_drop.getOrig());
-// console.log(menu_subdrop.getOrig());
-// console.log(menu_drop.getContainerOrig());
-
-
-
