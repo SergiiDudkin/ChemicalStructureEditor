@@ -16,12 +16,13 @@ import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn,
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn,
 	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn, menu_bar, file_new, save_as_svg, save_as_json,
-	open_json, show_grid, show_control_points
+	open_json, show_grid, show_control_points, show_mol_info
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {SelectionChem, pickNode} from './Selection.js';
 import {SelectRect, SelectLasso, pickMol} from './SelectionTools.js';
+import {InfoText} from './Indicator.js';
 
 
 function blankCanvasCmd() {
@@ -120,12 +121,31 @@ function controlPointsHandler(btn) {
 }
 
 
+function molInfoHandler(btn) {
+	btn.setCallback(callback);
+	let info_text = null;
+
+	function callback(is_active) {
+		if (is_active) {
+			info_text = new InfoText('utils');
+			info_text.setText('wewegrg\nrgergerg');
+			info_text.locateText([100, 100]);
+		}
+		else {
+			info_text.delete();
+			info_text = null;
+		}
+	}
+}
+
+
 newFileHandler(file_new);
 downloadSvgHandler(save_as_svg);
 downloadJsonHandler(save_as_json);
 openJsonHandler(open_json);
 chessGridHandler(show_grid);
 controlPointsHandler(show_control_points);
+molInfoHandler(show_mol_info);
 
 
 function showControlPoints() {
