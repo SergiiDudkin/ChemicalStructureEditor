@@ -5,14 +5,15 @@ import {ChemBond} from './ChemBond.js';
 import {cnv} from './Canvas.js';
 import {TransformTool} from './TransformTool.js';
 import {Indicator} from './Indicator.js';
-import {editStructure} from './Executor.js';
+import {editStructure, checkFwChange} from './Executor.js';
 import {vecSum, vecDif, vecMul, vecLen, MOVE} from './Geometry.js';
 import {
 	separateUnrecognized, sumFormula, hillToStr, toHillSystem, formulaToFw, computeElementalComposition
 } from './ChemParser.js';
-import {invertCmd} from './Dispatcher.js';
+import {invertCmd, DO, UNDO, REDO} from './Dispatcher.js';
 import {registry} from './BaseClasses.js';
 import {ControlPoint} from './ControlPoints.js';
+import {InfoText} from './Indicator.js';
 
 
 function objsUnderShape(cls, cover) {
@@ -288,9 +289,10 @@ class SelectionBase {
 		this.postAction();
 	}
 
-	undoRedo(cmd, is_undo) {
+	undoRedo(cmd, src) {
+		if (src == DO) return;
 		if (this.highlights.hasChildNodes()) {
-			if (this.dispatcher.ptr + is_undo <= this.bottom_ptr) {
+			if (this.dispatcher.ptr + (src == UNDO) <= this.bottom_ptr) {
 				this.removeTransformTool();
 				this.addTransformTool();
 			}
@@ -371,7 +373,7 @@ class SelectionShape extends SelectionBase {
 export class SelectionChem extends SelectionShape {
 	static classes = [...super.classes, ...registry.notShapes.toSorted((a, b) => (b === ChemNode) - (a === ChemNode))];
 
-	static event_handlers = {...super.event_handlers, keyUpHandler: 'keyup'};
+	static event_handlers = {...super.event_handlers, keyUpHandler: 'keyup', toggleMolInfoWin: null};
 
 	static atomsbonds_names = registry.notShapes.map(cls => cls.alias);
 
@@ -382,6 +384,37 @@ export class SelectionChem extends SelectionShape {
 	setSelectedItem(item) {
 		if (item instanceof ChemBond) this.atoms = item.nodes.map(node => node.id);
 		super.setSelectedItem(item);
+	}
+
+	toggleMolInfoWin(is_active) {
+		if (is_active) {
+			this.info_text = new InfoText('utils');
+			this.info_text.locateText([100, 100]);
+			this.updateMolInfoWin();
+		}
+		else {
+			this.info_text.delete();
+			this.info_text = null;
+		}
+	}
+
+	updateMolInfoWin() {
+		if (this.info_text) this.info_text.setText(this.computeMolInfo());
+	}
+
+	highlight() {
+		super.highlight();
+		this.updateMolInfoWin();
+	}
+
+	dehighlight() {
+		super.dehighlight();
+		this.updateMolInfoWin();
+	}
+
+	deselect() {
+		super.deselect();
+		this.updateMolInfoWin();
 	}
 
 	eventsOn() {
@@ -506,8 +539,7 @@ export class SelectionChem extends SelectionShape {
 	}
 
 	computeFormula() {
-		const atoms = this.atoms.length ? [...this.atoms] : [...document.getElementById('sensors_a').children]
-			.map(el => el.objref.id);
+		const atoms = this.atoms.length ? [...this.atoms] : ChemNode.getAllInstanceIDs().filter(id => id[0] == 'a');
 		return atoms.reduce(
 			(acc, atom_id) => sumFormula(acc, document.getElementById(atom_id).objref.formula), {}
 		);
@@ -521,14 +553,14 @@ export class SelectionChem extends SelectionShape {
 		const el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`)
 			.join(', ');
 		const str_output =
-`	Brutto formula 
-	${hill_string}
-
-	Fw
-	${fw}
-
-	Elemental composition
-	${el_comp}${hill_unrecognized.length ? '\n\t\n\tUnrecognized part\n\t' + hill_unrecognized : ''}`;
+`Brutto formula 
+${hill_string}
+---
+Fw
+${fw}
+---
+Elemental composition
+${el_comp}${hill_unrecognized.length ? '\n\t\n\tUnrecognized part\n\t' + hill_unrecognized : ''}`;
 		return str_output;
 	}
 
@@ -557,5 +589,10 @@ export class SelectionChem extends SelectionShape {
 		kwargs.del.atoms.forEach(atom_id => document.getElementById(atom_id).objref.connections
 			.forEach(bond => kwargs.del.bonds.add(bond.id)));
 		return kwargs;
+	}
+
+	undoRedo(cmd, src) {
+		super.undoRedo(cmd, src);
+		if (checkFwChange(cmd)) this.updateMolInfoWin();
 	}
 }

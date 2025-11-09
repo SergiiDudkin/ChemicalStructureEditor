@@ -22,7 +22,9 @@ import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
 import {SelectionChem, pickNode} from './Selection.js';
 import {SelectRect, SelectLasso, pickMol} from './SelectionTools.js';
-import {InfoText} from './Indicator.js';
+
+
+const selection = new SelectionChem(dispatcher);
 
 
 function blankCanvasCmd() {
@@ -122,20 +124,7 @@ function controlPointsHandler(btn) {
 
 
 function molInfoHandler(btn) {
-	btn.setCallback(callback);
-	let info_text = null;
-
-	function callback(is_active) {
-		if (is_active) {
-			info_text = new InfoText('utils');
-			info_text.setText('wewegrg\nrgergerg');
-			info_text.locateText([100, 100]);
-		}
-		else {
-			info_text.delete();
-			info_text = null;
-		}
-	}
+	btn.setCallback(selection.toggleMolInfoWin);
 }
 
 
@@ -154,15 +143,6 @@ function showControlPoints() {
 
 function hideControlPoints() {
 	document.styleSheets[0].cssRules[2].style.opacity = 0;
-}
-
-
-function getCursorAtom(event, atomtext) {
-	const cursoratom = new ChemNode('cursoratom', ...cnv.clampEventToCnv(event), '@' + atomtext);
-	cursoratom.parse();
-	cursoratom.renderText();
-	cursoratom.eventsOff();
-	return cursoratom;
 }
 
 const standard_bondlength = 40;
@@ -202,6 +182,14 @@ function chemNodeHandler(elbtn) {
 		cursoratom = getCursorAtom(event, atomtext);
 		window.addEventListener('mousemove', movElem);
 		window.addEventListener('mousedown', setElem);
+	}
+
+	function getCursorAtom(event, atomtext) {
+		const cursoratom = new ChemNode('cursor_a0', ...cnv.clampEventToCnv(event), '@' + atomtext);
+		cursoratom.parse();
+		cursoratom.renderText();
+		cursoratom.eventsOff();
+		return cursoratom;
 	}
 
 	function movElem(event) { // Move cursor atom
@@ -437,13 +425,8 @@ function textHandler(textbtn) {
 
 
 function polygonHandler(polygonbtn, num, alternate=false) {
-	function generateIds() {
-		const node_ids = Array.from({length: num}, () => ChemNode.getNewId());
-		const bond_ids = Array.from({length: num}, () => ChemBond.getNewId());
-		return [node_ids, bond_ids];
-	}
-
-	const [cur_node_ids, cur_bond_ids] = generateIds();
+	const cur_node_ids = [...Array(num).keys()].map(i => 'cursor_a' + i);
+	const cur_bond_ids = [...Array(num).keys()].map(i => 'cursor_b' + i);
 	let node, mo_st, common_bond, common_node, new_node_ids, new_bond_ids;
 	let prev_ctr = [,,];
 	const vertex_angle = polygonAngle(num);
@@ -469,8 +452,9 @@ function polygonHandler(polygonbtn, num, alternate=false) {
 		editStructure({transforms: [[MOVE, {atoms: new Set(cur_node_ids)}, {moving_vec: moving_vec}]]});
 	}
 
-	function setPolygon(event) { // Move cursor polygon
-		[new_node_ids, new_bond_ids] = generateIds();
+	function setPolygon(event) {
+		new_node_ids = Array.from({length: num}, () => ChemNode.getNewId());
+		new_bond_ids = Array.from({length: num}, () => ChemBond.getNewId());
 		if (cnv.isClicked(event)) { // Click inside the canvas
 			const [pt, node] = pickNodePoint(event);
 			if (node) {
@@ -774,9 +758,6 @@ function multipointHandler(btn, ShapeCls) {
 		return {create: {[ShapeCls.alias]: {[ShapeCls.new_id]: [points]}}};
 	}
 }
-
-
-const selection = new SelectionChem(dispatcher);
 
 
 function transformHandler(btn, SelectTool=null) {

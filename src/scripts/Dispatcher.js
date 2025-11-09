@@ -48,9 +48,14 @@ export function invertCmd(kwargs_dir) {
 }
 
 
+export const DO = 1;
+export const REDO = 2;
+export const UNDO = 3;
+
+
 class Dispatcher {
 	// eslint-disable-next-line no-unused-vars
-	constructor(executor, inverter, postaction = () => void 0, callback = (cmd, is_undo) => void 0) {
+	constructor(executor, inverter, postaction = () => void 0, callback = (cmd, src) => void 0) {
 		this.commands = [];
 		this.ptr = 0;
 		this.executor = executor;
@@ -70,20 +75,21 @@ class Dispatcher {
 		const kwargs_rev = this.inverter(kwargs_dir);
 		this.executor(kwargs_dir);
 		this.addCmd(kwargs_dir, kwargs_rev);
+		this.callback(kwargs_dir, DO);
 	}
 
 	redo() {
 		if (this.ptr >= this.commands.length) return;
 		const args_rev = this.commands[this.ptr++][0]; // Fetch command
 		this.executor(args_rev); // Execute the given function with args
-		this.callback(args_rev, false);
+		this.callback(args_rev, REDO);
 	}
 
 	undo() {
 		if (this.ptr <= 0) return;
 		const args_dir = this.commands[--this.ptr][1]; // Fetch command
 		this.executor(args_dir); // Execute the given function with args
-		this.callback(args_dir, true);
+		this.callback(args_dir, UNDO);
 	}
 
 	keyHandler(event) {

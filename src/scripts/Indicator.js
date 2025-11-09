@@ -62,11 +62,16 @@ export class InfoText extends DeletableAbortable {
 		super();
 		this.xy = [0, 0];
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
-		this.text = attachSvg(document.getElementById(parent_id), 'text',
-			{style: styleToString(this.constructor.textstyle), id: 'indicator', x: this.xy[0], y: this.xy[1]});
+		this.text = attachSvg(document.getElementById(parent_id), 'text', {
+			style: styleToString(this.constructor.textstyle), 
+			id: 'indicator', 
+			'class': 'sympoi', 
+			x: this.xy[0], 
+			y: this.xy[1]
+		});
 
 		['moving', 'finishMoving', 'startMoving'].forEach(method => this[method] = this[method].bind(this));
-		this.text.addEventListener('mousedown', this.startMoving, this.signal_opt);
+		this.rect.addEventListener('mousedown', this.startMoving, this.signal_opt);
 	}
 
 	static textstyle = {
@@ -76,16 +81,21 @@ export class InfoText extends DeletableAbortable {
 		'font-weight': 'bold'
 	};
 
-	setText(text, pt=[100, 100]) {
+	setText(text) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
 		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: this.xy[0], dy: '-1.2em'})
 			.appendChild(document.createTextNode(line)));
+		this.allignText();
 	}
 
 	locateText(pt) {
 		this.pt = pt;
+		this.allignText();
+	}
+
+	allignText() {
 		let bbox = this.text.getBBox();
-		this.xy = vecSum(this.xy, vecDif(this.getAnchor(this.text.getBBox()), pt));
+		this.xy = vecSum(this.xy, vecDif(this.getAnchor(this.text.getBBox()), this.pt));
 		setAttrsSvg(this.text, {y: this.xy[1]});
 		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: this.xy[0]}));
 		this.locateBg();

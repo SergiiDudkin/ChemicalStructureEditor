@@ -4,8 +4,15 @@ import {STRETCH, transform_funcs} from './Geometry.js';
 import {registry} from './BaseClasses.js';
 
 
+export function editStructure(cmd) {
+	const [chem_kwargs, shape_kwargs] = splitCmd(cmd);
+	editChem(chem_kwargs);
+	editShapes(shape_kwargs);
+}
+
+
 // eslint-disable-next-line no-unused-vars
-export function editStructure({create={}, del={}, alter={}, transforms=new Array()}) {
+function splitCmd({create={}, del={}, alter={}, transforms=new Array()}) {
 	const chem_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
 	const shape_kwargs = {create: {}, del: {}, alter: {}, transforms: []};
 
@@ -21,9 +28,7 @@ export function editStructure({create={}, del={}, alter={}, transforms=new Array
 			[chem_kwargs[subcmd_name], shape_kwargs[subcmd_name]] = sortoutClasses(subcmd_val);
 		}
 	}
-
-	editChem(chem_kwargs);
-	editShapes(shape_kwargs);
+	return [chem_kwargs, shape_kwargs];
 }
 
 
@@ -34,6 +39,20 @@ function sortoutClasses(obj) {
 		(registry.classes[cls_alias].shape ? shape : chem)[cls_alias] = content;
 	}
 	return [chem, shape];
+}
+
+
+export function checkFwChange(cmd) {
+	const chem_kwargs = splitCmd(cmd)[0];
+	delete chem_kwargs.transforms;
+	let is_changed = false;
+	for (const [subcmd_name, subcmd_val] of Object.entries(chem_kwargs)) {
+		for (const [cls_alias, content] of Object.entries(subcmd_val)) {
+			const tested_val = (content instanceof Set) ? content.size : Object.keys(content).length;
+			is_changed |= tested_val > 0;
+		}
+	}
+	return is_changed;
 }
 
 
