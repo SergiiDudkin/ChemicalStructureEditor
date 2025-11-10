@@ -196,7 +196,6 @@ body {
 
 .dropflexmenu {
 	display: none;
-/*	display: flex;*/
 	flex-direction: column;
 	position: absolute;
 }
@@ -208,4 +207,12 @@ body {
 
 .hidden {
 	display: none;
+}
+
+.grab:hover {
+	cursor: grab;
+}
+
+.grab:active {
+	cursor: grabbing;
 }

@@ -4,63 +4,11 @@ import {styleToString} from './ChemParser.js';
 import {vecSum, vecDif} from './Geometry.js';
 
 
-export class Indicator extends DeletableAbortable {
-	constructor(parent_id) {
-		super();
-		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
-		this.text = attachSvg(document.getElementById(parent_id), 'text',
-			{style: styleToString(this.constructor.textstyle), id: 'indicator'});
-		this.delete = this.delete.bind(this);
-		window.addEventListener('mouseup', this.delete, this.signal_opt);
-	}
-
-	static textstyle = {
-		fill: 'white',
-		'font-family': 'Arial',
-		'font-size': '12px',
-		'font-weight': 'bold'
-	};
-
-	setText(event, text) {
-		while (this.text.childElementCount) this.text.lastChild.remove();
-		const pt = cnv.getSvgPoint(event);
-		setAttrsSvg(this.text, {x: pt[0], y: pt[1]});
-		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: pt[0], dy: `${-1.2}em`})
-			.appendChild(document.createTextNode(line)));
-		let bbox = this.text.getBBox();
-		[...this.text.children].forEach(tspan => setAttrsSvg(tspan, {x: pt[0] * 2 + 4 - bbox.x - bbox.width / 2}));
-		bbox = this.text.getBBox();
-		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});
-	}
-
-	showPt(event, [x, y]) {
-		this.setText(event, `x: ${x}\ny: ${y}`);
-	}
-
-	showDelta(event, [x, y]) {
-		this.setText(event, `\u0394x: ${x}\n\u0394y: ${y}`);
-	}
-
-	showPercent(event, percent) {
-		this.setText(event, `${percent}%`);
-	}
-
-	showDegree(event, degree) {
-		this.setText(event, `${degree} \u00B0`);
-	}
-
-	delete() {
-		this.rect.remove();
-		this.text.remove();
-		super.delete();
-	}
-}
-
-
-export class InfoText extends DeletableAbortable {
+export class BaseInfoText extends DeletableAbortable {
 	constructor(parent_id) {
 		super();
 		this.xy = [0, 0];
+		this.pt = [0, 0];
 		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
 		this.text = attachSvg(document.getElementById(parent_id), 'text', {
 			style: styleToString(this.constructor.textstyle), 
@@ -69,9 +17,6 @@ export class InfoText extends DeletableAbortable {
 			x: this.xy[0], 
 			y: this.xy[1]
 		});
-
-		['moving', 'finishMoving', 'startMoving'].forEach(method => this[method] = this[method].bind(this));
-		this.rect.addEventListener('mousedown', this.startMoving, this.signal_opt);
 	}
 
 	static textstyle = {
@@ -83,7 +28,7 @@ export class InfoText extends DeletableAbortable {
 
 	setText(text) {
 		while (this.text.childElementCount) this.text.lastChild.remove();
-		text.split('\n').toReversed().forEach((line) => attachSvg(this.text, 'tspan', {x: this.xy[0], dy: '-1.2em'})
+		text.split('\n').forEach((line) => attachSvg(this.text, 'tspan', {x: this.xy[0], dy: '1.2em'})
 			.appendChild(document.createTextNode(line)));
 		this.allignText();
 	}
@@ -102,12 +47,34 @@ export class InfoText extends DeletableAbortable {
 	}
 
 	getAnchor(bbox) {
-		return [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2]
+		throw new Error('Override the abstract method!');
 	}
 
 	locateBg() {
 		const bbox = this.text.getBBox();
 		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});
+	}
+
+	delete() {
+		this.rect.remove();
+		this.text.remove();
+		super.delete();
+	}
+}
+
+
+export class MolInfoWin extends BaseInfoText {
+	constructor(parent_id) {
+		super(parent_id);
+
+		this.rect.setAttribute('class', 'grab');
+
+		['moving', 'finishMoving', 'startMoving'].forEach(method => this[method] = this[method].bind(this));
+		this.rect.addEventListener('mousedown', this.startMoving, this.signal_opt);
+	}
+
+	getAnchor(bbox) {
+		return [bbox.x, bbox.y]
 	}
 
 	startMoving(event) {
@@ -126,10 +93,39 @@ export class InfoText extends DeletableAbortable {
 		window.removeEventListener('mousemove', this.moving);
 		window.removeEventListener('mouseup', this.finishMoving);
 	}
+}
 
-	delete() {
-		this.rect.remove();
-		this.text.remove();
-		super.delete();
+
+export class Indicator extends BaseInfoText {
+	constructor(parent_id) {
+		super(parent_id);
+
+		this.delete = this.delete.bind(this);
+		window.addEventListener('mouseup', this.delete, this.signal_opt);
+	}
+
+	getAnchor(bbox) {
+		return [bbox.x + bbox.width / 2 - 5, bbox.y + bbox.height + 10]
+	}
+
+	setAndLocateText(event, text) {
+		this.setText(text);
+		this.locateText(cnv.getSvgPoint(event));
+	}
+
+	showPt(event, [x, y]) {
+		this.setAndLocateText(event, `x: ${x}\ny: ${y}`);
+	}
+
+	showDelta(event, [x, y]) {
+		this.setAndLocateText(event, `\u0394x: ${x}\n\u0394y: ${y}`);
+	}
+
+	showPercent(event, percent) {
+		this.setAndLocateText(event, `${percent}%`);
+	}
+
+	showDegree(event, degree) {
+		this.setAndLocateText(event, `${degree} \u00B0`);
 	}
 }

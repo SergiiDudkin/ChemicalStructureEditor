@@ -13,7 +13,7 @@ import {
 import {invertCmd, DO, UNDO, REDO} from './Dispatcher.js';
 import {registry} from './BaseClasses.js';
 import {ControlPoint} from './ControlPoints.js';
-import {InfoText} from './Indicator.js';
+import {MolInfoWin} from './Indicator.js';
 
 
 function objsUnderShape(cls, cover) {
@@ -388,7 +388,7 @@ export class SelectionChem extends SelectionShape {
 
 	toggleMolInfoWin(is_active) {
 		if (is_active) {
-			this.info_text = new InfoText('utils');
+			this.info_text = new MolInfoWin('utils');
 			this.info_text.locateText([100, 100]);
 			this.updateMolInfoWin();
 		}
