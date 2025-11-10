@@ -1,5 +1,6 @@
 import {makeSvg, attachSvg, setAttrsSvg} from './Utils.js';
 import {cnv} from './Canvas.js';
+import {styleToString} from './ChemParser.js';
 
 
 class BaseButton {
@@ -837,9 +838,7 @@ const text_menu_attrs = {...text_attrs, ...text_menu_extra_attrs};
 
 
 function toMenuText(text, attrs) {
-	const svg_text = makeSvg('text', attrs);
-	svg_text.textContent = text;
-	return svg_text.outerHTML;
+	return `<text ${styleToString(attrs, {}, '=', ' ', '"')}>${text}</text>`;
 }
 
 

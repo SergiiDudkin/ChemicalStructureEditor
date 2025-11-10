@@ -75,10 +75,12 @@ export function buildBracketTree(tokens) {
 	return bracket_tree;
 }
 
-export function styleToString(styledict, extras={}) {
+
+export function styleToString(styledict, extras={}, entry_sep=':', item_sep=';', quotes='') {
 	const aug_styledict = Object.assign({...styledict}, extras);
-	return Object.entries(aug_styledict).map(entry => entry.join(':')).join(';');
+	return Object.entries(aug_styledict).map(([key, val]) => key + entry_sep + quotes + val + quotes).join(item_sep);
 }
+
 
 function styleText(text_arr, parent, styledict, [x, y]=[0, 0], center=false) {
 	// Render text_arr
