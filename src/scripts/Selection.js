@@ -547,20 +547,23 @@ export class SelectionChem extends SelectionShape {
 
 	computeMolInfo() {
 		const [formula, unrecognized] = separateUnrecognized(this.computeFormula());
-		const hill_string = hillToStr(toHillSystem(formula));
+		let hill_string = hillToStr(toHillSystem(formula));
 		const hill_unrecognized = hillToStr(toHillSystem(unrecognized));
-		const fw = formulaToFw(formula);
-		const el_comp = computeElementalComposition(formula).map(([el, part]) => `${el}: ${(part * 100).toFixed(2)}%`)
+		let fw = formulaToFw(formula);
+		let el_comp = computeElementalComposition(formula).map(([el, part], i) => `${i % 3 == 0 ? '\n' : ''}${el}: ${(part * 100).toFixed(2)}%`)
 			.join(', ');
+		if (fw === 0) {
+			[hill_string, fw, el_comp] = [' -', ' -', ' -']
+		}
 		const str_output =
-`Brutto formula 
+`Brutto formula
 ${hill_string}
----
+ 
 Fw
 ${fw}
----
+ 
 Elemental composition
-${el_comp}${hill_unrecognized.length ? '\n\t\n\tUnrecognized part\n\t' + hill_unrecognized : ''}`;
+${el_comp}${hill_unrecognized.length ? '\n \nUnrecognized part\n' + hill_unrecognized : ''}`;
 		return str_output;
 	}
 
