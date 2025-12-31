@@ -23,9 +23,7 @@ class Canvas {
 		this.wmax = this.mainframe.offsetWidth - 36;
 		this.canvbckgrnd.setAttribute("width", this.wmax);
 		this.svg.setAttribute("width", this.wmax + 4 + 100);
-		// this.cnvcontainer.setAttribute("width", this.wmax + 4 + 'px');
 		this.cnvcontainer.style.width = this.wmax + 4 + 'px';
-		// this.cnvcontainer.setAttribute("flex-basis", this.wmax + 4);
 		this.renderClipPath();
 		this.updateMatrixrf();
 	}
