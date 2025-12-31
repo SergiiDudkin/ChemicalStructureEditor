@@ -1,6 +1,11 @@
+html {
+	height: 100%;
+}
 body {
-	height: auto;
-	margin: 6px 4px 4px 6px;
+	height: inherit;
+	padding: 6px 6px 6px 6px;
+	margin: 0;
+	box-sizing: border-box;
 	background-image: linear-gradient(90deg, #8ca698, #776581);
 }
 .brick {
@@ -40,7 +45,7 @@ body {
 	flex-direction: row;
 }
 #mainframe {
-	height: 606px;
+	height: inherit;
 }
 #canvas {
 	-webkit-user-select: none;

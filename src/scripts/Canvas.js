@@ -7,8 +7,8 @@ class Canvas {
 
 		this.clip_path_dict = {};
 		this.clip_path_counter = 0;
-		this.hmax = 566;
 
+// this.hmax = 500;
 		this.svgWidth();
 		[this.x, this.y] = this.getScreenPoint([0, 0]);
 		[
@@ -19,9 +19,16 @@ class Canvas {
 	}
 
 	svgWidth(event) { // eslint-disable-line no-unused-vars
+		// console.log(this.mainframe.offsetWidth, document.body.offsetWidth);
+		console.log(document.documentElement.clientWidth);
 		this.wmax = this.mainframe.offsetWidth - 36;
 		this.canvbckgrnd.setAttribute("width", this.wmax);
 		this.svg.setAttribute("width", this.wmax + 4);
+
+		this.hmax = this.mainframe.offsetHeight - 36;
+		this.canvbckgrnd.setAttribute("height", this.hmax);
+		this.svg.setAttribute("height", this.hmax + 4);
+
 		this.renderClipPath();
 		this.updateMatrixrf();
 	}
