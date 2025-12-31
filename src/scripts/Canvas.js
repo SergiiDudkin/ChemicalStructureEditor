@@ -7,8 +7,8 @@ class Canvas {
 
 		this.clip_path_dict = {};
 		this.clip_path_counter = 0;
+		// this.hmax = 566;
 
-// this.hmax = 500;
 		this.svgWidth();
 		[this.x, this.y] = this.getScreenPoint([0, 0]);
 		[
