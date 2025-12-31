@@ -4,6 +4,7 @@ class Canvas {
 		this.canvbckgrnd = document.getElementById('canvbckgrnd');
 		this.cnvclippath = document.getElementById('cnvclippath');
 		this.mainframe = document.getElementById('mainframe'); // ToDo: Replace with "canvas-container"
+		this.cnvcontainer = document.getElementById('canvas-container');
 
 		this.clip_path_dict = {};
 		this.clip_path_counter = 0;
@@ -21,7 +22,10 @@ class Canvas {
 	svgWidth(event) { // eslint-disable-line no-unused-vars
 		this.wmax = this.mainframe.offsetWidth - 36;
 		this.canvbckgrnd.setAttribute("width", this.wmax);
-		this.svg.setAttribute("width", this.wmax + 4);
+		this.svg.setAttribute("width", this.wmax + 4 + 100);
+		// this.cnvcontainer.setAttribute("width", this.wmax + 4 + 'px');
+		this.cnvcontainer.style.width = this.wmax + 4 + 'px';
+		// this.cnvcontainer.setAttribute("flex-basis", this.wmax + 4);
 		this.renderClipPath();
 		this.updateMatrixrf();
 	}

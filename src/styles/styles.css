@@ -42,6 +42,13 @@ body {
 #mainframe {
 	height: 606px;
 }
+#canvas-container {
+	overflow-x: scroll;
+/*	flex-grow: 0;
+	flex-shrink: 0;
+	min-width: 0;*/
+/*	width: 300px;*/
+}
 #canvas {
 	-webkit-user-select: none;
 	-moz-user-select: none;
