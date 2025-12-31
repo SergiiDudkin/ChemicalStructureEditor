@@ -48,7 +48,8 @@ body {
 	height: inherit;
 }
 #canvas-container {
-	overflow-x: scroll;
+	overflow-x: auto;
+	overflow-y: auto;
 }
 #canvas {
 	-webkit-user-select: none;
