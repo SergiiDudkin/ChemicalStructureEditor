@@ -19,15 +19,15 @@ class Canvas {
 	}
 
 	svgWidth(event) { // eslint-disable-line no-unused-vars
-		this.wmax = this.mainframe.offsetWidth - 36;
+		this.wmax = 2000;
 		this.canvbckgrnd.setAttribute("width", this.wmax);
 		this.svg.setAttribute("width", this.wmax + 4);
-		this.cnvcontainer.style.width = this.wmax + 4 + 'px';
+		this.cnvcontainer.style.width = this.mainframe.offsetWidth - 36 + 4 + 'px';
 
-		this.hmax = this.mainframe.offsetHeight - 36;
+		this.hmax = 2000;
 		this.canvbckgrnd.setAttribute("height", this.hmax);
 		this.svg.setAttribute("height", this.hmax + 4);
-		this.cnvcontainer.style.height = this.hmax + 4 + 'px';
+		this.cnvcontainer.style.height = this.mainframe.offsetHeight - 36 + 4 + 'px';
 
 		this.renderClipPath();
 		this.updateMatrixrf();
