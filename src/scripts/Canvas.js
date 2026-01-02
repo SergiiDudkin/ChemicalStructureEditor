@@ -3,30 +3,29 @@ class Canvas {
 		this.svg = document.getElementById('canvas');
 		this.canvbckgrnd = document.getElementById('canvbckgrnd');
 		this.cnvclippath = document.getElementById('cnvclippath');
-		this.mainframe = document.getElementById('mainframe'); // ToDo: Replace with "canvas-container"
+		this.mainframe = document.getElementById('mainframe');
 		this.cnvcontainer = document.getElementById('canvas-container');
 
-		this.clip_path_dict = {};
+		[this.w, this.h] = [794, 1123]; // A4
+		this.clip_path_dict = {bg: [0, 0, this.w, this.h]};
 		this.clip_path_counter = 0;
-
-		this.svgWidth();
+		this.fitSvgSize();
 		[this.x, this.y] = this.getScreenPoint([0, 0]);
 		[
-			'svgWidth', 'updateMatrixrf', 'showChessGrid', 'hideGrid'
+			'fitSvgSize', 'updateMatrixrf', 'showChessGrid', 'hideGrid'
 		].forEach(method => this[method] = this[method].bind(this));
-		window.addEventListener('resize', this.svgWidth);
-		window.addEventListener('scroll', this.updateMatrixrf);
+		window.addEventListener('resize', this.fitSvgSize);
+		window.addEventListener('scroll', this.updateMatrixrf); // ToDo: Consider to prevent the window overflow
+		this.cnvcontainer.addEventListener('scroll', this.fitSvgSize);
 	}
 
-	svgWidth(event) { // eslint-disable-line no-unused-vars
-		this.wmax = 2000;
-		this.canvbckgrnd.setAttribute("width", this.wmax);
-		this.svg.setAttribute("width", this.wmax + 4);
+	fitSvgSize(event) { // eslint-disable-line no-unused-vars
+		this.canvbckgrnd.setAttribute("width", this.w + 2);
+		this.svg.setAttribute("width", this.w + 6);
 		this.cnvcontainer.style.width = this.mainframe.offsetWidth - 36 + 4 + 'px';
 
-		this.hmax = 2000;
-		this.canvbckgrnd.setAttribute("height", this.hmax);
-		this.svg.setAttribute("height", this.hmax + 4);
+		this.canvbckgrnd.setAttribute("height", this.h + 2);
+		this.svg.setAttribute("height", this.h + 6);
 		this.cnvcontainer.style.height = this.mainframe.offsetHeight - 36 + 4 + 'px';
 
 		this.renderClipPath();
@@ -37,27 +36,27 @@ class Canvas {
 		this.matrixrf = this.svg.getScreenCTM().inverse();
 	}
 
-	clip(path) {
+	clipRect(x0, y0, x1, y1) {
 		const clip_path_num = this.clip_path_counter;
-		this.clip_path_dict[this.clip_path_counter++] = path;
+		this.clip_path_dict[this.clip_path_counter++] = [...this.clampToCnv([x0, y0]), ...this.clampToCnv([x1, y1])];
 		this.renderClipPath();
 		return clip_path_num;
 	}
 
-	clipRect(x0, y0, x1, y1) {
-		return this.clip(rectToPath(...this.clampToCnv([x0, y0]), ...this.clampToCnv([x1, y1])));
-	}
-
-	unclip(clip_path_num) {
+	unclipRect(clip_path_num) {
 		delete this.clip_path_dict[clip_path_num];
 		this.renderClipPath();
 	}
 
 	renderClipPath() {
-		this.cnvclippath.setAttribute('d', [
-			rectToPath(0, 0, ...this.clampToCnv([this.wmax, this.hmax])),
-			...Object.values(this.clip_path_dict)
-		].join(' '));
+		this.cnvclippath.setAttribute('d', 
+			Object.values(this.clip_path_dict).map(([x0, y0, x1, y1]) => rectToPath(
+				x0 + this.cnvcontainer.scrollLeft, 
+				y0 + this.cnvcontainer.scrollTop, 
+				x1 + this.cnvcontainer.scrollLeft, 
+				y1 + this.cnvcontainer.scrollTop
+			)).join(' ')
+		);
 	}
 
 	getSvgPoint(event) {
@@ -75,7 +74,7 @@ class Canvas {
 	}
 
 	clampToCnv([x, y]) {
-		return [Math.min(Math.max(x, 0), this.wmax - 2), Math.min(Math.max(y, 0), this.hmax - 2)];
+		return [Math.min(Math.max(x, 0), this.w), Math.min(Math.max(y, 0), this.h)];
 	}
 
 	showChessGrid() {

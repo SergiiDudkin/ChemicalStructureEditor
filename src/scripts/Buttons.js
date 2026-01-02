@@ -164,7 +164,7 @@ class DropButton extends BaseButton {
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
-		cnv.unclip(this.clip_path_num);
+		cnv.unclipRect(this.clip_path_num);
 		this.clip_path_num = null;
 		this.collapsed = true;
 		if (this.active) this.select();
@@ -713,7 +713,7 @@ class DropMenu extends MenuItem {
 	}
 
 	collapse(event) { // eslint-disable-line no-unused-vars
-		this.clip_path_nums.forEach(item => cnv.unclip(item));
+		this.clip_path_nums.forEach(item => cnv.unclipRect(item));
 		this.clip_path_nums = [];
 	}
 
