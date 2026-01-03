@@ -103,6 +103,10 @@ class Canvas {
 			.replaceAll(/ >/gm, '>');
 		return svg_content;
 	}
+
+	zooming(factor) {
+		console.log(factor);
+	}
 }
 
 

@@ -16,7 +16,7 @@ import {
 	selrebtn, sellabtn, selmobtn, elbtns, bondbtn, dbondbtn, upperbtn, lowerbtn, delbtn, textbtn, benzenebtn,
 	pentagonbtn, hexagonbtn, heptagonbtn, arrowbtn, doublearrowbtn, resonancearrowbtn, retroarrowbtn, linebtn,
 	circlebtn, rectbtn, polylinebtn, polygbtn, curvbtn, smoothbtn, menu_bar, file_new, save_as_svg, save_as_json,
-	open_json, show_grid, show_control_points, show_mol_info
+	open_json, show_grid, show_control_points, show_mol_info, zoombtns
 } from './Buttons.js';
 import {dispatcher, invertCmd} from './Dispatcher.js';
 import {refreshBondCutouts} from './BondCutouts.js';
@@ -128,6 +128,11 @@ function molInfoHandler(btn) {
 }
 
 
+function zoomHandler(btn) {
+	btn.setCallback(cnv.zooming);
+}
+
+
 newFileHandler(file_new);
 downloadSvgHandler(save_as_svg);
 downloadJsonHandler(save_as_json);
@@ -135,6 +140,7 @@ openJsonHandler(open_json);
 chessGridHandler(show_grid);
 controlPointsHandler(show_control_points);
 molInfoHandler(show_mol_info);
+for (const zoombtn of zoombtns) zoomHandler(zoombtn);
 
 
 function showControlPoints() {

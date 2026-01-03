@@ -490,6 +490,7 @@ class MenuItem {
 
 
 class MenuFlag extends MenuItem {
+	// Abstract class
 	constructor(parent, html_text) {
 		super(parent, html_text);
 		this.box_size = 12;
@@ -528,13 +529,17 @@ class MenuFlag extends MenuItem {
 		this.active = false;
 	}
 
-	toggle() {
-		this.callback(this.active);
-	}
-
 	setCallback(callback) {
 		this.callback = callback;
 	}
+
+	locateFlag() {
+		throw new Error('Override the abstract method!');
+	}
+
+	toggle() {
+		throw new Error('Override the abstract method!');
+ 	}
 }
 
 
@@ -567,15 +572,16 @@ class MenuCheckBox extends MenuFlag {
 
 	toggle() {
 		this.active ? this.deselect() : this.select();
-		super.toggle();
+		this.callback(this.active);
 	}
 }
 
 
 class MenuRadioButton extends MenuFlag {
-	constructor(parent, html_text) {
+	constructor(parent, html_text, value) {
 		super(parent, html_text);
 		this.mutex_partners = [];
+		this.value = value;
 	}
 
 	static id_prefix = 'mrb';
@@ -606,7 +612,7 @@ class MenuRadioButton extends MenuFlag {
 	toggle() {
 		this.select();
 		this.mutex_partners.forEach(partner => partner.deselect());
-		super.toggle();
+		this.callback(this.value);
 	}
 }
 
@@ -867,10 +873,11 @@ show.compressDropContainerWidth();
 
 
 export const zoom = new SubDropMenu(menu_view, toMenuText('zoom', text_dropdown_attrs));
-export const zoom500 = new MenuRadioButton(zoom, toMenuText('500%', text_dropdown_attrs));
-export const zoom200 = new MenuRadioButton(zoom, toMenuText('200%', text_dropdown_attrs));
-export const zoom100 = new MenuRadioButton(zoom, toMenuText('100%', text_dropdown_attrs));
-export const zoom50 = new MenuRadioButton(zoom, toMenuText('50%', text_dropdown_attrs));
-export const zoom25 = new MenuRadioButton(zoom, toMenuText('25%', text_dropdown_attrs));
+const zoom500 = new MenuRadioButton(zoom, toMenuText('500%', text_dropdown_attrs), 5);
+const zoom200 = new MenuRadioButton(zoom, toMenuText('200%', text_dropdown_attrs), 2);
+const zoom100 = new MenuRadioButton(zoom, toMenuText('100%', text_dropdown_attrs), 1);
+const zoom50 = new MenuRadioButton(zoom, toMenuText('50%', text_dropdown_attrs), 0.5);
+const zoom25 = new MenuRadioButton(zoom, toMenuText('25%', text_dropdown_attrs), 0.25);
 zoom.compressDropContainerWidth();
 MenuRadioButton.setMutEx(zoom100, zoom500, zoom200, zoom50, zoom25);
+export const zoombtns = [zoom500, zoom200, zoom100, zoom50, zoom25];
