@@ -7,12 +7,13 @@ class Canvas {
 		this.cnvcontainer = document.getElementById('canvas-container');
 
 		[this.w, this.h] = [794, 1123]; // A4
+		this.zoom_factor = 1;
 		this.clip_path_dict = {bg: [0, 0, this.w, this.h]};
 		this.clip_path_counter = 0;
 		this.fitSvgSize();
 		[this.x, this.y] = this.getScreenPoint([0, 0]);
 		[
-			'fitSvgSize', 'updateMatrixrf', 'showChessGrid', 'hideGrid'
+			'fitSvgSize', 'updateMatrixrf', 'showChessGrid', 'hideGrid', 'zooming'
 		].forEach(method => this[method] = this[method].bind(this));
 		window.addEventListener('resize', this.fitSvgSize);
 		window.addEventListener('scroll', this.updateMatrixrf); // ToDo: Consider to prevent the window overflow
@@ -21,11 +22,11 @@ class Canvas {
 
 	fitSvgSize(event) { // eslint-disable-line no-unused-vars
 		this.canvbckgrnd.setAttribute("width", this.w + 2);
-		this.svg.setAttribute("width", this.w + 6);
+		this.svg.setAttribute("width", this.w * this.zoom_factor + 6);
 		this.cnvcontainer.style.width = this.mainframe.offsetWidth - 36 + 4 + 'px';
 
 		this.canvbckgrnd.setAttribute("height", this.h + 2);
-		this.svg.setAttribute("height", this.h + 6);
+		this.svg.setAttribute("height", this.h * this.zoom_factor + 6);
 		this.cnvcontainer.style.height = this.mainframe.offsetHeight - 36 + 4 + 'px';
 
 		this.renderClipPath();
@@ -50,12 +51,13 @@ class Canvas {
 
 	renderClipPath() {
 		this.cnvclippath.setAttribute('d', 
-			Object.values(this.clip_path_dict).map(([x0, y0, x1, y1]) => rectToPath(
-				x0 + this.cnvcontainer.scrollLeft, 
-				y0 + this.cnvcontainer.scrollTop, 
-				x1 + this.cnvcontainer.scrollLeft, 
-				y1 + this.cnvcontainer.scrollTop
-			)).join(' ')
+			Object.entries(this.clip_path_dict)
+				.map(([key, [x0, y0, x1, y1]]) => rectToPath(...(key == 'bg') ? [x0, y0, x1, y1] : [
+					(x0 + this.cnvcontainer.scrollLeft) / this.zoom_factor, 
+					(y0 + this.cnvcontainer.scrollTop) / this.zoom_factor, 
+					(x1 + this.cnvcontainer.scrollLeft) / this.zoom_factor, 
+					(y1 + this.cnvcontainer.scrollTop) / this.zoom_factor
+				])).join(' ')
 		);
 	}
 
@@ -104,8 +106,10 @@ class Canvas {
 		return svg_content;
 	}
 
-	zooming(factor) {
-		console.log(factor);
+	zooming(zoom_factor) {
+		this.zoom_factor = zoom_factor;
+		this.svg.setAttribute('viewBox', `0 0 ${this.w + 6 / (zoom_factor)} ${this.h + 6 / (zoom_factor)}`);
+		this.fitSvgSize();
 	}
 }
 
