@@ -51,3 +51,4 @@ function check_dims() {
 
 window.run_debug = run_debug;
 window.check_dims = check_dims;
+window.cnv = cnv;

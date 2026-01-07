@@ -8,6 +8,7 @@ class Canvas {
 
 		[this.w, this.h] = [794, 1123]; // A4
 		this.zoom_factor = 1;
+		this.zoom_callbacks = [];
 		this.clip_path_dict = {bg: [0, 0, this.w, this.h]};
 		this.clip_path_counter = 0;
 		this.fitSvgSize();
@@ -110,6 +111,13 @@ class Canvas {
 		this.zoom_factor = zoom_factor;
 		this.svg.setAttribute('viewBox', `0 0 ${this.w + 6 / (zoom_factor)} ${this.h + 6 / (zoom_factor)}`);
 		this.fitSvgSize();
+		for (const callback of this.zoom_callbacks) {
+			callback(zoom_factor);
+		}
+	}
+
+	addZoomCallback(callback) {
+		this.zoom_callbacks.push(callback);
 	}
 }
 

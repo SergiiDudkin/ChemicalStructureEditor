@@ -1,8 +1,9 @@
-import {attachSvg} from './Utils.js';
+import {attachSvg, setAttrsSvg} from './Utils.js';
 import {
 	transform_funcs, vecLen, unitVec, vecDif, vecSum, vecMul, lineIntersec, vecDotProd
 } from './Geometry.js';
 import {SENSOR, IdHolder} from './BaseClasses.js';
+import {cnv} from './Canvas.js';
 
 
 export class ControlPoint extends IdHolder {
@@ -12,7 +13,7 @@ export class ControlPoint extends IdHolder {
 		this.master = typeof master === "string" ? document.getElementById(master).objref : master;
 
 		this.shape = attachSvg(this.constructor.parents[SENSOR], 'rect',
-			{width: 10, height: 10, class: 'var-opaq', id: id});
+			{width: this.constructor.w, height: this.constructor.h, class: 'var-opaq', id: id});
 		this.shape.objref = this;
 		this.shape.is_shape = true;
 		this.shape.is_cp = true;
@@ -35,6 +36,25 @@ export class ControlPoint extends IdHolder {
 	static citizen = false;
 
 	static shape = true;
+
+	static w = 10;
+
+	static h = 10;
+
+	static rescaleAll(scale_factor) { // Maintain constant size while scaling
+		const ids = this.getAllInstanceIDs();
+		for (const id of ids) {
+			const obj = document.getElementById(id).objref;
+			setAttrsSvg(obj.shape, {width: this.w / scale_factor, height: this.h / scale_factor});
+			obj.render();
+		}
+	}
+
+	static clsInit() {
+		super.clsInit();
+		this.rescaleAll = this.rescaleAll.bind(this);
+		cnv.addZoomCallback(this.rescaleAll);
+	}
 
 	setCtr(xy) {
 		this.xy = [...xy];
