@@ -175,7 +175,6 @@ body {
 }
 .transformjig {
 	stroke: black;
-	stroke-width: 1;
 	fill: gray;
 	cursor: pointer;
 }

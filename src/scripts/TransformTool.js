@@ -23,18 +23,20 @@ export class TransformTool extends DeletableAbortable {
 		const hh = height / 2; // Transform tool half height
 
 		// Dimensions
-		const cl = 8; // Corner rectangle length
-		const sw = 6; // Side rectangle width
-		const sh = 12; // Side rectangle height
-		const aht = 2; // Pivot half thickness
-		const ahl = 14; // Pivot half length
-		const lever_r = 6; // Lever radius
-		this.lever_len = 25; // Distanse from the circle to the nearest side rectangle
+		const cl = 8 / cnv.zoom_factor; // Corner rectangle length
+		const sw = 6 / cnv.zoom_factor; // Side rectangle width
+		const sh = 12 / cnv.zoom_factor; // Side rectangle height
+		const aht = 2 / cnv.zoom_factor; // Pivot half thickness
+		const ahl = 14 / cnv.zoom_factor; // Pivot half length
+		const lever_r = 6 / cnv.zoom_factor; // Lever radius
+		this.lever_len = 25 / cnv.zoom_factor; // Distanse from the circle to the nearest side rectangle
 
 		const pivot_pts = [
 			[aht, aht], [aht, ahl], [-aht, ahl], [-aht, -ahl], [aht, -ahl],
 			[aht, aht], [-ahl, aht], [-ahl, -aht], [ahl, -aht], [ahl, aht]
 		].map(pt => pt.join()).join(' ');
+
+		document.styleSheets[0].cssRules[3].style.strokeWidth = 1 / cnv.zoom_factor;
 
 		const vals = [ // Jigs init data: [ShapeClass, cx, cy, svg_args, callback]
 			[CtrPolygon, cx, cy, {points: pivot_pts, 'fill-rule': 'evenodd'}, this.startMovingPivot], // Pivot
@@ -48,7 +50,7 @@ export class TransformTool extends DeletableAbortable {
 			[CtrRect, cx, cy + hh, {width: sh, height: sw}, this.startStretching], // Bottom rectangle
 			[CtrRect, cx, cy - hh, {width: sh, height: sw}, this.startStretching] // Top rectangle
 		];
-		vals.forEach(item => item[3].class = 'transformjig');
+		vals.forEach(item => item[3].class = 'transformjig var-stroke-width');
 		this.jigs = vals.map(([ShapeClass, cx, cy, svg_args, callback]) =>
 			new ShapeClass('transform-tool', cx, cy, svg_args).render()
 				.addEventListener('mousedown', callback, this.signal_opt)
@@ -239,3 +241,6 @@ export class TransformTool extends DeletableAbortable {
 		super.delete();
 	}
 }
+
+
+// cnv.addZoomCallback((zoom_factor) => document.styleSheets[0].cssRules[3].style.strokeWidth = 1 / zoom_factor);
