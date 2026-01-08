@@ -9,8 +9,10 @@ export class SelectShape extends DeletableAbortable {
 	constructor(parent_id, selection) {
 		super();
 		this.selection = selection;
+		document.styleSheets[0].cssRules[4].style.strokeWidth = 1 / cnv.zoom_factor;
+		document.styleSheets[0].cssRules[4].style.strokeDasharray = 2 / cnv.zoom_factor;
 		this.shape = attachSvg(document.getElementById(parent_id), this.constructor.tag, {
-			class: 'sympoi', 'fill-opacity': 0, stroke: 'blue', 'stroke-dasharray': 2, 'stroke-width': 1
+			class: 'sympoi var-stroke-dash', 'fill-opacity': 0, stroke: 'blue'
 		});
 
 		this.recalc = this.recalc.bind(this);
