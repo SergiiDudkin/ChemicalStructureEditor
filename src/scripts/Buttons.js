@@ -32,8 +32,6 @@ class BaseButton {
 
 	static margin = 6;
 
-	// static btn_corners = '0,0 30,0 30,30 0,30';
-
 	static getBtnNum() {
 		return this.btn_num++;
 	}
@@ -46,13 +44,11 @@ class BaseButton {
 		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
 		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'}); // ToDo: Remove class 'elmask'!
-		// attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
 		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
 		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
 		this.mask_g.objref = this;
-		// attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: 32, height: 32}); // Button tissue
 		this.bg = attachSvg(this.mask_g, 'rect',
 			{class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}
 		); // Button tissue
@@ -91,7 +87,6 @@ class BaseButton {
 	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
-		// this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
 		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${
 			this.height / 2}) scale(0.94) translate(${-this.width / 2} ${-this.height / 2})`);
 		window.addEventListener('mouseup', this.animateBtnUp);
@@ -101,7 +96,6 @@ class BaseButton {
 	animateBtnUp(event) { // Reset appearance of fancy buttons
 		window.removeEventListener('mouseup', this.animateBtnUp);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		// this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
 		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${
 			-this.width / 2} ${-this.height / 2})`);
 	}
@@ -165,12 +159,8 @@ class DropButton extends BaseButton {
 		super(parent, html_text);
 		this.collapsed = true;
 		this.clip_path_num = null;
-		// this.children_cnt = 0;
 		this.children = [];
 		this.drop_container_height = this.constructor.h;
-		// this.cut_right = 0;
-		// this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
-		// this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
 		this.initCutDims();
 
 		this.expand = this.expand.bind(this);
@@ -183,13 +173,9 @@ class DropButton extends BaseButton {
 
 	static id_prefix = 'db';
 
-	// static margin = 2;
-
 	static child_margin = 2;
 
 	static button_spacing = 6;
-
-	// static hflex_term = this.margin - this.child_margin;
 
 	getBtnCorners() {
 		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
@@ -204,7 +190,6 @@ class DropButton extends BaseButton {
 
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflex');
-		// this.hflex.style.top = this.drop_container.offsetTop + 'px';
 		this.drop_container.appendChild(this.hflex);
 
 		this.allignHtml();
@@ -232,12 +217,10 @@ class DropButton extends BaseButton {
 	}
 
 	calcCutTop() {
-		// this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
 		this.cut_top = this.origin.y - this.constructor.child_margin - cnv.y;
 	}
 
 	calcCutBottom() {
-		// this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
 		this.cut_bottom = this.cut_top + this.drop_container_height + this.constructor.child_margin * 2;
 	}
 
@@ -268,13 +251,6 @@ class DropButton extends BaseButton {
 	}
 
 	appendChild(child) {
-		// child.setAttribute('height', 36 - this.constructor.hflex_term);
-		// child.setAttribute('width', 36 - this.constructor.hflex_term);
-		// if (this.children_cnt) this.hflex.lastChild.setAttribute('width', 36);
-		// this.cut_right = ++this.children_cnt * 36 - this.constructor.hflex_term;
-		// this.hflex.style.width = this.children_cnt * 36 + 'px';
-		// this.hflex.appendChild(child);
-
 		const ch_cnt = this.children.length;
 		if (ch_cnt) {
 			this.children[ch_cnt - 1].setMarginHor(this.constructor.button_spacing);
