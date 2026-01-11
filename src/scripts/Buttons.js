@@ -6,6 +6,10 @@ import {styleToString} from './ChemParser.js';
 class BaseButton {
 	constructor(parent, html_text) {
 		this.parent = parent;
+		this.width = this.constructor.w;
+		this.height = this.constructor.h;
+		this.margin_hor = this.constructor.margin;
+		this.margin_ver = this.constructor.margin;
 		this.html_text = html_text;
 		this.active = false;
 
@@ -22,28 +26,43 @@ class BaseButton {
 
 	static id_prefix = 'fb';
 
-	static btn_corners = '0,0 30,0 30,30 0,30';
+	static w = 30;
+
+	static h = 30;
+
+	static margin = 6;
+
+	// static btn_corners = '0,0 30,0 30,30 0,30';
 
 	static getBtnNum() {
 		return this.btn_num++;
 	}
 
+	getBtnCorners() {
+		return `0,0 ${this.width},0 ${this.width},${this.height} 0,${this.height}`;
+	}
+
 	createSvg() {
+		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
-		this.svg = makeSvg('svg', {width: 36, height: 36});
-		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'});
-		attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'}); // ToDo: Remove class 'elmask'!
+		// attachSvg(mask, 'polygon', {points: this.constructor.btn_corners, fill: 'white'}); // White bg
+		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
 		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
 		this.mask_g.objref = this;
-		attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: 32, height: 32}); // Button tissue
+		// attachSvg(this.mask_g, 'rect', {class: 'but brick', x: 0, y: 0, width: 32, height: 32}); // Button tissue
+		this.bg = attachSvg(this.mask_g, 'rect',
+			{class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}
+		); // Button tissue
 		this.selrect = attachSvg(this.mask_g, 'polygon',
-			{class: 'invisible', points: this.constructor.btn_corners, fill: 'none', stroke: 'blue', 'stroke-width': 2}
+			{class: 'invisible', points: this.getBtnCorners(), fill: 'none', stroke: 'blue', 'stroke-width': 2}
 		);
 	}
 
 	createHtml() {
+		this.svg.objref = this;
 		this.parent.appendChild(this.svg);
 	}
 
@@ -51,10 +70,30 @@ class BaseButton {
 		this.img.insertAdjacentHTML('beforeend', html_text);
 	}
 
+	setMarginHor(margin_hor) {
+		this.margin_hor = margin_hor;
+		this.implementWidthOuter();
+	}
+
+	setMarginVer(margin_ver) {
+		this.margin_ver = margin_ver;
+		this.implementHeightOuter();
+	}
+
+	implementWidthOuter() {
+		this.svg.setAttribute('width', this.width + this.margin_hor);
+	}
+
+	implementHeightOuter() {
+		this.svg.setAttribute('height', this.height + this.margin_ver);
+	}
+
 	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
-		this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
+		// this.filter_g.setAttribute('transform', 'translate(16 16) scale(0.94) translate(-16 -16)');
+		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${
+			this.height / 2}) scale(0.94) translate(${-this.width / 2} ${-this.height / 2})`);
 		window.addEventListener('mouseup', this.animateBtnUp);
 	}
 
@@ -62,7 +101,9 @@ class BaseButton {
 	animateBtnUp(event) { // Reset appearance of fancy buttons
 		window.removeEventListener('mouseup', this.animateBtnUp);
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
+		// this.filter_g.setAttribute('transform', 'translate(16 16) scale(1) translate(-16 -16)');
+		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${
+			-this.width / 2} ${-this.height / 2})`);
 	}
 
 	selectCond() {
@@ -113,7 +154,7 @@ class SubButton extends RegularButton {
 	createSvg() {
 		super.createSvg();
 		this.focline = attachSvg(this.mask_g, 'line',
-			{class: 'invisible', x1: 2, y1: 30, x2: 28, y2: 30, stroke: 'blue', 'stroke-width': 2}
+			{class: 'invisible', x1: 2, y1: this.height, x2: this.width - 2, y2: this.height, stroke: 'blue', 'stroke-width': 2}
 		);
 	}
 }
@@ -124,10 +165,13 @@ class DropButton extends BaseButton {
 		super(parent, html_text);
 		this.collapsed = true;
 		this.clip_path_num = null;
-		this.children_cnt = 0;
-		this.cut_right = 0;
-		this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
-		this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
+		// this.children_cnt = 0;
+		this.children = [];
+		this.drop_container_height = this.constructor.h;
+		// this.cut_right = 0;
+		// this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
+		// this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
+		this.initCutDims();
 
 		this.expand = this.expand.bind(this);
 		this.collapse = this.collapse.bind(this);
@@ -139,26 +183,72 @@ class DropButton extends BaseButton {
 
 	static id_prefix = 'db';
 
-	static margin = 2;
+	// static margin = 2;
 
-	static hflex_term = 6 - this.margin;
+	static child_margin = 2;
 
-	static btn_corners = '0,0 30,0 30,25 25,30 0,30';
+	static button_spacing = 6;
+
+	// static hflex_term = this.margin - this.child_margin;
+
+	getBtnCorners() {
+		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
+	}
 
 	createHtml() {
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcont');
 		this.drop_container.appendChild(this.svg);
+		this.drop_container.objref = this;
 		this.parent.appendChild(this.drop_container);
 
 		this.hflex = document.createElement('div');
 		this.hflex.classList.add('dropflex');
-		this.hflex.style.top = this.drop_container.offsetTop + 'px';
+		// this.hflex.style.top = this.drop_container.offsetTop + 'px';
 		this.drop_container.appendChild(this.hflex);
+
+		this.allignHtml();
+	}
+
+	allignHtml() {
+		this.hflex.style.left = this.origin.x + 'px';
+		this.hflex.style.top = this.origin.y + 'px';
+	}
+
+	initCutDims() {
+		this.calcCutLeft();
+		this.calcCutRight();
+		this.calcCutTop();
+		this.calcCutBottom();
+	}
+
+	calcCutLeft() {
+		this.cut_left = 0;
+	}
+
+	calcCutRight() {
+		this.cut_right = 0;
+		this.children.forEach(child => this.cut_right += child.width + child.margin_hor);
+	}
+
+	calcCutTop() {
+		// this.cut_top = this.drop_container.offsetTop - 48 + this.constructor.hflex_term;
+		this.cut_top = this.origin.y - this.constructor.child_margin - cnv.y;
+	}
+
+	calcCutBottom() {
+		// this.cut_bottom = this.drop_container.offsetTop - 6 - this.constructor.hflex_term;
+		this.cut_bottom = this.cut_top + this.drop_container_height + this.constructor.child_margin * 2;
+	}
+
+	get origin() {
+		// eslint-disable-next-line no-unused-vars
+		const {x, y} = new DOMPoint(0, 0).matrixTransform(this.svg.getScreenCTM());
+		return {x: cnv.x, y: y};
 	}
 
 	expand(event) { // eslint-disable-line no-unused-vars
-		this.clip_path_num = cnv.clipRect(0, this.cut_top, this.cut_right, this.cut_bottom);
+		this.clip_path_num = cnv.clipRect(this.cut_left, this.cut_top, this.cut_right, this.cut_bottom);
 		this.collapsed = false;
 		if (this.active) this.deselect();
 	}
@@ -178,12 +268,22 @@ class DropButton extends BaseButton {
 	}
 
 	appendChild(child) {
-		child.setAttribute('height', 36 - this.constructor.hflex_term);
-		child.setAttribute('width', 36 - this.constructor.hflex_term);
-		if (this.children_cnt) this.hflex.lastChild.setAttribute('width', 36);
-		this.cut_right = ++this.children_cnt * 36 - this.constructor.hflex_term;
-		this.hflex.style.width = this.children_cnt * 36 + 'px';
+		// child.setAttribute('height', 36 - this.constructor.hflex_term);
+		// child.setAttribute('width', 36 - this.constructor.hflex_term);
+		// if (this.children_cnt) this.hflex.lastChild.setAttribute('width', 36);
+		// this.cut_right = ++this.children_cnt * 36 - this.constructor.hflex_term;
+		// this.hflex.style.width = this.children_cnt * 36 + 'px';
+		// this.hflex.appendChild(child);
+
+		const ch_cnt = this.children.length;
+		if (ch_cnt) {
+			this.children[ch_cnt - 1].setMarginHor(this.constructor.button_spacing);
+		}
+		child.objref.setMarginHor(this.constructor.child_margin);
+		child.objref.setMarginVer(this.constructor.child_margin);
 		this.hflex.appendChild(child);
+		this.children.push(child.objref);
+		this.calcCutRight();
 	}
 
 	selectCond(subbtn) {
