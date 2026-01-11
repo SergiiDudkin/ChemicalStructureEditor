@@ -9,20 +9,20 @@ export class BaseInfoText extends DeletableAbortable {
 		super();
 		this.xy = [0, 0];
 		this.pt = [0, 0];
-		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black', rx: 4});
+		this.rect = attachSvg(document.getElementById(parent_id), 'rect', {fill: 'black'});
 		this.text = attachSvg(document.getElementById(parent_id), 'text', {
 			style: styleToString(this.constructor.textstyle), 
-			id: 'indicator', 
-			'class': 'sympoi', 
+			'class': 'sympoi var-font-size', 
 			x: this.xy[0], 
 			y: this.xy[1]
 		});
+		this.allignText = this.allignText.bind(this);
+		this.zoom_callback_num = cnv.addZoomCallback((zoom_factor) => this.allignText());
 	}
 
 	static textstyle = {
 		fill: 'white',
 		'font-family': 'Arial',
-		'font-size': '12px',
 		'font-weight': 'bold'
 	};
 
@@ -52,15 +52,25 @@ export class BaseInfoText extends DeletableAbortable {
 
 	locateBg() {
 		const bbox = this.text.getBBox();
-		setAttrsSvg(this.rect, {x: bbox.x - 2, y: bbox.y, width: bbox.width + 4, height: bbox.height + 2});
+		setAttrsSvg(this.rect, {
+			x: bbox.x - 2 / cnv.zoom_factor, 
+			y: bbox.y, 
+			width: bbox.width + 4 / cnv.zoom_factor, 
+			height: bbox.height + 2 / cnv.zoom_factor,
+			rx: 4 / cnv.zoom_factor
+		});
 	}
 
 	delete() {
+		cnv.removeZoomCallback(this.zoom_callback_num);
 		this.rect.remove();
 		this.text.remove();
 		super.delete();
 	}
 }
+
+
+cnv.addZoomCallback((zoom_factor) => document.styleSheets[0].cssRules[5].style.fontSize = `${12 / zoom_factor}px`);
 
 
 export class MolInfoWin extends BaseInfoText {
@@ -105,7 +115,7 @@ export class Indicator extends BaseInfoText {
 	}
 
 	getAnchor(bbox) {
-		return [bbox.x + bbox.width / 2 - 5, bbox.y + bbox.height + 10]
+		return [bbox.x + bbox.width / 2 - 5 / cnv.zoom_factor, bbox.y + bbox.height + 10 / cnv.zoom_factor]
 	}
 
 	setAndLocateText(event, text) {

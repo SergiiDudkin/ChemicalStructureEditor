@@ -220,7 +220,6 @@ body {
 .grab:hover {
 	cursor: grab;
 }
-
 .grab:active {
 	cursor: grabbing;
 }

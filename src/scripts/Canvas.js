@@ -6,9 +6,11 @@ class Canvas {
 		this.mainframe = document.getElementById('mainframe');
 		this.cnvcontainer = document.getElementById('canvas-container');
 
-		[this.w, this.h] = [794, 1123]; // A4
 		this.zoom_factor = 1;
-		this.zoom_callbacks = [];
+		this.zoom_callbacks = {};
+		this.zoom_callback_counter = 0;
+
+		[this.w, this.h] = [794, 1123]; // A4
 		this.clip_path_dict = {bg: [0, 0, this.w, this.h]};
 		this.clip_path_counter = 0;
 		this.fitSvgSize();
@@ -111,13 +113,19 @@ class Canvas {
 		this.zoom_factor = zoom_factor;
 		this.svg.setAttribute('viewBox', `0 0 ${this.w + 6 / (zoom_factor)} ${this.h + 6 / (zoom_factor)}`);
 		this.fitSvgSize();
-		for (const callback of this.zoom_callbacks) {
+		for (const callback of Object.values(this.zoom_callbacks)) {
 			callback(zoom_factor);
 		}
 	}
 
 	addZoomCallback(callback) {
-		this.zoom_callbacks.push(callback);
+		const zoom_callback_num = this.zoom_callback_counter;
+		this.zoom_callbacks[this.zoom_callback_counter++] = callback;
+		return zoom_callback_num;
+	}
+
+	removeZoomCallback(zoom_callback_num) {
+		delete this.zoom_callbacks[zoom_callback_num];
 	}
 }
 
