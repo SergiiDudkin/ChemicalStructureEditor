@@ -43,7 +43,8 @@ class BaseButton {
 	createSvg() {
 		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
-		const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'}); // ToDo: Remove class 'elmask'!
+		// const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'}); // ToDo: Remove class 'elmask'!
+		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
 		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
 		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
@@ -293,10 +294,21 @@ class DropButton extends BaseButton {
 }
 
 
-function toBtnText(text) {
-	return `<text class='but' x='15' y='17' fill='black' dominant-baseline='middle' 
-	text-anchor='middle'>${text}</text>`;
+function toMenuText(text, attrs) {
+	return `<text ${styleToString(attrs, {}, '=', ' ', '"')}>${text}</text>`;
 }
+
+
+const el_text_attrs = {
+	'font-family': 'Arial',
+	'font-size': '14pt',
+	'font-weight': 'bold',
+	x: '15',
+	y: '17',
+	fill: 'black',
+	'dominant-baseline': 'middle',
+	'text-anchor': 'middle'
+};
 
 const toolbar = document.getElementById('toolbar');
 
@@ -328,17 +340,17 @@ const dropelbtn = new DropButton(toolbar, `
 	<line x1="2.0" y1="5.5" x2="9.8" y2="10.0" stroke="black" stroke-width="2" />
 	<line x1="28.0" y1="5.5" x2="20.2" y2="10.0" stroke="black" stroke-width="2" />
 	<text x="15" y="15" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
-	font-size="16px">A</text>
+	font-size="16px" font-weight="bold">A</text>
 `);
-export const elbtns = elbtnseq.map(atom => new SubButton(dropelbtn, toBtnText(atom)));
+export const elbtns = elbtnseq.map(atom => new SubButton(dropelbtn, toMenuText(atom, el_text_attrs)));
 dropelbtn.focusSubbtn(elbtns[0]);
 
 const dropbondbtn = new DropButton(toolbar, `
 	<line x1="11.0" y1="19.0" x2="19.4" y2="10.6" stroke="black" stroke-width="2" />
 	<text x="6.5" y="24.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
-	font-size="12px">C</text>
+	font-size="12px" font-weight="bold">C</text>
 	<text x="23.5" y="7.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Arial" 
-	font-size="12px">C</text>
+	font-size="12px" font-weight="bold">C</text>
 `);
 export const bondbtn = new SubButton(dropbondbtn,
 	'<line x1="4.4" y1="25.6" x2="25.6" y2="4.4" stroke="black" stroke-width="2" />'
@@ -371,7 +383,7 @@ export const textbtn = new RegularButton(toolbar, `
 	<path d=" M 22 6.8 V 23.2 M 18 5 H 20 A 2 2 0 0 1 22 7 A 2 2 0 0 1 24 5 H 26 M 18 25 H 20 A 2 2 0 0 0 22 23 A 2 2 
 	0 0 0 24 25 H 26" stroke="black" stroke-width="1.5" />
 	<text x="12" y="17.5" fill="black" dominant-baseline="middle" text-anchor="middle" font-family="Serif" 
-	font-size="20px">T</text>
+	font-size="20px" font-weight="bold">T</text>
 `);
 
 const dropcycbtn = new DropButton(toolbar, `
@@ -917,11 +929,6 @@ const text_menu_extra_attrs = {
 };
 
 const text_menu_attrs = {...text_attrs, ...text_menu_extra_attrs};
-
-
-function toMenuText(text, attrs) {
-	return `<text ${styleToString(attrs, {}, '=', ' ', '"')}>${text}</text>`;
-}
 
 
 export const menu_file = new DropMenu(menu_bar, toMenuText('File', text_menu_attrs));
