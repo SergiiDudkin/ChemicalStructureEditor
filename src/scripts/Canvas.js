@@ -10,20 +10,27 @@ class Canvas {
 		this.zoom_callbacks = {};
 		this.zoom_callback_counter = 0;
 
+		[
+			'fitSvgSize', 'fitSvgSizeHelper', 'updateMatrixrf', 'showChessGrid', 'hideGrid', 'zooming'
+		].forEach(method => this[method] = this[method].bind(this));
+
 		[this.w, this.h] = [794, 1123]; // A4
 		this.clip_path_dict = {bg: [0, 0, this.w, this.h]};
 		this.clip_path_counter = 0;
 		this.fitSvgSize();
 		[this.x, this.y] = this.getScreenPoint([0, 0]);
-		[
-			'fitSvgSize', 'updateMatrixrf', 'showChessGrid', 'hideGrid', 'zooming'
-		].forEach(method => this[method] = this[method].bind(this));
+		
 		window.addEventListener('resize', this.fitSvgSize);
 		window.addEventListener('scroll', this.updateMatrixrf); // ToDo: Consider to prevent the window overflow
 		this.cnvcontainer.addEventListener('scroll', this.fitSvgSize);
 	}
 
 	fitSvgSize(event) { // eslint-disable-line no-unused-vars
+		this.fitSvgSizeHelper();
+		requestAnimationFrame(this.fitSvgSizeHelper);
+	}
+
+	fitSvgSizeHelper(timestamp) { // eslint-disable-line no-unused-vars
 		this.canvbckgrnd.setAttribute("width", this.w + 2);
 		this.svg.setAttribute("width", this.w * this.zoom_factor + 6);
 		this.cnvcontainer.style.width = this.mainframe.offsetWidth - 36 + 4 + 'px';
