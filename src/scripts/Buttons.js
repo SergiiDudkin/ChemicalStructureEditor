@@ -3,47 +3,14 @@ import {cnv} from './Canvas.js';
 import {styleToString} from './ChemParser.js';
 
 
-class BaseButton {
-	constructor(parent, html_text) {
-		this.parent = parent;
-		this.width = this.constructor.w;
-		this.height = this.constructor.h;
-		this.margin_hor = this.constructor.margin;
-		this.margin_ver = this.constructor.margin;
-		this.html_text = html_text;
-		this.active = false;
-
-		this.createSvg();
-		this.createHtml();
-		this.setImage(html_text);
-
-		this.animateBtnDown = this.animateBtnDown.bind(this);
-		this.animateBtnUp = this.animateBtnUp.bind(this);
-		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
-	}
-
-	static btn_num = 0;
-
-	static id_prefix = 'fb';
-
-	static w = 30;
-
-	static h = 30;
-
-	static margin = 6;
-
+class CommonAbstractBase {
 	static getBtnNum() {
 		return this.btn_num++;
-	}
-
-	getBtnCorners() {
-		return `0,0 ${this.width},0 ${this.width},${this.height} 0,${this.height}`;
 	}
 
 	createSvg() {
 		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
 		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
-		// const mask = attachSvg(this.svg, 'mask', {id: mask_id, class: 'elmsk'}); // ToDo: Remove class 'elmask'!
 		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
 		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
 		this.img = attachSvg(mask, 'g');
@@ -53,9 +20,10 @@ class BaseButton {
 		this.bg = attachSvg(this.mask_g, 'rect',
 			{class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}
 		); // Button tissue
-		this.selrect = attachSvg(this.mask_g, 'polygon',
-			{class: 'invisible', points: this.getBtnCorners(), fill: 'none', stroke: 'blue', 'stroke-width': 2}
-		);
+	}
+
+	getBtnCorners() {
+		return `0,0 ${this.width},0 ${this.width},${this.height} 0,${this.height}`;
 	}
 
 	createHtml() {
@@ -84,7 +52,41 @@ class BaseButton {
 	implementHeightOuter() {
 		this.svg.setAttribute('height', this.height + this.margin_ver);
 	}
+}
 
+
+const DropdownMixin = (Base) => class extends Base {
+	getBtnCorners() {
+		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
+	}
+
+	allignHtml() {
+		this.hflex.style.left = this.origin.x + 'px';
+		this.hflex.style.top = this.origin.y + 'px';
+	}
+
+	initCutDims() {
+		this.calcCutLeft();
+		this.calcCutRight();
+		this.calcCutTop();
+		this.calcCutBottom();
+	}
+
+	appendChild(child, setMarginMethodName, calcCutMethodName) {
+		const ch_cnt = this.children.length;
+		if (ch_cnt) {
+			this.children[ch_cnt - 1][setMarginMethodName](this.constructor.button_spacing);
+		}
+		child.objref.setMarginHor(this.constructor.child_margin);
+		child.objref.setMarginVer(this.constructor.child_margin);
+		this.hflex.appendChild(child);
+		this.children.push(child.objref);
+		this[calcCutMethodName]();
+	}
+};
+
+
+const ButtonMixin = (Base) => class extends Base {
 	// eslint-disable-next-line no-unused-vars
 	animateBtnDown(event) { // Change appearance of fancy buttons
 		this.filter_g.setAttribute('filter', 'url(#okshadow)');
@@ -99,6 +101,45 @@ class BaseButton {
 		this.filter_g.setAttribute('filter', 'url(#shadow)');
 		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${
 			-this.width / 2} ${-this.height / 2})`);
+	}
+}
+
+
+class BaseButton extends ButtonMixin(CommonAbstractBase) {
+	constructor(parent, html_text) {
+		super();
+		this.parent = parent;
+		this.width = this.constructor.w;
+		this.height = this.constructor.h;
+		this.margin_hor = this.constructor.margin;
+		this.margin_ver = this.constructor.margin;
+		this.html_text = html_text;
+		this.active = false;
+
+		this.createSvg();
+		this.createHtml();
+		this.setImage(html_text);
+
+		this.animateBtnDown = this.animateBtnDown.bind(this);
+		this.animateBtnUp = this.animateBtnUp.bind(this);
+		this.mask_g.addEventListener('mousedown', this.animateBtnDown);
+	}
+
+	static btn_num = 0;
+
+	static id_prefix = 'fb';
+
+	static w = 30;
+
+	static h = 30;
+
+	static margin = 6;
+
+	createSvg() {
+		super.createSvg()
+		this.selrect = attachSvg(this.mask_g, 'polygon',
+			{class: 'invisible', points: this.getBtnCorners(), fill: 'none', stroke: 'blue', 'stroke-width': 2}
+		);
 	}
 
 	selectCond() {
@@ -155,7 +196,7 @@ class SubButton extends RegularButton {
 }
 
 
-class DropButton extends BaseButton {
+class DropButton extends DropdownMixin(BaseButton) {
 	constructor(parent, html_text) {
 		super(parent, html_text);
 		this.collapsed = true;
@@ -178,10 +219,6 @@ class DropButton extends BaseButton {
 
 	static button_spacing = 6;
 
-	getBtnCorners() {
-		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
-	}
-
 	createHtml() {
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcont');
@@ -194,18 +231,6 @@ class DropButton extends BaseButton {
 		this.drop_container.appendChild(this.hflex);
 
 		this.allignHtml();
-	}
-
-	allignHtml() {
-		this.hflex.style.left = this.origin.x + 'px';
-		this.hflex.style.top = this.origin.y + 'px';
-	}
-
-	initCutDims() {
-		this.calcCutLeft();
-		this.calcCutRight();
-		this.calcCutTop();
-		this.calcCutBottom();
 	}
 
 	calcCutLeft() {
@@ -252,15 +277,7 @@ class DropButton extends BaseButton {
 	}
 
 	appendChild(child) {
-		const ch_cnt = this.children.length;
-		if (ch_cnt) {
-			this.children[ch_cnt - 1].setMarginHor(this.constructor.button_spacing);
-		}
-		child.objref.setMarginHor(this.constructor.child_margin);
-		child.objref.setMarginVer(this.constructor.child_margin);
-		this.hflex.appendChild(child);
-		this.children.push(child.objref);
-		this.calcCutRight();
+		super.appendChild(child, 'setMarginHor', 'calcCutRight')
 	}
 
 	selectCond(subbtn) {
@@ -472,8 +489,9 @@ dropshapesbtn.focusSubbtn(linebtn);
 export const menu_bar = document.getElementById('menubar');
 
 
-class MenuItem {
+class MenuItem extends CommonAbstractBase {
 	constructor(parent, html_text) {
+		super();
 		this.parent = parent;
 		this.text_width = Math.round(getTextWidth(html_text));
 		this.width = this.constructor.w;
@@ -484,6 +502,7 @@ class MenuItem {
 		this.createSvg();
 		this.createHtml();
 		this.setImage(html_text);
+		this.text = this.img.lastChild;
 		this.centerText();
 	}
 
@@ -499,38 +518,6 @@ class MenuItem {
 
 	static padding = 4;
 
-	static getBtnNum() {
-		return this.btn_num++;
-	}
-
-	getBtnCorners() {
-		return `0,0 ${this.width},0 ${this.width},${this.height} 0,${this.height}`;
-	}
-
-	createSvg() {
-		this.svg = makeSvg('svg', {width: this.width + this.margin_hor, height: this.height + this.margin_ver});
-		const mask_id = this.constructor.id_prefix + this.constructor.getBtnNum() + 'mask';
-		const mask = attachSvg(this.svg, 'mask', {id: mask_id});
-		this.clip_poligon = attachSvg(mask, 'polygon', {points: this.getBtnCorners(), fill: 'white'}); // White bg
-		this.img = attachSvg(mask, 'g');
-		this.filter_g = attachSvg(this.svg, 'g', {filter: 'url(#shadow)'});
-		this.mask_g = attachSvg(this.filter_g, 'g', {class: 'but', mask: `url(#${mask_id})`});
-		this.mask_g.objref = this;
-		this.bg = attachSvg(this.mask_g, 'rect',
-			{class: 'but brick', x: 0, y: 0, width: this.width + 2, height: this.height + 2}
-		); // Button tissue
-	}
-
-	createHtml() {
-		this.svg.objref = this;
-		this.parent.appendChild(this.svg);
-	}
-
-	setImage(html_text) {
-		this.img.insertAdjacentHTML('beforeend', html_text);
-		this.text = this.img.lastChild;
-	}
-
 	setWidth(width) {
 		this.width = width;
 		setAttrsSvg(this.text, {'text-anchor': 'start', x: this.constructor.padding});
@@ -545,28 +532,10 @@ class MenuItem {
 		this.implementHeightOuter();
 	}
 
-	setMarginVer(margin_ver) {
-		this.margin_ver = margin_ver;
-		this.implementHeightOuter();
-	}
-
-	setMarginHor(margin_hor) {
-		this.margin_hor = margin_hor;
-		this.implementWidthOuter();
-	}
-
-	implementWidthOuter() {
-		this.svg.setAttribute('width', this.width + this.margin_hor);
-	}
-
 	implementHeightInner() {
 		this.clip_poligon.setAttribute('points', this.getBtnCorners());
 		this.centerText();
 		this.bg.setAttribute('height', this.height + 2);
-	}
-
-	implementHeightOuter() {
-		this.svg.setAttribute('height', this.height + this.margin_ver);
 	}
 
 	centerText() {
@@ -705,7 +674,7 @@ class MenuRadioButton extends MenuFlag {
 }
 
 
-class MenuButton extends MenuItem {
+class MenuButton extends ButtonMixin(MenuItem) {
 	constructor(parent, html_text) {
 		super(parent, html_text);
 
@@ -715,26 +684,10 @@ class MenuButton extends MenuItem {
 	}
 
 	static id_prefix = 'mb';
-
-	// eslint-disable-next-line no-unused-vars
-	animateBtnDown(event) { // Change appearance of fancy buttons
-		this.filter_g.setAttribute('filter', 'url(#okshadow)');
-		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${
-			this.height / 2}) scale(0.94) translate(${-this.width / 2} ${-this.height / 2})`);
-		window.addEventListener('mouseup', this.animateBtnUp);
-	}
-
-	// eslint-disable-next-line no-unused-vars
-	animateBtnUp(event) { // Reset appearance of fancy buttons
-		window.removeEventListener('mouseup', this.animateBtnUp);
-		this.filter_g.setAttribute('filter', 'url(#shadow)');
-		this.filter_g.setAttribute('transform', `translate(${this.width / 2} ${this.height / 2}) scale(1) translate(${
-			-this.width / 2} ${-this.height / 2})`);
-	}
 }
 
 
-class DropMenu extends MenuItem {
+class DropMenu extends DropdownMixin(MenuItem) {
 	constructor(parent, html_text) {
 		super(parent, html_text);
 		this.clip_path_nums = [];
@@ -755,10 +708,6 @@ class DropMenu extends MenuItem {
 
 	static button_spacing = 0;
 
-	getBtnCorners() {
-		return `0,0 ${this.width},0 ${this.width},${this.height - 5} ${this.width - 5},${this.height} 0,${this.height}`;
-	}
-
 	createHtml() {
 		this.drop_container = document.createElement('div');
 		this.drop_container.classList.add('dropcontmenu');
@@ -771,18 +720,6 @@ class DropMenu extends MenuItem {
 		this.drop_container.appendChild(this.hflex);
 
 		this.allignHtml();
-	}
-
-	allignHtml() {
-		this.hflex.style.left = this.origin.x + 'px';
-		this.hflex.style.top = this.origin.y + 'px';
-	}
-
-	initCutDims() {
-		this.calcCutLeft();
-		this.calcCutRight();
-		this.calcCutTop();
-		this.calcCutBottom();
 	}
 
 	calcCutLeft() {
@@ -812,15 +749,7 @@ class DropMenu extends MenuItem {
 	}
 
 	appendChild(child) {
-		const ch_cnt = this.children.length;
-		if (ch_cnt) {
-			this.children[ch_cnt - 1].setMarginVer(this.constructor.button_spacing);
-		}
-		child.objref.setMarginHor(this.constructor.child_margin);
-		child.objref.setMarginVer(this.constructor.child_margin);
-		this.hflex.appendChild(child);
-		this.children.push(child.objref);
-		this.calcCutBottom();
+		super.appendChild(child, 'setMarginVer', 'calcCutBottom')
 	}
 
 	getMaxChildrenTextWidth() {
